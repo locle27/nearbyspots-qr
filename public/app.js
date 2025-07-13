@@ -251,16 +251,15 @@ function updateResultsDisplay() {
         elements.resultsContainer.appendChild(seeMoreContainer);
     }
     
-    // Update results count with hot location indicator
-    const hotCount = places.filter(place => place.isHotLocation).length;
+    // Update results count
     const totalPlaces = Object.values(currentResults).reduce((sum, categoryPlaces) => sum + categoryPlaces.length, 0);
-    const hotIndicator = hotCount > 0 ? ` (🔥 ${hotCount} hot spots)` : '';
-    elements.resultsCount.textContent = `${totalPlaces} places found${hotIndicator}`;
+    const avgRating = places.length > 0 ? (places.reduce((sum, place) => sum + (place.rating || 0), 0) / places.length).toFixed(1) : 0;
+    elements.resultsCount.textContent = `${totalPlaces} places found (avg rating: ${avgRating}⭐)`;
 }
 
 function createPlaceCard(place) {
     const card = document.createElement('div');
-    card.className = `place-card ${place.isHotLocation ? 'hot-location' : ''}`;
+    card.className = 'place-card';
     
     const rating = place.rating || 0;
     const ratingCount = place.userRatingCount || 0;
@@ -271,8 +270,13 @@ function createPlaceCard(place) {
         ? `/api/place-photo/${encodeURIComponent(place.photos[0].name)}?maxHeightPx=300&maxWidthPx=400`
         : null;
     
+    // Highlight highly rated places with 4+ stars
+    const isHighRated = rating >= 4.0;
+    if (isHighRated) {
+        card.classList.add('high-rated');
+    }
+    
     card.innerHTML = `
-        ${place.isHotLocation ? '<div class="hot-badge">🔥 Hot Spot</div>' : ''}
         ${photoUrl ? `
             <div class="place-photo">
                 <img src="${photoUrl}" alt="${place.name}" loading="lazy">
@@ -287,7 +291,7 @@ function createPlaceCard(place) {
             <div class="place-rating">
                 ${rating > 0 ? `
                     <span class="rating-stars">${stars}</span>
-                    <span class="rating-score">${rating.toFixed(1)}</span>
+                    <span class="rating-score ${isHighRated ? 'high-rating' : ''}">${rating.toFixed(1)}</span>
                     <span class="rating-text">(${ratingCount} reviews)</span>
                 ` : `
                     <span class="rating-text no-rating">No rating available</span>

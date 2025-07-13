@@ -722,35 +722,21 @@ label {
     }
 }
 
-/* Hot Locations Styling */
-.place-card.hot-location {
-    border: 2px solid #ff6b35;
-    background: linear-gradient(135deg, #fff8f5 0%, #ffffff 100%);
-    box-shadow: 0 8px 24px rgba(255, 107, 53, 0.15);
-    position: relative;
+/* High-Rated Places Styling */
+.place-card.high-rated {
+    border: 2px solid #4caf50;
+    background: linear-gradient(135deg, #f8fff8 0%, #ffffff 100%);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.15);
 }
 
-.hot-badge {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: linear-gradient(135deg, #ff6b35 0%, #ff8a50 100%);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    z-index: 2;
-    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+.place-card.high-rated .place-name {
+    color: #2e7d32;
 }
 
-.place-card.hot-location .place-name {
-    color: #d84315;
-}
-
-.place-card.hot-location .rating-score {
-    color: #ff6b35;
+.rating-score.high-rating {
+    color: #4caf50;
     font-weight: 700;
+    font-size: 1.1rem;
 }
 
 /* See More Button */
