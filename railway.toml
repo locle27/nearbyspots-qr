@@ -2,7 +2,7 @@
 builder = "dockerfile"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "node server.js"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
@@ -10,4 +10,3 @@ restartPolicyMaxRetries = 3
 
 [variables]
 NODE_ENV = "production"
-PORT = { default = "3000" }
