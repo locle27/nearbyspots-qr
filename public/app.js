@@ -129,17 +129,26 @@ async function getCurrentLocation() {
 
 async function geocodeAddress(address) {
     try {
-        const response = await fetch(`https://api.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
-        const data = await response.json();
+        const response = await fetch('/api/geocode-address', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ address })
+        });
         
-        if (data && data.length > 0) {
-            return {
-                latitude: parseFloat(data[0].lat),
-                longitude: parseFloat(data[0].lon)
-            };
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to find location');
         }
-        throw new Error('Address not found');
+        
+        const data = await response.json();
+        return {
+            latitude: data.latitude,
+            longitude: data.longitude
+        };
     } catch (error) {
+        console.error('Geocoding error:', error);
         throw new Error('Failed to find location. Please try a different address.');
     }
 }

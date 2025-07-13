@@ -1,0 +1,25 @@
+<svg width="192" height="192" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" fill="#1976D2"/>
+  <rect x="24" y="24" width="16" height="16" fill="white"/>
+  <rect x="40" y="24" width="16" height="16" fill="white"/>
+  <rect x="56" y="24" width="16" height="16" fill="white"/>
+  <rect x="88" y="24" width="16" height="16" fill="white"/>
+  <rect x="104" y="24" width="16" height="16" fill="white"/>
+  <rect x="24" y="40" width="16" height="16" fill="white"/>
+  <rect x="56" y="40" width="16" height="16" fill="white"/>
+  <rect x="88" y="40" width="16" height="16" fill="white"/>
+  <rect x="104" y="40" width="16" height="16" fill="white"/>
+  <rect x="24" y="56" width="16" height="16" fill="white"/>
+  <rect x="40" y="56" width="16" height="16" fill="white"/>
+  <rect x="56" y="56" width="16" height="16" fill="white"/>
+  <rect x="88" y="56" width="16" height="16" fill="white"/>
+  <rect x="24" y="88" width="16" height="16" fill="white"/>
+  <rect x="56" y="88" width="16" height="16" fill="white"/>
+  <rect x="88" y="88" width="16" height="16" fill="white"/>
+  <rect x="104" y="88" width="16" height="16" fill="white"/>
+  <rect x="24" y="104" width="16" height="16" fill="white"/>
+  <rect x="40" y="104" width="16" height="16" fill="white"/>
+  <rect x="56" y="104" width="16" height="16" fill="white"/>
+  <rect x="88" y="104" width="16" height="16" fill="white"/>
+  <rect x="104" y="104" width="16" height="16" fill="white"/>
+</svg>

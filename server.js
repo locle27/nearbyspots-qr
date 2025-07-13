@@ -239,6 +239,40 @@ app.post('/api/search-nearby', async (req, res) => {
   }
 });
 
+// Geocode address endpoint
+app.post('/api/geocode-address', async (req, res) => {
+  try {
+    const { address } = req.body;
+    
+    if (!address) {
+      return res.status(400).json({ error: 'Address is required' });
+    }
+
+    if (!GOOGLE_MAPS_API_KEY) {
+      return res.status(500).json({ error: 'Google Maps API key not configured' });
+    }
+
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`;
+    
+    const response = await axios.get(geocodeUrl, { timeout: 10000 });
+    
+    if (response.data.status === 'OK' && response.data.results.length > 0) {
+      const location = response.data.results[0].geometry.location;
+      res.json({
+        success: true,
+        latitude: location.lat,
+        longitude: location.lng,
+        address: response.data.results[0].formatted_address
+      });
+    } else {
+      res.status(404).json({ error: 'Address not found. Please try a different address.' });
+    }
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    res.status(500).json({ error: 'Failed to geocode address' });
+  }
+});
+
 // Get place photo
 app.get('/api/place-photo/:photoName', async (req, res) => {
   try {
