@@ -84,6 +84,7 @@ const HOTEL_LOCATIONS = {
 const ALLOWED_DOMAINS = [
   'localhost:3000',
   '127.0.0.1:3000',
+  'nearbyspots-qr-production.up.railway.app', // Production Railway domain
   process.env.PRODUCTION_DOMAIN, // Your Railway domain
   process.env.CUSTOM_DOMAIN       // Your custom domain
 ].filter(Boolean);
