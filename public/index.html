@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Discover nearby restaurants, landmarks, coffee shops, and cultural sites with QR code scanning">
+    <meta name="theme-color" content="#1976D2">
+    <title>NearbySpots - QR Discovery</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <h1 class="header-title">📍 NearbySpots</h1>
+                <p class="header-subtitle">Discover amazing places around you</p>
+            </div>
+        </header>
+
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="loading-screen hidden">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Finding nearby places...</p>
+        </div>
+
+        <!-- Error Screen -->
+        <div id="error-screen" class="error-screen hidden">
+            <div class="error-content">
+                <div class="error-icon">⚠️</div>
+                <h2 class="error-title">Something went wrong</h2>
+                <p id="error-message" class="error-message"></p>
+                <button id="retry-btn" class="btn btn-primary">Try Again</button>
+            </div>
+        </div>
+
+        <!-- Location Permission Screen -->
+        <div id="permission-screen" class="permission-screen">
+            <div class="container">
+                <div class="permission-content">
+                    <div class="permission-icon">🎯</div>
+                    <h2 class="permission-title">Enable Location Access</h2>
+                    <p class="permission-text">
+                        We need your location to find amazing restaurants, landmarks, 
+                        coffee shops, and cultural sites nearby.
+                    </p>
+                    <div class="permission-buttons">
+                        <button id="enable-location-btn" class="btn btn-primary">
+                            📍 Enable Location
+                        </button>
+                        <button id="manual-location-btn" class="btn btn-secondary">
+                            📝 Enter Manually
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Location Input -->
+        <div id="manual-location-screen" class="manual-location-screen hidden">
+            <div class="container">
+                <div class="manual-location-content">
+                    <h2 class="manual-location-title">Enter Your Location</h2>
+                    <div class="form-group">
+                        <input 
+                            type="text" 
+                            id="address-input" 
+                            class="form-input" 
+                            placeholder="Enter address or city name"
+                            autocomplete="street-address"
+                        >
+                        <button id="search-address-btn" class="btn btn-primary">
+                            🔍 Search
+                        </button>
+                    </div>
+                    <p class="manual-location-note">
+                        For best results, include city and country (e.g., "Times Square, New York, NY")
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distance Selection Screen -->
+        <div id="distance-screen" class="distance-screen hidden">
+            <div class="container">
+                <div class="distance-content">
+                    <h2 class="distance-title">Select Search Radius</h2>
+                    <p class="distance-subtitle">How far should we search for places?</p>
+                    
+                    <div class="distance-options">
+                        <div class="distance-option" data-radius="500">
+                            <div class="distance-icon">🚶‍♂️</div>
+                            <div class="distance-label">0.5 km</div>
+                            <div class="distance-desc">Walking distance</div>
+                        </div>
+                        <div class="distance-option selected" data-radius="1000">
+                            <div class="distance-icon">🚴‍♂️</div>
+                            <div class="distance-label">1 km</div>
+                            <div class="distance-desc">Short bike ride</div>
+                        </div>
+                        <div class="distance-option" data-radius="2000">
+                            <div class="distance-icon">🏃‍♂️</div>
+                            <div class="distance-label">2 km</div>
+                            <div class="distance-desc">Quick jog</div>
+                        </div>
+                        <div class="distance-option" data-radius="5000">
+                            <div class="distance-icon">🚗</div>
+                            <div class="distance-label">5 km</div>
+                            <div class="distance-desc">Short drive</div>
+                        </div>
+                        <div class="distance-option" data-radius="10000">
+                            <div class="distance-icon">🚙</div>
+                            <div class="distance-label">10 km</div>
+                            <div class="distance-desc">Extended area</div>
+                        </div>
+                    </div>
+
+                    <button id="search-places-btn" class="btn btn-primary btn-large">
+                        🔍 Find Places
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="results-screen hidden">
+            <div class="container">
+                <div class="results-header">
+                    <h2 class="results-title">Nearby Places</h2>
+                    <div class="results-info">
+                        <span id="results-count">0 places found</span>
+                        <button id="change-location-btn" class="btn btn-small">📍 Change Location</button>
+                    </div>
+                </div>
+
+                <!-- Category Tabs -->
+                <div class="category-tabs">
+                    <button class="category-tab active" data-category="restaurants">
+                        🍽️ Restaurants
+                    </button>
+                    <button class="category-tab" data-category="landmarks">
+                        🏛️ Landmarks
+                    </button>
+                    <button class="category-tab" data-category="coffee">
+                        ☕ Coffee
+                    </button>
+                    <button class="category-tab" data-category="culture">
+                        🎭 Culture
+                    </button>
+                </div>
+
+                <!-- Results Container -->
+                <div id="results-container" class="results-container">
+                    <!-- Results will be dynamically inserted here -->
+                </div>
+
+                <!-- No Results Message -->
+                <div id="no-results" class="no-results hidden">
+                    <div class="no-results-icon">🔍</div>
+                    <h3 class="no-results-title">No places found</h3>
+                    <p class="no-results-text">
+                        Try expanding your search radius or selecting a different location.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code Generator (Admin/Business Owner Tool) -->
+        <div id="qr-generator" class="qr-generator hidden">
+            <div class="container">
+                <h2 class="qr-title">Generate QR Code</h2>
+                <div class="qr-form">
+                    <div class="form-group">
+                        <label for="qr-label">Location Label (Optional)</label>
+                        <input type="text" id="qr-label" class="form-input" placeholder="e.g., Restaurant Name, Event Location">
+                    </div>
+                    <div class="form-group">
+                        <label for="qr-lat">Latitude (Optional)</label>
+                        <input type="number" id="qr-lat" class="form-input" step="any" placeholder="e.g., 40.7128">
+                    </div>
+                    <div class="form-group">
+                        <label for="qr-lng">Longitude (Optional)</label>
+                        <input type="number" id="qr-lng" class="form-input" step="any" placeholder="e.g., -74.0060">
+                    </div>
+                    <button id="generate-qr-btn" class="btn btn-primary">Generate QR Code</button>
+                </div>
+                <div id="qr-result" class="qr-result hidden">
+                    <img id="qr-image" alt="Generated QR Code">
+                    <p class="qr-instruction">Scan this QR code to discover nearby places</p>
+                    <button id="download-qr-btn" class="btn btn-secondary">Download QR Code</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 NearbySpots. Powered by Google Maps Platform.</p>
+            <div class="footer-links">
+                <button id="show-qr-generator" class="footer-link">Generate QR Code</button>
+                <a href="#" class="footer-link">About</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
