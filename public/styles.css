@@ -722,11 +722,111 @@ label {
     }
 }
 
+/* Hot Locations Styling */
+.place-card.hot-location {
+    border: 2px solid #ff6b35;
+    background: linear-gradient(135deg, #fff8f5 0%, #ffffff 100%);
+    box-shadow: 0 8px 24px rgba(255, 107, 53, 0.15);
+    position: relative;
+}
+
+.hot-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: linear-gradient(135deg, #ff6b35 0%, #ff8a50 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.place-card.hot-location .place-name {
+    color: #d84315;
+}
+
+.place-card.hot-location .rating-score {
+    color: #ff6b35;
+    font-weight: 700;
+}
+
+/* See More Button */
+.see-more-container {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+    padding: 0 16px;
+}
+
+.see-more-btn {
+    background: linear-gradient(135deg, #1976D2 0%, #42a5f5 100%);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+    min-width: 200px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.see-more-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(25, 118, 210, 0.4);
+    background: linear-gradient(135deg, #1565C0 0%, #1976D2 100%);
+}
+
+.see-more-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+/* Enhanced Results Count with Hot Indicators */
+.results-count {
+    display: block;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+/* Hot location indicator in results count */
+.results-count:has-text("🔥") {
+    color: #ff6b35;
+    font-weight: 600;
+}
+
+/* Animation for new results appearing */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.place-card {
+    animation: slideInUp 0.3s ease-out;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
     * {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+    }
+    
+    .place-card {
+        animation: none;
     }
 }

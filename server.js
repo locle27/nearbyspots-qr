@@ -61,7 +61,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 const DEFAULT_SEARCH_RADIUS = parseInt(process.env.DEFAULT_SEARCH_RADIUS) || 1000;
 const MAX_SEARCH_RADIUS = parseInt(process.env.MAX_SEARCH_RADIUS) || 10000;
-const RESULTS_PER_CATEGORY = parseInt(process.env.RESULTS_PER_CATEGORY) || 20;
+const RESULTS_PER_CATEGORY = parseInt(process.env.RESULTS_PER_CATEGORY) || 50; // Increased for more hot locations
 
 // Default Hotel Location - 118 Hang Bac, Hanoi Old Quarter
 const DEFAULT_HOTEL = {
@@ -566,14 +566,23 @@ app.post('/api/search-nearby', async (req, res) => {
             console.log(`First photo name: ${place.photos[0].name}`);
           }
 
+          // Calculate popularity score for hot locations
+          const rating = place.rating || 0;
+          const reviewCount = place.userRatingCount || 0;
+          
+          // Hot location score: rating * log(reviews + 1) - prioritizes highly rated places with many reviews
+          const popularityScore = rating * Math.log(reviewCount + 1);
+          
           return {
             id: place.id,
             name: place.displayName?.text || 'Unknown',
             address: place.formattedAddress || '',
             location: place.location,
-            rating: place.rating || 0,
-            userRatingCount: place.userRatingCount || 0,
+            rating: rating,
+            userRatingCount: reviewCount,
             distance: Math.round(distance),
+            popularityScore: popularityScore,
+            isHotLocation: rating >= 4.0 && reviewCount >= 50, // Mark as hot if highly rated with many reviews
             photos: place.photos?.map(photo => ({
               name: photo.name,
               widthPx: photo.widthPx,
@@ -583,7 +592,15 @@ app.post('/api/search-nearby', async (req, res) => {
             mapsUrl: generateMapsUrl(place.location.latitude, place.location.longitude, place.displayName?.text || ''),
             types: place.types || []
           };
-        }).sort((a, b) => a.distance - b.distance);
+        }).sort((a, b) => {
+          // Sort by: 1) Hot locations first, 2) Popularity score, 3) Distance
+          if (a.isHotLocation && !b.isHotLocation) return -1;
+          if (!a.isHotLocation && b.isHotLocation) return 1;
+          if (Math.abs(a.popularityScore - b.popularityScore) > 0.5) {
+            return b.popularityScore - a.popularityScore; // Higher popularity first
+          }
+          return a.distance - b.distance; // Then by distance
+        });
       } catch (categoryError) {
         console.error(`Error searching ${category}:`, categoryError);
         results[category] = [];

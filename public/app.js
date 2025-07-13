@@ -3,6 +3,8 @@ let currentLocation = null;
 let currentRadius = 1000;
 let currentResults = {};
 let currentCategory = 'restaurants';
+let displayLimits = {}; // Track how many items are currently displayed per category
+const INITIAL_DISPLAY_COUNT = 8; // Show first 8 items, then "See More"
 
 // DOM elements
 const elements = {
@@ -223,19 +225,42 @@ function updateResultsDisplay() {
     elements.noResults.classList.add('hidden');
     elements.resultsContainer.classList.remove('hidden');
     
-    places.forEach(place => {
+    // Initialize display limit for this category if not set
+    if (!displayLimits[category]) {
+        displayLimits[category] = INITIAL_DISPLAY_COUNT;
+    }
+    
+    const displayCount = Math.min(displayLimits[category], places.length);
+    const hasMoreResults = places.length > displayCount;
+    
+    // Display places up to the current limit
+    places.slice(0, displayCount).forEach(place => {
         const placeCard = createPlaceCard(place);
         elements.resultsContainer.appendChild(placeCard);
     });
     
-    // Update results count
+    // Add "See More" button if there are more results
+    if (hasMoreResults) {
+        const seeMoreContainer = document.createElement('div');
+        seeMoreContainer.className = 'see-more-container';
+        seeMoreContainer.innerHTML = `
+            <button class="see-more-btn" onclick="showMoreResults('${category}')">
+                🔍 See More Places (${places.length - displayCount} more)
+            </button>
+        `;
+        elements.resultsContainer.appendChild(seeMoreContainer);
+    }
+    
+    // Update results count with hot location indicator
+    const hotCount = places.filter(place => place.isHotLocation).length;
     const totalPlaces = Object.values(currentResults).reduce((sum, categoryPlaces) => sum + categoryPlaces.length, 0);
-    elements.resultsCount.textContent = `${totalPlaces} places found`;
+    const hotIndicator = hotCount > 0 ? ` (🔥 ${hotCount} hot spots)` : '';
+    elements.resultsCount.textContent = `${totalPlaces} places found${hotIndicator}`;
 }
 
 function createPlaceCard(place) {
     const card = document.createElement('div');
-    card.className = 'place-card';
+    card.className = `place-card ${place.isHotLocation ? 'hot-location' : ''}`;
     
     const rating = place.rating || 0;
     const ratingCount = place.userRatingCount || 0;
@@ -247,6 +272,7 @@ function createPlaceCard(place) {
         : null;
     
     card.innerHTML = `
+        ${place.isHotLocation ? '<div class="hot-badge">🔥 Hot Spot</div>' : ''}
         ${photoUrl ? `
             <div class="place-photo">
                 <img src="${photoUrl}" alt="${place.name}" loading="lazy">
@@ -397,6 +423,16 @@ function handleCategoryChange(category) {
     document.querySelector(`[data-category="${category}"]`).classList.add('active');
     
     updateResultsDisplay();
+}
+
+function showMoreResults(category) {
+    // Increase display limit for this category
+    displayLimits[category] = (displayLimits[category] || INITIAL_DISPLAY_COUNT) + INITIAL_DISPLAY_COUNT;
+    
+    // If this is the current category, refresh the display
+    if (category === currentCategory) {
+        updateResultsDisplay();
+    }
 }
 
 async function handleGenerateQR() {
@@ -561,3 +597,4 @@ window.addEventListener('offline', () => {
 window.openDirections = openDirections;
 window.openInMaps = openInMaps;
 window.openWebsite = openWebsite;
+window.showMoreResults = showMoreResults;
