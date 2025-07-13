@@ -61,7 +61,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 const DEFAULT_SEARCH_RADIUS = parseInt(process.env.DEFAULT_SEARCH_RADIUS) || 1000;
 const MAX_SEARCH_RADIUS = parseInt(process.env.MAX_SEARCH_RADIUS) || 10000;
-const RESULTS_PER_CATEGORY = parseInt(process.env.RESULTS_PER_CATEGORY) || 50; // Increased for more hot locations
+const RESULTS_PER_CATEGORY = parseInt(process.env.RESULTS_PER_CATEGORY) || 20; // Reduced to reliable number
 
 // Default Hotel Location - 118 Hang Bac, Hanoi Old Quarter
 const DEFAULT_HOTEL = {
@@ -92,12 +92,12 @@ const ALLOWED_DOMAINS = [
 const QR_SECRET_KEY = process.env.QR_SECRET_KEY || 'your-secret-key-change-in-production';
 const crypto = require('crypto');
 
-// Place types for different categories
+// Place types for different categories - simplified to work reliably
 const PLACE_TYPES = {
-  restaurants: ['restaurant', 'meal_takeaway', 'meal_delivery', 'bar', 'night_club'],
+  restaurants: ['restaurant'], // Single type that works
   landmarks: ['tourist_attraction'],
-  coffee: ['cafe', 'bakery'],
-  culture: ['museum', 'art_gallery', 'library', 'cultural_center']
+  coffee: ['cafe'],
+  culture: ['museum']
 };
 
 // Security Functions
@@ -223,7 +223,7 @@ async function searchNearbyPlaces(latitude, longitude, radius, types) {
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.types,places.websiteUri,places.id'
+          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
         },
         timeout: 10000
       }

@@ -1,0 +1,44 @@
+{
+  "places": [
+    {
+      "formattedAddress": "25 P. Hàng Cá, Hàng Bồ, Hoàn Kiếm, Hà Nội, Vietnam",
+      "rating": 4.4,
+      "displayName": {
+        "text": "Banh Mi 25",
+        "languageCode": "vi"
+      }
+    },
+    {
+      "formattedAddress": "10 P. Lý Quốc Sư, Hàng Trống, Hoàn Kiếm, Hà Nội, Vietnam",
+      "rating": 4.1,
+      "displayName": {
+        "text": "Pho 10 Ly Quoc Su",
+        "languageCode": "en"
+      }
+    },
+    {
+      "formattedAddress": "11B P. Báo Khánh, Alley, Hoàn Kiếm, Hà Nội 100000, Vietnam",
+      "rating": 4.9,
+      "displayName": {
+        "text": "Pizza 4P’s Bao Khanh",
+        "languageCode": "en"
+      }
+    },
+    {
+      "formattedAddress": "64 P. Lương Văn Can, Hàng Trống, Hoàn Kiếm, Hà Nội, Vietnam",
+      "rating": 4.4,
+      "displayName": {
+        "text": "The Note Coffee",
+        "languageCode": "en"
+      }
+    },
+    {
+      "formattedAddress": "14 P. Tống Duy Tân, Hàng Bông, Hoàn Kiếm, Hà Nội, Vietnam",
+      "rating": 4.4,
+      "displayName": {
+        "text": "Xofa Cafe",
+        "languageCode": "en"
+      }
+    }
+  ]
+}
