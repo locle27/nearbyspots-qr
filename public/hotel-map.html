@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Management Map - 118 Hang Bac</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1976D2 0%, #42a5f5 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin-bottom: 5px;
+            font-size: 1.8rem;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .radius-select {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .radius-select:focus {
+            outline: none;
+            border-color: #1976D2;
+        }
+
+        .category-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .category-filter {
+            padding: 8px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .category-filter.active {
+            background: #1976D2;
+            color: white;
+            border-color: #1976D2;
+        }
+
+        .category-filter:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .load-btn {
+            background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .load-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .load-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .map-container {
+            height: calc(100vh - 200px);
+            margin: 0;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .info-panel {
+            background: white;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .stat {
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1976D2;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                padding: 15px;
+            }
+            
+            .category-filters {
+                justify-content: center;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .map-container {
+                height: calc(100vh - 250px);
+            }
+        }
+
+        /* Custom marker info window styling */
+        .marker-info {
+            max-width: 250px;
+        }
+
+        .marker-info h3 {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .marker-info p {
+            margin: 4px 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .marker-info .rating {
+            color: #ff9800;
+            font-weight: bold;
+        }
+
+        .marker-info .distance {
+            color: #1976D2;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏨 Hotel Management Map</h1>
+        <p>118 Hang Bac, Hanoi Old Quarter - Visual Overview</p>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>Search Radius:</label>
+            <select class="radius-select" id="radiusSelect">
+                <option value="500">500m - Walking</option>
+                <option value="1000" selected>1km - Short walk</option>
+                <option value="2000">2km - Bike ride</option>
+                <option value="5000">5km - Scooter/taxi</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Categories to Show:</label>
+            <div class="category-filters">
+                <div class="category-filter active" data-category="restaurants">
+                    🍽️ Restaurants
+                </div>
+                <div class="category-filter active" data-category="landmarks">
+                    🏛️ Landmarks
+                </div>
+                <div class="category-filter active" data-category="coffee">
+                    ☕ Coffee
+                </div>
+                <div class="category-filter active" data-category="culture">
+                    🎭 Culture
+                </div>
+            </div>
+        </div>
+
+        <button class="load-btn" id="loadPlacesBtn">
+            🗺️ Load Places on Map
+        </button>
+    </div>
+
+    <div class="info-panel">
+        <div class="stats" id="statsContainer">
+            <div class="stat">
+                <div class="stat-number" id="totalPlaces">0</div>
+                <div class="stat-label">Total Places</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="avgRating">0.0</div>
+                <div class="stat-label">Avg Rating</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="maxDistance">0</div>
+                <div class="stat-label">Max Distance</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="topCategory">-</div>
+                <div class="stat-label">Most Places</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="map-container">
+        <div class="loading" id="loading">
+            <div style="text-align: center;">
+                <div style="font-size: 1.5rem; margin-bottom: 10px;">🔍</div>
+                <div>Loading places on map...</div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <script>
+        // Global variables
+        let map;
+        let hotelMarker;
+        let placeMarkers = [];
+        let allPlaces = {};
+        let activeCategories = new Set(['restaurants', 'landmarks', 'coffee', 'culture']);
+
+        // Hotel location
+        const HOTEL_LOCATION = {
+            lat: 21.034087,
+            lng: 105.85114,
+            name: "Old Quarter Hotel",
+            address: "118 Hang Bac, Hoan Kiem, Hanoi, Vietnam"
+        };
+
+        // Category colors
+        const CATEGORY_COLORS = {
+            restaurants: '#FF6B35',
+            landmarks: '#4CAF50', 
+            coffee: '#795548',
+            culture: '#9C27B0'
+        };
+
+        // Category icons
+        const CATEGORY_ICONS = {
+            restaurants: '🍽️',
+            landmarks: '🏛️',
+            coffee: '☕',
+            culture: '🎭'
+        };
+
+        // Initialize map
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: HOTEL_LOCATION,
+                zoom: 15,
+                styles: [
+                    {
+                        featureType: "poi",
+                        elementType: "labels",
+                        stylers: [{ visibility: "off" }]
+                    }
+                ]
+            });
+
+            // Add hotel marker
+            addHotelMarker();
+
+            // Set up event listeners
+            setupEventListeners();
+        }
+
+        function addHotelMarker() {
+            hotelMarker = new google.maps.Marker({
+                position: HOTEL_LOCATION,
+                map: map,
+                title: HOTEL_LOCATION.name,
+                icon: {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="20" cy="20" r="18" fill="#1976D2" stroke="white" stroke-width="3"/>
+                            <text x="20" y="28" text-anchor="middle" fill="white" font-size="20">🏨</text>
+                        </svg>
+                    `),
+                    scaledSize: new google.maps.Size(40, 40),
+                    anchor: new google.maps.Point(20, 20)
+                }
+            });
+
+            const hotelInfoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div class="marker-info">
+                        <h3>🏨 ${HOTEL_LOCATION.name}</h3>
+                        <p><strong>Your Hotel Location</strong></p>
+                        <p>📍 ${HOTEL_LOCATION.address}</p>
+                        <p>🎯 All places are shown relative to this location</p>
+                    </div>
+                `
+            });
+
+            hotelMarker.addListener('click', () => {
+                hotelInfoWindow.open(map, hotelMarker);
+            });
+        }
+
+        function setupEventListeners() {
+            // Category filter toggles
+            document.querySelectorAll('.category-filter').forEach(filter => {
+                filter.addEventListener('click', () => {
+                    const category = filter.dataset.category;
+                    
+                    if (activeCategories.has(category)) {
+                        activeCategories.delete(category);
+                        filter.classList.remove('active');
+                    } else {
+                        activeCategories.add(category);
+                        filter.classList.add('active');
+                    }
+                    
+                    updateMapMarkers();
+                });
+            });
+
+            // Load places button
+            document.getElementById('loadPlacesBtn').addEventListener('click', loadPlaces);
+
+            // Radius change
+            document.getElementById('radiusSelect').addEventListener('change', () => {
+                if (Object.keys(allPlaces).length > 0) {
+                    loadPlaces(); // Reload with new radius
+                }
+            });
+        }
+
+        async function loadPlaces() {
+            const radius = parseInt(document.getElementById('radiusSelect').value);
+            const loadBtn = document.getElementById('loadPlacesBtn');
+            const loading = document.getElementById('loading');
+
+            loadBtn.disabled = true;
+            loadBtn.textContent = '🔄 Loading...';
+            loading.classList.add('show');
+
+            try {
+                const response = await fetch('/api/search-nearby', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        latitude: HOTEL_LOCATION.lat,
+                        longitude: HOTEL_LOCATION.lng,
+                        radius: radius
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load places');
+                }
+
+                const data = await response.json();
+                allPlaces = data.results;
+
+                updateMapMarkers();
+                updateStats();
+
+                // Adjust map bounds to show all markers
+                adjustMapBounds();
+
+            } catch (error) {
+                console.error('Error loading places:', error);
+                alert('Failed to load places. Please try again.');
+            } finally {
+                loadBtn.disabled = false;
+                loadBtn.textContent = '🗺️ Load Places on Map';
+                loading.classList.remove('show');
+            }
+        }
+
+        function updateMapMarkers() {
+            // Clear existing markers
+            placeMarkers.forEach(marker => marker.setMap(null));
+            placeMarkers = [];
+
+            // Add markers for active categories
+            Object.entries(allPlaces).forEach(([category, places]) => {
+                if (!activeCategories.has(category)) return;
+
+                places.forEach(place => {
+                    addPlaceMarker(place, category);
+                });
+            });
+        }
+
+        function addPlaceMarker(place, category) {
+            const color = CATEGORY_COLORS[category];
+            const icon = CATEGORY_ICONS[category];
+
+            const marker = new google.maps.Marker({
+                position: {
+                    lat: place.location.latitude,
+                    lng: place.location.longitude
+                },
+                map: map,
+                title: place.name,
+                icon: {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                        <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="15" cy="15" r="12" fill="${color}" stroke="white" stroke-width="2"/>
+                            <text x="15" y="20" text-anchor="middle" fill="white" font-size="12">${icon}</text>
+                        </svg>
+                    `),
+                    scaledSize: new google.maps.Size(30, 30),
+                    anchor: new google.maps.Point(15, 15)
+                }
+            });
+
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div class="marker-info">
+                        <h3>${icon} ${place.name}</h3>
+                        <p>📍 ${place.address}</p>
+                        <p class="distance">🚶 ${place.distance}m from hotel</p>
+                        ${place.rating > 0 ? `<p class="rating">⭐ ${place.rating.toFixed(1)} (${place.userRatingCount} reviews)</p>` : ''}
+                        <p style="margin-top: 8px;">
+                            <button onclick="openDirections(${place.location.latitude}, ${place.location.longitude}, '${place.name}')" 
+                                    style="background: #1976D2; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
+                                🗺️ Get Directions
+                            </button>
+                        </p>
+                    </div>
+                `
+            });
+
+            marker.addListener('click', () => {
+                infoWindow.open(map, marker);
+            });
+
+            placeMarkers.push(marker);
+        }
+
+        function updateStats() {
+            const allPlacesList = Object.values(allPlaces).flat();
+            const totalPlaces = allPlacesList.length;
+            
+            const avgRating = totalPlaces > 0 
+                ? (allPlacesList.reduce((sum, place) => sum + (place.rating || 0), 0) / totalPlaces).toFixed(1)
+                : '0.0';
+                
+            const maxDistance = totalPlaces > 0 
+                ? Math.max(...allPlacesList.map(place => place.distance))
+                : 0;
+                
+            const categoryCounts = Object.entries(allPlaces).map(([cat, places]) => ({
+                category: cat,
+                count: places.length
+            })).sort((a, b) => b.count - a.count);
+            
+            const topCategory = categoryCounts[0]?.category || '-';
+
+            document.getElementById('totalPlaces').textContent = totalPlaces;
+            document.getElementById('avgRating').textContent = avgRating;
+            document.getElementById('maxDistance').textContent = maxDistance + 'm';
+            document.getElementById('topCategory').textContent = CATEGORY_ICONS[topCategory] || '-';
+        }
+
+        function adjustMapBounds() {
+            if (placeMarkers.length === 0) return;
+
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend(HOTEL_LOCATION);
+            
+            placeMarkers.forEach(marker => {
+                bounds.extend(marker.getPosition());
+            });
+
+            map.fitBounds(bounds);
+            
+            // Don't zoom in too much
+            const listener = google.maps.event.addListener(map, "idle", () => {
+                if (map.getZoom() > 16) map.setZoom(16);
+                google.maps.event.removeListener(listener);
+            });
+        }
+
+        function openDirections(lat, lng, placeName) {
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(placeName)}`;
+            window.open(url, '_blank');
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', () => {
+            // Load map when Google Maps API is ready
+            if (typeof google !== 'undefined') {
+                initMap();
+            }
+        });
+    </script>
+
+    <!-- Load Google Maps API -->
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAVdAZdO0tjOSoNImELNfi5HtZVzitN3Y4&callback=initMap">
+    </script>
+</body>
+</html>

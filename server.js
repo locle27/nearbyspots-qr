@@ -286,6 +286,12 @@ function verifyQRAccess(req, res, next) {
   }
 }
 
+// Hotel management map page
+app.get('/hotel-map', (req, res) => {
+  const htmlPath = path.join(__dirname, 'public', 'hotel-map.html');
+  res.sendFile(htmlPath);
+});
+
 // Main page with QR security verification
 app.get('/', verifyQRAccess, (req, res) => {
   // Check for hotel parameter
