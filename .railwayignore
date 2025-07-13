@@ -1,0 +1,11 @@
+.env
+.env.local
+.env.*.local
+node_modules/
+.git/
+.gitignore
+README.md
+DEPLOYMENT_GUIDE.md
+RAILWAY_FIX_GUIDE.md
+.vscode/
+.idea/
