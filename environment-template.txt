@@ -1,0 +1,29 @@
+# Environment Variables Template
+# Copy this to .env and fill in your values
+
+# Required - Google Maps API Configuration
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+
+# Required - Security Configuration  
+QR_SECRET_KEY=your_256_bit_secret_key_generate_with_crypto
+PRODUCTION_DOMAIN=your-app.railway.app
+CUSTOM_DOMAIN=your-custom-domain.com
+
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# CORS Security
+CORS_ORIGIN=http://localhost:3000
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Search Configuration
+DEFAULT_SEARCH_RADIUS=1000
+MAX_SEARCH_RADIUS=10000
+RESULTS_PER_CATEGORY=20
+
+# Generate secret key with:
+# node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"

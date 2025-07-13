@@ -440,13 +440,31 @@ label {
 .place-card {
     background: white;
     border-radius: 16px;
-    padding: 16px;
+    overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease;
 }
 
 .place-card:active {
     transform: scale(0.98);
+}
+
+.place-photo {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.place-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0;
+}
+
+.place-content {
+    padding: 16px;
 }
 
 .place-header {
@@ -490,11 +508,26 @@ label {
 
 .rating-stars {
     color: #ffa726;
+    font-size: 1rem;
+}
+
+.rating-score {
+    background: #ffa726;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 
 .rating-text {
     color: #666;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+}
+
+.rating-text.no-rating {
+    color: #999;
+    font-style: italic;
 }
 
 .place-actions {

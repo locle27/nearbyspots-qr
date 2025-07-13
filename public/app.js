@@ -241,31 +241,79 @@ function createPlaceCard(place) {
     const ratingCount = place.userRatingCount || 0;
     const stars = generateStars(rating);
     
+    // Get first photo if available
+    const photoUrl = place.photos && place.photos.length > 0 
+        ? `/api/place-photo/${encodeURIComponent(place.photos[0].name)}?maxHeightPx=300&maxWidthPx=400`
+        : null;
+    
     card.innerHTML = `
-        <div class="place-header">
-            <h3 class="place-name">${place.name}</h3>
-            <span class="place-distance">${formatDistance(place.distance)}</span>
-        </div>
-        <p class="place-address">${place.address}</p>
-        ${rating > 0 ? `
-            <div class="place-rating">
-                <span class="rating-stars">${stars}</span>
-                <span class="rating-text">${rating.toFixed(1)} (${ratingCount} reviews)</span>
+        ${photoUrl ? `
+            <div class="place-photo">
+                <img src="${photoUrl}" alt="${place.name}" loading="lazy">
             </div>
         ` : ''}
-        <div class="place-actions">
-            <button class="action-btn" onclick="openInMaps('${place.mapsUrl}')">
-                🗺️ Directions
-            </button>
-            ${place.websiteUri ? `
-                <button class="action-btn secondary" onclick="openWebsite('${place.websiteUri}')">
-                    🌐 Website
+        <div class="place-content">
+            <div class="place-header">
+                <h3 class="place-name">${place.name}</h3>
+                <span class="place-distance">${formatDistance(place.distance)}</span>
+            </div>
+            <p class="place-address">${place.address}</p>
+            <div class="place-rating">
+                ${rating > 0 ? `
+                    <span class="rating-stars">${stars}</span>
+                    <span class="rating-score">${rating.toFixed(1)}</span>
+                    <span class="rating-text">(${ratingCount} reviews)</span>
+                ` : `
+                    <span class="rating-text no-rating">No rating available</span>
+                `}
+            </div>
+            <div class="place-actions">
+                <button class="action-btn directions-btn" data-lat="${place.location.latitude}" data-lng="${place.location.longitude}" data-name="${place.name}">
+                    🗺️ Directions
                 </button>
-            ` : ''}
+                ${place.websiteUri ? `
+                    <button class="action-btn secondary website-btn" data-url="${place.websiteUri}">
+                        🌐 Website
+                    </button>
+                ` : ''}
+            </div>
         </div>
     `;
     
+    // Add event listeners to buttons
+    const directionsBtn = card.querySelector('.directions-btn');
+    if (directionsBtn) {
+        directionsBtn.addEventListener('click', () => {
+            openDirections(place.location.latitude, place.location.longitude, place.name);
+        });
+    }
+    
+    const websiteBtn = card.querySelector('.website-btn');
+    if (websiteBtn) {
+        websiteBtn.addEventListener('click', () => {
+            openWebsite(place.websiteUri);
+        });
+    }
+    
+    // Handle photo error
+    const photoImg = card.querySelector('.place-photo img');
+    if (photoImg) {
+        photoImg.addEventListener('error', (e) => {
+            console.log('Photo failed to load:', e.target.src);
+            photoImg.parentElement.style.display = 'none';
+        });
+        photoImg.addEventListener('load', () => {
+            console.log('Photo loaded successfully:', photoImg.src);
+        });
+    }
+    
     return card;
+}
+
+function openDirections(lat, lng, placeName) {
+    const destination = `${lat},${lng}`;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&destination_place_id=${encodeURIComponent(placeName)}`;
+    window.open(url, '_blank');
 }
 
 function openInMaps(mapsUrl) {
@@ -383,7 +431,31 @@ function handleDownloadQR() {
 
 // Initialize app
 function initApp() {
-    // Check for URL parameters
+    // Check for injected default location (your hotel)
+    if (window.DEFAULT_LOCATION) {
+        currentLocation = {
+            latitude: window.DEFAULT_LOCATION.latitude,
+            longitude: window.DEFAULT_LOCATION.longitude
+        };
+        
+        // Show hotel info if available
+        if (window.DEFAULT_LOCATION.source === 'hotel_default') {
+            console.log(`🏨 Using default hotel location: ${window.DEFAULT_LOCATION.label}`);
+            console.log(`📍 Address: ${window.DEFAULT_LOCATION.address}`);
+            
+            // Update header to show hotel context
+            const headerSubtitle = document.querySelector('.header-subtitle');
+            if (headerSubtitle && window.DEFAULT_LOCATION.description) {
+                headerSubtitle.textContent = window.DEFAULT_LOCATION.description;
+            }
+        }
+        
+        // Skip to distance selection since we have your hotel location
+        showScreen(elements.distanceScreen);
+        return;
+    }
+    
+    // Fallback: Check for URL parameters (legacy support)
     const urlParams = new URLSearchParams(window.location.search);
     const lat = urlParams.get('lat');
     const lng = urlParams.get('lng');
@@ -395,6 +467,7 @@ function initApp() {
         };
         showScreen(elements.distanceScreen);
     } else {
+        // No location data available, ask for permission
         showScreen(elements.permissionScreen);
     }
     
@@ -443,7 +516,9 @@ function initApp() {
     });
 }
 
-// Service Worker registration (for PWA capabilities)
+// Service Worker disabled for debugging
+// Uncomment to enable service worker
+/*
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
@@ -455,6 +530,7 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+*/
 
 // Initialize app when DOM is loaded
 if (document.readyState === 'loading') {
@@ -482,5 +558,6 @@ window.addEventListener('offline', () => {
 });
 
 // Export functions for global access
+window.openDirections = openDirections;
 window.openInMaps = openInMaps;
 window.openWebsite = openWebsite;
