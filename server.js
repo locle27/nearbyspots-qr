@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const QRCode = require('qrcode');
 const axios = require('axios');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,9 +60,9 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 // Constants
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-const DEFAULT_SEARCH_RADIUS = parseInt(process.env.DEFAULT_SEARCH_RADIUS) || 1000;
+const DEFAULT_SEARCH_RADIUS = parseInt(process.env.DEFAULT_SEARCH_RADIUS) || 2000; // Increased from 1000m to 2000m for better coverage
 const MAX_SEARCH_RADIUS = parseInt(process.env.MAX_SEARCH_RADIUS) || 10000;
-const RESULTS_PER_CATEGORY = parseInt(process.env.RESULTS_PER_CATEGORY) || 20; // Reduced to reliable number
+const RESULTS_PER_CATEGORY = parseInt(process.env.RESULTS_PER_CATEGORY) || 100; // Increased to 100 for better landmark coverage
 
 // Default Hotel Location - 118 Hang Bac, Hanoi Old Quarter
 const DEFAULT_HOTEL = {
@@ -92,13 +93,97 @@ const ALLOWED_DOMAINS = [
 const QR_SECRET_KEY = process.env.QR_SECRET_KEY || 'your-secret-key-change-in-production';
 const crypto = require('crypto');
 
-// Place types for different categories - simplified to work reliably
+// Place types for different categories - expanded for better coverage
 const PLACE_TYPES = {
-  restaurants: ['restaurant'], // Single type that works
-  landmarks: ['tourist_attraction'],
-  coffee: ['cafe'],
+  restaurants: ['restaurant'],
+  landmarks: ['tourist_attraction'], // Will make enhanced searches for landmarks
+  coffee: ['cafe'], // Will make multiple calls for coffee shops
   culture: ['museum']
 };
+
+// Manual Recommendations Storage
+const RECOMMENDATIONS_FILE = path.join(__dirname, 'data', 'recommendations.json');
+let manualRecommendations = [];
+
+// Ensure data directory exists
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// Load existing recommendations on startup
+function loadRecommendations() {
+  try {
+    if (fs.existsSync(RECOMMENDATIONS_FILE)) {
+      const data = fs.readFileSync(RECOMMENDATIONS_FILE, 'utf8');
+      manualRecommendations = JSON.parse(data);
+      console.log(`📋 Loaded ${manualRecommendations.length} manual recommendations`);
+    } else {
+      // Create default recommendations for demo
+      manualRecommendations = [
+        {
+          id: 'rec_001',
+          name: 'Hanoi Old Quarter Walking Tour',
+          address: '36 Streets, Hoan Kiem, Hanoi, Vietnam',
+          location: {
+            latitude: 21.033333,
+            longitude: 105.85
+          },
+          rating: 4.8,
+          userRatingCount: 127,
+          distance: 150,
+          description: 'Explore the historic heart of Hanoi with narrow streets, traditional shops, and colonial architecture.',
+          category: 'recommend',
+          photos: [],
+          websiteUri: '',
+          addedBy: 'hotel_management',
+          addedDate: new Date().toISOString(),
+          featured: true
+        },
+        {
+          id: 'rec_002', 
+          name: 'Hoan Kiem Lake & Ngoc Son Temple',
+          address: 'Hoan Kiem Lake, Hanoi, Vietnam',
+          location: {
+            latitude: 21.028511,
+            longitude: 105.852245
+          },
+          rating: 4.6,
+          userRatingCount: 89,
+          distance: 300,
+          description: 'Peaceful lake in the city center with a beautiful temple on a small island.',
+          category: 'recommend',
+          photos: [],
+          websiteUri: '',
+          addedBy: 'hotel_management',
+          addedDate: new Date().toISOString(),
+          featured: true
+        }
+      ];
+      saveRecommendations();
+    }
+  } catch (error) {
+    console.error('Error loading recommendations:', error);
+    manualRecommendations = [];
+  }
+}
+
+// Save recommendations to file
+function saveRecommendations() {
+  try {
+    fs.writeFileSync(RECOMMENDATIONS_FILE, JSON.stringify(manualRecommendations, null, 2));
+    console.log(`💾 Saved ${manualRecommendations.length} recommendations`);
+  } catch (error) {
+    console.error('Error saving recommendations:', error);
+  }
+}
+
+// Generate unique ID for recommendations
+function generateRecommendationId() {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `rec_${timestamp}_${random}`;
+}
 
 // Security Functions
 function validateDomain(url) {
@@ -536,6 +621,197 @@ app.post('/api/generate-hotel-qr', async (req, res) => {
   }
 });
 
+// Get manual recommendations endpoint
+app.get('/api/recommendations', (req, res) => {
+  try {
+    const { latitude, longitude } = req.query;
+    
+    let recommendations = [...manualRecommendations];
+    
+    // If coordinates provided, calculate distances and sort by distance
+    if (latitude && longitude) {
+      const userLat = parseFloat(latitude);
+      const userLng = parseFloat(longitude);
+      
+      if (!isNaN(userLat) && !isNaN(userLng)) {
+        recommendations = recommendations.map(rec => ({
+          ...rec,
+          distance: Math.round(calculateDistance(
+            userLat, userLng,
+            rec.location.latitude, rec.location.longitude
+          ))
+        })).sort((a, b) => a.distance - b.distance);
+      }
+    }
+    
+    console.log(`📋 Returning ${recommendations.length} manual recommendations`);
+    
+    res.json({
+      success: true,
+      count: recommendations.length,
+      recommendations
+    });
+  } catch (error) {
+    console.error('Error fetching recommendations:', error);
+    res.status(500).json({ error: 'Failed to fetch recommendations' });
+  }
+});
+
+// Add new recommendation endpoint
+app.post('/api/recommendations', (req, res) => {
+  try {
+    const {
+      name,
+      address,
+      latitude,
+      longitude,
+      rating = 0,
+      userRatingCount = 0,
+      description = '',
+      websiteUri = '',
+      featured = false
+    } = req.body;
+    
+    // Validation
+    if (!name || !address || !latitude || !longitude) {
+      return res.status(400).json({
+        error: 'Missing required fields: name, address, latitude, longitude'
+      });
+    }
+    
+    // Validate coordinates
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return res.status(400).json({
+        error: 'Invalid coordinates. Latitude must be -90 to 90, longitude must be -180 to 180'
+      });
+    }
+    
+    // Create new recommendation
+    const newRecommendation = {
+      id: generateRecommendationId(),
+      name: sanitizeInput(name, 'string'),
+      address: sanitizeInput(address, 'string'),
+      location: {
+        latitude: lat,
+        longitude: lng
+      },
+      rating: Math.max(0, Math.min(5, parseFloat(rating) || 0)),
+      userRatingCount: Math.max(0, parseInt(userRatingCount) || 0),
+      distance: 0, // Will be calculated when requested with coordinates
+      description: sanitizeInput(description, 'string'),
+      category: 'recommend',
+      photos: [],
+      websiteUri: sanitizeInput(websiteUri, 'string'),
+      addedBy: 'manual_entry',
+      addedDate: new Date().toISOString(),
+      featured: Boolean(featured)
+    };
+    
+    // Add to recommendations
+    manualRecommendations.push(newRecommendation);
+    saveRecommendations();
+    
+    console.log(`➕ Added new recommendation: ${newRecommendation.name}`);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Recommendation added successfully',
+      recommendation: newRecommendation
+    });
+  } catch (error) {
+    console.error('Error adding recommendation:', error);
+    res.status(500).json({ error: 'Failed to add recommendation' });
+  }
+});
+
+// Update recommendation endpoint
+app.put('/api/recommendations/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    // Find recommendation
+    const recIndex = manualRecommendations.findIndex(rec => rec.id === id);
+    if (recIndex === -1) {
+      return res.status(404).json({ error: 'Recommendation not found' });
+    }
+    
+    // Validate and sanitize update data
+    const allowedUpdates = [
+      'name', 'address', 'latitude', 'longitude', 'rating', 
+      'userRatingCount', 'description', 'websiteUri', 'featured'
+    ];
+    
+    const updates = {};
+    Object.keys(updateData).forEach(key => {
+      if (allowedUpdates.includes(key)) {
+        if (key === 'latitude' || key === 'longitude') {
+          const coord = parseFloat(updateData[key]);
+          if (!isNaN(coord) && coord >= -180 && coord <= 180) {
+            if (key === 'latitude' && (coord < -90 || coord > 90)) return;
+            if (!updates.location) updates.location = { ...manualRecommendations[recIndex].location };
+            updates.location[key] = coord;
+          }
+        } else if (key === 'rating') {
+          updates[key] = Math.max(0, Math.min(5, parseFloat(updateData[key]) || 0));
+        } else if (key === 'userRatingCount') {
+          updates[key] = Math.max(0, parseInt(updateData[key]) || 0);
+        } else if (key === 'featured') {
+          updates[key] = Boolean(updateData[key]);
+        } else {
+          updates[key] = sanitizeInput(updateData[key], 'string');
+        }
+      }
+    });
+    
+    // Apply updates
+    Object.assign(manualRecommendations[recIndex], updates);
+    manualRecommendations[recIndex].updatedDate = new Date().toISOString();
+    
+    saveRecommendations();
+    
+    console.log(`✏️ Updated recommendation: ${manualRecommendations[recIndex].name}`);
+    
+    res.json({
+      success: true,
+      message: 'Recommendation updated successfully',
+      recommendation: manualRecommendations[recIndex]
+    });
+  } catch (error) {
+    console.error('Error updating recommendation:', error);
+    res.status(500).json({ error: 'Failed to update recommendation' });
+  }
+});
+
+// Delete recommendation endpoint
+app.delete('/api/recommendations/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Find and remove recommendation
+    const recIndex = manualRecommendations.findIndex(rec => rec.id === id);
+    if (recIndex === -1) {
+      return res.status(404).json({ error: 'Recommendation not found' });
+    }
+    
+    const deletedRec = manualRecommendations.splice(recIndex, 1)[0];
+    saveRecommendations();
+    
+    console.log(`🗑️ Deleted recommendation: ${deletedRec.name}`);
+    
+    res.json({
+      success: true,
+      message: 'Recommendation deleted successfully',
+      deletedRecommendation: deletedRec
+    });
+  } catch (error) {
+    console.error('Error deleting recommendation:', error);
+    res.status(500).json({ error: 'Failed to delete recommendation' });
+  }
+});
+
 // Search nearby places endpoint
 app.post('/api/search-nearby', async (req, res) => {
   try {
@@ -552,14 +828,526 @@ app.post('/api/search-nearby', async (req, res) => {
     const searchRadius = Math.min(parseInt(radius), MAX_SEARCH_RADIUS);
     const results = {};
 
-    // Search for each category
+    // Add manual recommendations to results if they exist
+    if (manualRecommendations.length > 0) {
+      const recommendationsWithDistance = manualRecommendations.map(rec => ({
+        ...rec,
+        distance: Math.round(calculateDistance(
+          latitude, longitude,
+          rec.location.latitude, rec.location.longitude
+        ))
+      })).filter(rec => rec.distance <= searchRadius)
+        .sort((a, b) => a.distance - b.distance);
+      
+      if (recommendationsWithDistance.length > 0) {
+        results.recommend = recommendationsWithDistance;
+        console.log(`Added ${recommendationsWithDistance.length} manual recommendations within ${searchRadius}m`);
+      }
+    }
+
+    // Search for each category with special handling for coffee
     for (const [category, types] of Object.entries(PLACE_TYPES)) {
       try {
-        console.log(`Searching ${category} with types: ${types.join(', ')}`);
-        const places = await searchNearbyPlaces(latitude, longitude, searchRadius, types);
-        console.log(`Found ${places.length} ${category} places`);
+        let allPlacesForCategory = [];
         
-        results[category] = places.map(place => {
+        if (category === 'landmarks') {
+          // For landmarks, make multiple searches to get more comprehensive results
+          console.log(`Searching landmarks with multiple strategies`);
+          
+          // Search 1: Tourist attractions
+          const touristAttractions = await searchNearbyPlaces(latitude, longitude, searchRadius, ['tourist_attraction']);
+          console.log(`Found ${touristAttractions.length} tourist attraction places`);
+          allPlacesForCategory.push(...touristAttractions);
+          
+          // Search 2: Historical landmarks (using text search)
+          try {
+            const landmarkResponse = await axios.post(
+              'https://places.googleapis.com/v1/places:searchText',
+              {
+                textQuery: 'historical landmark monument temple pagoda',
+                locationBias: {
+                  circle: {
+                    center: { latitude, longitude },
+                    radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
+                  }
+                },
+                maxResultCount: RESULTS_PER_CATEGORY,
+                languageCode: 'en'
+              },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                },
+                timeout: 10000
+              }
+            );
+
+            if (landmarkResponse.data.places) {
+              const textLandmarks = landmarkResponse.data.places.map(place => {
+                // Better name extraction
+                let placeName = 'Unknown Landmark';
+                if (place.displayName?.text) {
+                  placeName = place.displayName.text;
+                } else if (place.name) {
+                  placeName = place.name;
+                } else if (place.formattedAddress) {
+                  const addressParts = place.formattedAddress.split(',');
+                  if (addressParts.length > 0 && addressParts[0].trim().length > 0) {
+                    placeName = addressParts[0].trim();
+                  }
+                }
+                
+                return {
+                  id: place.id,
+                  name: placeName,
+                  address: place.formattedAddress || 'Address not available',
+                  location: place.location || { latitude: 0, longitude: 0 },
+                  rating: place.rating || 0,
+                  userRatingCount: place.userRatingCount || 0,
+                  photos: (place.photos && place.photos.length > 0) ? place.photos : [],
+                  websiteUri: place.websiteUri || '',
+                  distance: calculateDistance(
+                    latitude,
+                    longitude,
+                    place.location?.latitude || 0,
+                    place.location?.longitude || 0
+                  )
+                };
+              }).filter(place => place.distance <= searchRadius && place.name !== 'Unknown Landmark');
+
+              console.log(`Found ${textLandmarks.length} text search landmarks`);
+              allPlacesForCategory.push(...textLandmarks);
+            }
+          } catch (textSearchError) {
+            console.error('Text search for landmarks failed:', textSearchError.message);
+          }
+          
+          // Search 3: Religious sites (using text search)
+          try {
+            const religiousResponse = await axios.post(
+              'https://places.googleapis.com/v1/places:searchText',
+              {
+                textQuery: 'temple pagoda church cathedral mosque shrine',
+                locationBias: {
+                  circle: {
+                    center: { latitude, longitude },
+                    radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
+                  }
+                },
+                maxResultCount: RESULTS_PER_CATEGORY,
+                languageCode: 'en'
+              },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                },
+                timeout: 10000
+              }
+            );
+
+            if (religiousResponse.data.places) {
+              const religiousLandmarks = religiousResponse.data.places.map(place => {
+                // Better name extraction
+                let placeName = 'Unknown Religious Site';
+                if (place.displayName?.text) {
+                  placeName = place.displayName.text;
+                } else if (place.name) {
+                  placeName = place.name;
+                } else if (place.formattedAddress) {
+                  const addressParts = place.formattedAddress.split(',');
+                  if (addressParts.length > 0 && addressParts[0].trim().length > 0) {
+                    placeName = addressParts[0].trim();
+                  }
+                }
+                
+                return {
+                  id: place.id,
+                  name: placeName,
+                  address: place.formattedAddress || 'Address not available',
+                  location: place.location || { latitude: 0, longitude: 0 },
+                  rating: place.rating || 0,
+                  userRatingCount: place.userRatingCount || 0,
+                  photos: (place.photos && place.photos.length > 0) ? place.photos : [],
+                  websiteUri: place.websiteUri || '',
+                  distance: calculateDistance(
+                    latitude,
+                    longitude,
+                    place.location?.latitude || 0,
+                    place.location?.longitude || 0
+                  )
+                };
+              }).filter(place => place.distance <= searchRadius && place.name !== 'Unknown Religious Site');
+
+              console.log(`Found ${religiousLandmarks.length} religious landmarks`);
+              allPlacesForCategory.push(...religiousLandmarks);
+            }
+          } catch (religiousSearchError) {
+            console.error('Religious landmarks search failed:', religiousSearchError.message);
+          }
+        } else if (category === 'restaurants') {
+          // For restaurants, make multiple searches to get more comprehensive results
+          console.log(`Searching restaurants with multiple strategies`);
+          
+          // Search 1: Standard restaurants
+          const restaurantPlaces = await searchNearbyPlaces(latitude, longitude, searchRadius, ['restaurant']);
+          console.log(`Found ${restaurantPlaces.length} restaurant places`);
+          allPlacesForCategory.push(...restaurantPlaces);
+          
+          // Search 2: Food establishments (using text search)
+          try {
+            const foodResponse = await axios.post(
+              'https://places.googleapis.com/v1/places:searchText',
+              {
+                textQuery: 'restaurant dining food eat meal',
+                locationBias: {
+                  circle: {
+                    center: { latitude, longitude },
+                    radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
+                  }
+                },
+                maxResultCount: RESULTS_PER_CATEGORY,
+                languageCode: 'en'
+              },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                },
+                timeout: 10000
+              }
+            );
+
+            if (foodResponse.data.places) {
+              const textRestaurants = foodResponse.data.places.map(place => {
+                // Better name extraction
+                let placeName = 'Unknown Restaurant';
+                if (place.displayName?.text) {
+                  placeName = place.displayName.text;
+                } else if (place.name) {
+                  placeName = place.name;
+                } else if (place.formattedAddress) {
+                  // Extract name from address if needed
+                  const addressParts = place.formattedAddress.split(',');
+                  if (addressParts.length > 0 && addressParts[0].trim().length > 0) {
+                    placeName = addressParts[0].trim();
+                  }
+                }
+                
+                return {
+                  id: place.id,
+                  name: placeName,
+                  address: place.formattedAddress || 'Address not available',
+                  location: place.location || { latitude: 0, longitude: 0 },
+                  rating: place.rating || 0,
+                  userRatingCount: place.userRatingCount || 0,
+                  photos: (place.photos && place.photos.length > 0) ? place.photos : [],
+                  websiteUri: place.websiteUri || '',
+                  distance: calculateDistance(
+                    latitude,
+                    longitude,
+                    place.location?.latitude || 0,
+                    place.location?.longitude || 0
+                  )
+                };
+              }).filter(place => place.distance <= searchRadius && place.name !== 'Unknown Restaurant');
+
+              console.log(`Found ${textRestaurants.length} text search restaurants`);
+              allPlacesForCategory.push(...textRestaurants);
+            }
+          } catch (textSearchError) {
+            console.error('Text search for restaurants failed:', textSearchError.message);
+          }
+          
+          // Search 3: Specific cuisine types (using text search)
+          try {
+            const cuisineResponse = await axios.post(
+              'https://places.googleapis.com/v1/places:searchText',
+              {
+                textQuery: 'pho banh mi vietnamese asian italian french cafe bistro',
+                locationBias: {
+                  circle: {
+                    center: { latitude, longitude },
+                    radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
+                  }
+                },
+                maxResultCount: RESULTS_PER_CATEGORY,
+                languageCode: 'en'
+              },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                },
+                timeout: 10000
+              }
+            );
+
+            if (cuisineResponse.data.places) {
+              const cuisineRestaurants = cuisineResponse.data.places.map(place => {
+                // Better name extraction
+                let placeName = 'Unknown Restaurant';
+                if (place.displayName?.text) {
+                  placeName = place.displayName.text;
+                } else if (place.name) {
+                  placeName = place.name;
+                } else if (place.formattedAddress) {
+                  const addressParts = place.formattedAddress.split(',');
+                  if (addressParts.length > 0 && addressParts[0].trim().length > 0) {
+                    placeName = addressParts[0].trim();
+                  }
+                }
+                
+                return {
+                  id: place.id,
+                  name: placeName,
+                  address: place.formattedAddress || 'Address not available',
+                  location: place.location || { latitude: 0, longitude: 0 },
+                  rating: place.rating || 0,
+                  userRatingCount: place.userRatingCount || 0,
+                  photos: (place.photos && place.photos.length > 0) ? place.photos : [],
+                  websiteUri: place.websiteUri || '',
+                  distance: calculateDistance(
+                    latitude,
+                    longitude,
+                    place.location?.latitude || 0,
+                    place.location?.longitude || 0
+                  )
+                };
+              }).filter(place => place.distance <= searchRadius && place.name !== 'Unknown Restaurant');
+
+              console.log(`Found ${cuisineRestaurants.length} cuisine-specific restaurants`);
+              allPlacesForCategory.push(...cuisineRestaurants);
+            }
+          } catch (cuisineSearchError) {
+            console.error('Cuisine search for restaurants failed:', cuisineSearchError.message);
+          }
+        } else if (category === 'culture') {
+          // For culture, make multiple searches to get more comprehensive results
+          console.log(`Searching cultural sites with multiple strategies`);
+          
+          // Search 1: Museums
+          const museumPlaces = await searchNearbyPlaces(latitude, longitude, searchRadius, ['museum']);
+          console.log(`Found ${museumPlaces.length} museum places`);
+          allPlacesForCategory.push(...museumPlaces);
+          
+          // Search 2: Cultural sites (using text search)
+          try {
+            const cultureResponse = await axios.post(
+              'https://places.googleapis.com/v1/places:searchText',
+              {
+                textQuery: 'museum gallery cultural center art exhibition heritage',
+                locationBias: {
+                  circle: {
+                    center: { latitude, longitude },
+                    radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
+                  }
+                },
+                maxResultCount: RESULTS_PER_CATEGORY,
+                languageCode: 'en'
+              },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                },
+                timeout: 10000
+              }
+            );
+
+            if (cultureResponse.data.places) {
+              const textCulturalSites = cultureResponse.data.places.map(place => {
+                // Better name extraction
+                let placeName = 'Unknown Cultural Site';
+                if (place.displayName?.text) {
+                  placeName = place.displayName.text;
+                } else if (place.name) {
+                  placeName = place.name;
+                } else if (place.formattedAddress) {
+                  const addressParts = place.formattedAddress.split(',');
+                  if (addressParts.length > 0 && addressParts[0].trim().length > 0) {
+                    placeName = addressParts[0].trim();
+                  }
+                }
+                
+                return {
+                  id: place.id,
+                  name: placeName,
+                  address: place.formattedAddress || 'Address not available',
+                  location: place.location || { latitude: 0, longitude: 0 },
+                  rating: place.rating || 0,
+                  userRatingCount: place.userRatingCount || 0,
+                  photos: (place.photos && place.photos.length > 0) ? place.photos : [],
+                  websiteUri: place.websiteUri || '',
+                  distance: calculateDistance(
+                    latitude,
+                    longitude,
+                    place.location?.latitude || 0,
+                    place.location?.longitude || 0
+                  )
+                };
+              }).filter(place => place.distance <= searchRadius && place.name !== 'Unknown Cultural Site');
+
+              console.log(`Found ${textCulturalSites.length} text search cultural sites`);
+              allPlacesForCategory.push(...textCulturalSites);
+            }
+          } catch (textSearchError) {
+            console.error('Text search for cultural sites failed:', textSearchError.message);
+          }
+          
+          // Search 3: Performance venues (using text search)
+          try {
+            const performanceResponse = await axios.post(
+              'https://places.googleapis.com/v1/places:searchText',
+              {
+                textQuery: 'theater opera house concert hall performance venue',
+                locationBias: {
+                  circle: {
+                    center: { latitude, longitude },
+                    radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
+                  }
+                },
+                maxResultCount: RESULTS_PER_CATEGORY,
+                languageCode: 'en'
+              },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                },
+                timeout: 10000
+              }
+            );
+
+            if (performanceResponse.data.places) {
+              const performanceVenues = performanceResponse.data.places.map(place => {
+                // Better name extraction
+                let placeName = 'Unknown Venue';
+                if (place.displayName?.text) {
+                  placeName = place.displayName.text;
+                } else if (place.name) {
+                  placeName = place.name;
+                } else if (place.formattedAddress) {
+                  const addressParts = place.formattedAddress.split(',');
+                  if (addressParts.length > 0 && addressParts[0].trim().length > 0) {
+                    placeName = addressParts[0].trim();
+                  }
+                }
+                
+                return {
+                  id: place.id,
+                  name: placeName,
+                  address: place.formattedAddress || 'Address not available',
+                  location: place.location || { latitude: 0, longitude: 0 },
+                  rating: place.rating || 0,
+                  userRatingCount: place.userRatingCount || 0,
+                  photos: (place.photos && place.photos.length > 0) ? place.photos : [],
+                  websiteUri: place.websiteUri || '',
+                  distance: calculateDistance(
+                    latitude,
+                    longitude,
+                    place.location?.latitude || 0,
+                    place.location?.longitude || 0
+                  )
+                };
+              }).filter(place => place.distance <= searchRadius && place.name !== 'Unknown Venue');
+
+              console.log(`Found ${performanceVenues.length} performance venues`);
+              allPlacesForCategory.push(...performanceVenues);
+            }
+          } catch (performanceSearchError) {
+            console.error('Performance venue search failed:', performanceSearchError.message);
+          }
+        } else if (category === 'coffee') {
+          // For coffee, make multiple searches to get more comprehensive results
+          console.log(`Searching coffee shops with multiple strategies`);
+          
+          // Search 1: Cafe
+          const cafePlaces = await searchNearbyPlaces(latitude, longitude, searchRadius, ['cafe']);
+          console.log(`Found ${cafePlaces.length} cafe places`);
+          allPlacesForCategory.push(...cafePlaces);
+          
+          // Search 2: Coffee shops (using text search approach)
+          try {
+            const coffeeResponse = await axios.post(
+              'https://places.googleapis.com/v1/places:searchText',
+              {
+                textQuery: 'coffee shop',
+                locationBias: {
+                  circle: {
+                    center: { latitude, longitude },
+                    radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
+                  }
+                },
+                maxResultCount: RESULTS_PER_CATEGORY,
+                languageCode: 'en'
+              },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                },
+                timeout: 10000
+              }
+            );
+            
+            if (coffeeResponse.data.places) {
+              const textCoffeeShops = coffeeResponse.data.places.map(place => {
+                // Better name extraction
+                let placeName = 'Unknown Coffee Shop';
+                if (place.displayName?.text) {
+                  placeName = place.displayName.text;
+                } else if (place.name) {
+                  placeName = place.name;
+                } else if (place.formattedAddress) {
+                  const addressParts = place.formattedAddress.split(',');
+                  if (addressParts.length > 0 && addressParts[0].trim().length > 0) {
+                    placeName = addressParts[0].trim();
+                  }
+                }
+                
+                return {
+                  id: place.id,
+                  name: placeName,
+                  address: place.formattedAddress || 'Address not available',
+                  location: place.location || { latitude: 0, longitude: 0 },
+                  rating: place.rating || 0,
+                  userRatingCount: place.userRatingCount || 0,
+                  photos: (place.photos && place.photos.length > 0) ? place.photos : [],
+                  websiteUri: place.websiteUri || '',
+                  distance: calculateDistance(
+                    latitude,
+                    longitude,
+                    place.location?.latitude || 0,
+                    place.location?.longitude || 0
+                  )
+                };
+              }).filter(place => place.distance <= searchRadius && place.name !== 'Unknown Coffee Shop');
+              
+              console.log(`Found ${textCoffeeShops.length} coffee shop places via text search`);
+              allPlacesForCategory.push(...textCoffeeShops);
+            }
+          } catch (textSearchError) {
+            console.warn('Text search for coffee failed:', textSearchError.message);
+          }
+          
+        } else {
+          // Regular search for other categories
+          console.log(`Searching ${category} with types: ${types.join(', ')}`);
+          const places = await searchNearbyPlaces(latitude, longitude, searchRadius, types);
+          console.log(`Found ${places.length} ${category} places`);
+          allPlacesForCategory = places;
+        }
+        
+        results[category] = allPlacesForCategory.map(place => {
           const distance = calculateDistance(
             latitude,
             longitude,
@@ -567,14 +1355,58 @@ app.post('/api/search-nearby', async (req, res) => {
             place.location.longitude
           );
 
-          console.log(`Place: ${place.displayName?.text}, Photos: ${place.photos?.length || 0}`);
+          // Enhanced name extraction for all places with robust fallbacks
+          let placeName = 'Unknown Place';
+          
+          // Primary: use displayName.text
+          if (place.displayName?.text && place.displayName.text.trim().length > 0) {
+            placeName = place.displayName.text.trim();
+          } 
+          // Secondary: use name field
+          else if (place.name && place.name.trim().length > 0) {
+            placeName = place.name.trim();
+          } 
+          // Tertiary: extract from formatted address
+          else if (place.formattedAddress && place.formattedAddress.trim().length > 0) {
+            const addressParts = place.formattedAddress.split(',');
+            for (const part of addressParts) {
+              const trimmedPart = part.trim();
+              if (trimmedPart.length > 0 && !trimmedPart.match(/^\d+/) && !trimmedPart.includes('Vietnam') && !trimmedPart.includes('Hanoi')) {
+                placeName = trimmedPart;
+                break;
+              }
+            }
+          }
+          // Quaternary: generate descriptive name based on types
+          else if (place.types && place.types.length > 0) {
+            const typeMap = {
+              'restaurant': 'Restaurant',
+              'tourist_attraction': 'Landmark',
+              'cafe': 'Coffee Shop',
+              'museum': 'Museum',
+              'art_gallery': 'Art Gallery',
+              'library': 'Library',
+              'cultural_center': 'Cultural Center',
+              'establishment': 'Establishment',
+              'point_of_interest': 'Point of Interest'
+            };
+            
+            for (const type of place.types) {
+              if (typeMap[type]) {
+                placeName = `${typeMap[type]} at ${place.location?.latitude?.toFixed(4) || 'Unknown'},${place.location?.longitude?.toFixed(4) || 'Unknown'}`;
+                break;
+              }
+            }
+          }
+
+          console.log(`Place: ${placeName}, Photos: ${place.photos?.length || 0}`);
           if (place.photos && place.photos.length > 0) {
             console.log(`First photo name: ${place.photos[0].name}`);
           }
 
           return {
             id: place.id,
-            name: place.displayName?.text || 'Unknown',
+            name: placeName,
             address: place.formattedAddress || '',
             location: place.location,
             rating: place.rating || 0,
@@ -586,10 +1418,25 @@ app.post('/api/search-nearby', async (req, res) => {
               heightPx: photo.heightPx
             })) || [],
             websiteUri: place.websiteUri || '',
-            mapsUrl: generateMapsUrl(place.location.latitude, place.location.longitude, place.displayName?.text || ''),
+            mapsUrl: generateMapsUrl(place.location.latitude, place.location.longitude, placeName),
             types: place.types || []
           };
-        }).sort((a, b) => {
+        }).filter(place => place.name !== 'Unknown Place'); // Filter out places with no valid names
+        
+        // Remove duplicates for all categories (since we made multiple searches)
+        if (['landmarks', 'restaurants', 'culture', 'coffee'].includes(category)) {
+          const uniquePlaces = new Map();
+          results[category].forEach(place => {
+            if (!uniquePlaces.has(place.id)) {
+              uniquePlaces.set(place.id, place);
+            }
+          });
+          results[category] = Array.from(uniquePlaces.values());
+          console.log(`After deduplication: ${results[category].length} unique ${category} places`);
+        }
+        
+        // Sort all places
+        results[category].sort((a, b) => {
           // Simple sorting: places with higher ratings first, then by distance
           if (a.rating !== b.rating) {
             return b.rating - a.rating; // Higher rating first
@@ -611,6 +1458,40 @@ app.post('/api/search-nearby', async (req, res) => {
   } catch (error) {
     console.error('Search nearby error:', error);
     res.status(500).json({ error: 'Failed to search nearby places' });
+  }
+});
+
+// Reverse geocode coordinates to address endpoint
+app.post('/api/geocode-coordinates', async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+    
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    if (!GOOGLE_MAPS_API_KEY) {
+      return res.status(500).json({ error: 'Google Maps API key not configured' });
+    }
+
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
+    
+    const response = await axios.get(geocodeUrl, { timeout: 10000 });
+    
+    if (response.data.status === 'OK' && response.data.results.length > 0) {
+      const address = response.data.results[0].formatted_address;
+      res.json({
+        success: true,
+        address: address,
+        latitude: latitude,
+        longitude: longitude
+      });
+    } else {
+      res.status(404).json({ error: 'Address not found for these coordinates.' });
+    }
+  } catch (error) {
+    console.error('Reverse geocoding error:', error);
+    res.status(500).json({ error: 'Failed to reverse geocode coordinates' });
   }
 });
 
@@ -645,6 +1526,58 @@ app.post('/api/geocode-address', async (req, res) => {
   } catch (error) {
     console.error('Geocoding error:', error);
     res.status(500).json({ error: 'Failed to geocode address' });
+  }
+});
+
+// Resolve shortened Google Maps URLs
+app.post('/api/resolve-maps-url', async (req, res) => {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+    
+    console.log('Resolving shortened URL:', url);
+    
+    // For shortened URLs like goo.gl, we need to follow redirects
+    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
+      try {
+        const response = await axios.get(url, {
+          maxRedirects: 5,
+          timeout: 10000,
+          validateStatus: function (status) {
+            return status < 400; // Accept redirects
+          }
+        });
+        
+        // Get the final URL after redirects
+        const finalUrl = response.request.res.responseUrl || url;
+        console.log('Resolved URL:', finalUrl);
+        
+        res.json({
+          success: true,
+          originalUrl: url,
+          resolvedUrl: finalUrl
+        });
+      } catch (error) {
+        console.error('Error resolving URL:', error.message);
+        res.status(500).json({ 
+          error: 'Could not resolve shortened URL',
+          originalUrl: url 
+        });
+      }
+    } else {
+      // Not a shortened URL, return as-is
+      res.json({
+        success: true,
+        originalUrl: url,
+        resolvedUrl: url
+      });
+    }
+  } catch (error) {
+    console.error('URL resolution error:', error);
+    res.status(500).json({ error: 'Failed to resolve URL' });
   }
 });
 
@@ -707,10 +1640,14 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+// Load recommendations on startup
+loadRecommendations();
+
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 NearbySpots QR Discovery Server running on port ${PORT}`);
   console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🗺️  Google Maps API: ${GOOGLE_MAPS_API_KEY ? 'Configured' : 'Missing'}`);
+  console.log(`⭐ Manual Recommendations: ${manualRecommendations.length} loaded`);
   console.log(`🌐 Server accessible at http://0.0.0.0:${PORT}`);
 });
