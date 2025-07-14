@@ -369,6 +369,12 @@
 
         // Initialize map
         function initMap() {
+            console.log('initMap called');
+            if (map) {
+                console.log('Map already exists, skipping initialization');
+                return;
+            }
+            
             map = new google.maps.Map(document.getElementById('map'), {
                 center: HOTEL_LOCATION,
                 zoom: 15,
@@ -422,7 +428,17 @@
             });
         }
 
+        let eventListenersSetup = false;
+        
         function setupEventListeners() {
+            if (eventListenersSetup) {
+                console.log('Event listeners already set up, skipping');
+                return;
+            }
+            
+            console.log('Setting up event listeners');
+            eventListenersSetup = true;
+            
             // Category filter toggles
             document.querySelectorAll('.category-filter').forEach(filter => {
                 filter.addEventListener('click', () => {
@@ -465,11 +481,16 @@
         }
 
         async function loadPlaces() {
+            console.log('Load button clicked! Current activeCategories:', Array.from(activeCategories), 'Size:', activeCategories.size);
+            
             // Check if any categories are selected
             if (activeCategories.size === 0) {
+                console.log('No categories selected, showing alert');
                 alert('Please select at least one category (Restaurants, Landmarks, Coffee, or Culture) before loading places.');
                 return;
             }
+            
+            console.log('Categories are selected, proceeding with load...');
 
             const radius = parseInt(document.getElementById('radiusSelect').value);
             const loadBtn = document.getElementById('loadPlacesBtn');
@@ -644,11 +665,13 @@
                 loadBtn.textContent = '🗺️ Select Categories First';
                 loadBtn.style.background = '#ccc';
                 loadBtn.style.cursor = 'not-allowed';
+                console.log('Button updated: No categories');
             } else {
                 const categories = Array.from(activeCategories).map(cat => CATEGORY_ICONS[cat]).join('');
                 loadBtn.textContent = `🗺️ Load ${categories} (${selectedCount} categories)`;
                 loadBtn.style.background = 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)';
                 loadBtn.style.cursor = 'pointer';
+                console.log('Button updated:', loadBtn.textContent, 'Background:', loadBtn.style.background);
             }
         }
 
