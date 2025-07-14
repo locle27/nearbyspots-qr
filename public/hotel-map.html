@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hotel Management Map - 118 Hang Bac</title>
+    <title>Nearby Places - 118 Hang Bac, Hanoi Old Quarter</title>
     <style>
         * {
             margin: 0;
@@ -980,6 +980,12 @@
             text-align: center;
         }
 
+        /* Loading animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .no-photos {
             text-align: center;
             color: #666;
@@ -1107,9 +1113,16 @@
     </style>
 </head>
 <body>
+    <!-- Loading indicator for mobile -->
+    <div id="loadingIndicator" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(25, 118, 210, 0.9); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; font-family: Arial;">
+        <div style="width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3); border-top: 5px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+        <h2 style="margin: 0 0 10px 0;">📍 Loading Nearby Places</h2>
+        <p style="margin: 0; text-align: center; padding: 0 20px;">Connecting to Google Maps and finding restaurants, landmarks, coffee shops & culture near you...</p>
+    </div>
+
     <div class="header">
-        <h1>🏨 Hotel Management Map</h1>
-        <p>118 Hang Bac, Hanoi Old Quarter - Visual Overview</p>
+        <h1>📍 Nearby Places</h1>
+        <p>Discover restaurants, landmarks, coffee shops & culture near 118 Hang Bac, Hanoi Old Quarter</p>
     </div>
 
     <div class="controls">
@@ -1352,6 +1365,13 @@
             if (map) {
                 console.log('Map already exists, skipping initialization');
                 return;
+            }
+
+            // Hide loading indicator
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+                console.log('✅ Loading indicator hidden');
             }
             
             map = new google.maps.Map(document.getElementById('map'), {
@@ -2992,22 +3012,44 @@
             window.open(url, '_blank');
         }
 
-        // Initialize when page loads - with better timing
+        // Define the actual initialization function
+        function initializeMap() {
+            console.log('🗺️ Initializing Google Maps...');
+            initMap();
+        }
+
+        // Global initMap function for Google Maps callback
+        window.initMap = function() {
+            console.log('🗺️ Google Maps API callback triggered');
+            initializeMap();
+        };
+
+        // Initialize when page loads - with better timing and mobile support
         window.addEventListener('load', () => {
-            // Wait a bit for Google Maps API to be fully loaded
-            setTimeout(() => {
-                if (typeof google !== 'undefined') {
-                    initMap();
-                } else {
-                    console.log('Google Maps API not ready, waiting...');
-                    // Try again after 1 second
-                    setTimeout(() => {
-                        if (typeof google !== 'undefined') {
-                            initMap();
-                        }
-                    }, 1000);
-                }
-            }, 500);
+            console.log('📱 Page loaded, checking for Google Maps API...');
+            
+            // Check if Google Maps API is already loaded
+            if (typeof google !== 'undefined' && google.maps) {
+                console.log('✅ Google Maps API already available');
+                initializeMap();
+            } else {
+                console.log('⏳ Waiting for Google Maps API to load...');
+                // Set up a callback for when the API loads
+                let attempts = 0;
+                const checkForGoogle = setInterval(() => {
+                    attempts++;
+                    if (typeof google !== 'undefined' && google.maps) {
+                        console.log('✅ Google Maps API loaded after', attempts, 'attempts');
+                        clearInterval(checkForGoogle);
+                        initializeMap();
+                    } else if (attempts > 20) {
+                        console.error('❌ Google Maps API failed to load after 20 attempts');
+                        clearInterval(checkForGoogle);
+                        // Show error message to user
+                        document.body.innerHTML += '<div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff4444; color: white; padding: 20px; border-radius: 10px; z-index: 10000; text-align: center;"><h3>🚨 Map Loading Error</h3><p>Please refresh the page or check your internet connection.</p></div>';
+                    }
+                }, 500);
+            }
         });
 
         // Initialize when DOM is ready
