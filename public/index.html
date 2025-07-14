@@ -3060,53 +3060,82 @@
             // Get all gallery images
             const galleryImages = document.querySelectorAll('.gallery-image');
             
-            galleryImages.forEach((img, index) => {
-                const loadingId = img.getAttribute('data-loading-id');
-                const errorId = img.getAttribute('data-error-id');
-                const loadingEl = document.getElementById(loadingId);
-                const errorEl = document.getElementById(errorId);
-                const realSrc = img.getAttribute('data-real-src');
+            // Load images sequentially with longer delays to avoid 429 errors
+            loadImageSequentially(galleryImages, 0);
+        }
+        
+        function loadImageSequentially(galleryImages, currentIndex) {
+            if (currentIndex >= galleryImages.length) {
+                console.log('✅ All gallery images processed');
+                return;
+            }
+            
+            const img = galleryImages[currentIndex];
+            const loadingId = img.getAttribute('data-loading-id');
+            const errorId = img.getAttribute('data-error-id');
+            const loadingEl = document.getElementById(loadingId);
+            const errorEl = document.getElementById(errorId);
+            const realSrc = img.getAttribute('data-real-src');
+            
+            if (!realSrc) {
+                console.log(`Skipping image ${currentIndex + 1} - no source`);
+                // Move to next image immediately
+                setTimeout(() => loadImageSequentially(galleryImages, currentIndex + 1), 100);
+                return;
+            }
+            
+            console.log(`Loading gallery image ${currentIndex + 1}/${galleryImages.length}:`, realSrc);
+            
+            // Try loading with retry logic
+            loadImageWithRetry(img, realSrc, loadingEl, errorEl, currentIndex + 1, 0, () => {
+                // Success or final failure - move to next image
+                setTimeout(() => loadImageSequentially(galleryImages, currentIndex + 1), 800); // 800ms between images
+            });
+        }
+        
+        function loadImageWithRetry(img, realSrc, loadingEl, errorEl, imageNumber, retryCount, onComplete) {
+            const maxRetries = 2;
+            
+            // Create a test image to check if it loads
+            const testImg = new Image();
+            
+            testImg.onload = () => {
+                console.log(`✅ Gallery image ${imageNumber} loaded successfully`);
+                // Hide loading indicator
+                if (loadingEl) {
+                    loadingEl.style.display = 'none';
+                }
+                // Show actual image
+                img.src = realSrc;
+                img.style.display = 'block';
+                onComplete();
+            };
+            
+            testImg.onerror = () => {
+                console.log(`❌ Gallery image ${imageNumber} failed to load (attempt ${retryCount + 1})`);
                 
-                if (!realSrc) return;
-                
-                console.log(`Loading gallery image ${index + 1}:`, realSrc);
-                console.log(`Looking for loading element: ${loadingId}`);
-                console.log(`Loading element found:`, !!loadingEl);
-                
-                // Create a test image to check if it loads
-                const testImg = new Image();
-                
-                testImg.onload = () => {
-                    console.log(`✅ Gallery image ${index + 1} loaded successfully`);
-                    // Hide loading indicator
+                if (retryCount < maxRetries) {
+                    // Retry with exponential backoff
+                    const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+                    console.log(`Retrying image ${imageNumber} in ${delay}ms...`);
+                    setTimeout(() => {
+                        loadImageWithRetry(img, realSrc, loadingEl, errorEl, imageNumber, retryCount + 1, onComplete);
+                    }, delay);
+                } else {
+                    // Final failure - show error state
+                    console.log(`Final failure for image ${imageNumber} after ${maxRetries} retries`);
                     if (loadingEl) {
                         loadingEl.style.display = 'none';
-                        console.log(`Hidden loading indicator for image ${index + 1}`);
                     }
-                    // Show actual image
-                    img.src = realSrc;
-                    img.style.display = 'block';
-                    console.log(`Displayed gallery image ${index + 1}`);
-                };
-                
-                testImg.onerror = () => {
-                    console.log(`❌ Gallery image ${index + 1} failed to load`);
-                    // Hide loading indicator
-                    if (loadingEl) {
-                        loadingEl.style.display = 'none';
-                    }
-                    // Show error state
                     if (errorEl) {
                         errorEl.style.display = 'flex';
-                        console.log(`Showed error state for image ${index + 1}`);
                     }
-                };
-                
-                // Start loading with a slight delay for each image
-                setTimeout(() => {
-                    testImg.src = realSrc;
-                }, index * 200); // Stagger loading by 200ms each
-            });
+                    onComplete();
+                }
+            };
+            
+            // Start loading
+            testImg.src = realSrc;
         }
         
         function openFullImage(imageUrl, placeName) {
