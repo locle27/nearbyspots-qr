@@ -1380,6 +1380,15 @@
                 🔄 Update Location
             </button>
         </div>
+        
+        <!-- GPS Location Option -->
+        <div class="gps-option-container" style="margin-top: 15px; text-align: center;">
+            <p style="margin-bottom: 10px; color: #666; font-size: 0.9rem;">Or use your current location:</p>
+            <button type="button" id="useGpsBtn" class="btn-gps" style="background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);">
+                📍 Use My Location (GPS)
+            </button>
+            <p style="margin-top: 8px; color: #999; font-size: 0.8rem;">Requires location permission</p>
+        </div>
         <div class="current-location-display">
             <span id="currentLocationText">📍 Current: 118 Hang Bac, Hanoi Old Quarter</span>
         </div>
@@ -1788,6 +1797,9 @@
 
             // Hotel location update button
             document.getElementById('updateLocationBtn').addEventListener('click', updateHotelLocation);
+            
+            // GPS location button
+            document.getElementById('useGpsBtn').addEventListener('click', useGPSLocation);
             
             // Clear places button
             document.getElementById('clearPlacesBtn').addEventListener('click', clearAllPlaces);
@@ -3541,6 +3553,152 @@
             
             console.log('No valid coordinates found in URL');
             return null;
+        }
+
+        // GPS Location Functions
+        async function getCurrentLocationGPS() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation is not supported by this browser'));
+                    return;
+                }
+
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 300000 // 5 minutes
+                };
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        resolve({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        });
+                    },
+                    (error) => {
+                        let errorMessage = 'Unable to get your location';
+                        switch (error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMessage = 'Location access denied. Please enable location permissions and try again.';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMessage = 'Location information unavailable. Please check your GPS and try again.';
+                                break;
+                            case error.TIMEOUT:
+                                errorMessage = 'Location request timed out. Please try again.';
+                                break;
+                        }
+                        reject(new Error(errorMessage));
+                    },
+                    options
+                );
+            });
+        }
+
+        async function useGPSLocation() {
+            const gpsBtn = document.getElementById('useGpsBtn');
+            const originalText = gpsBtn.innerHTML;
+            
+            try {
+                // Update button to show loading
+                gpsBtn.innerHTML = '🔄 Getting location...';
+                gpsBtn.disabled = true;
+                
+                console.log('🌍 Requesting GPS location...');
+                const location = await getCurrentLocationGPS();
+                
+                console.log('✅ GPS location obtained:', location);
+                
+                // Update the hotel location with GPS coordinates
+                hotelLocation = {
+                    latitude: location.latitude,
+                    longitude: location.longitude
+                };
+                
+                // Reverse geocode to get address
+                try {
+                    const response = await fetch('/api/geocode-coordinates', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            latitude: location.latitude,
+                            longitude: location.longitude
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        document.getElementById('currentLocationText').textContent = `📍 Current: ${data.address}`;
+                    } else {
+                        document.getElementById('currentLocationText').textContent = `📍 Current: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+                    }
+                } catch (geocodeError) {
+                    console.warn('Reverse geocoding failed:', geocodeError);
+                    document.getElementById('currentLocationText').textContent = `📍 Current: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+                }
+                
+                // Clear the URL input since we're using GPS
+                document.getElementById('hotelMapsUrl').value = '';
+                
+                // Update map center if map is initialized
+                if (map) {
+                    const newCenter = { lat: location.latitude, lng: location.longitude };
+                    map.setCenter(newCenter);
+                    map.setZoom(15);
+                    
+                    // Add or update hotel marker
+                    if (hotelMarker) {
+                        hotelMarker.setPosition(newCenter);
+                    } else {
+                        hotelMarker = new google.maps.Marker({
+                            position: newCenter,
+                            map: map,
+                            title: 'Your Location (GPS)',
+                            icon: {
+                                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                                    <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M20 0C8.95 0 0 8.95 0 20c0 11.05 20 30 20 30s20-18.95 20-30C40 8.95 31.05 0 20 0z" fill="#FF6B35"/>
+                                        <circle cx="20" cy="20" r="8" fill="white"/>
+                                        <text x="20" y="26" text-anchor="middle" fill="#FF6B35" font-size="12" font-weight="bold">📍</text>
+                                    </svg>
+                                `),
+                                scaledSize: new google.maps.Size(40, 50),
+                                anchor: new google.maps.Point(20, 50)
+                            }
+                        });
+                    }
+                }
+                
+                // Success feedback
+                gpsBtn.innerHTML = '✅ Location Updated!';
+                gpsBtn.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
+                
+                // Clear all current places since location changed
+                clearAllPlaces();
+                
+                console.log('🎯 GPS location set successfully!');
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    gpsBtn.innerHTML = originalText;
+                    gpsBtn.style.background = 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)';
+                    gpsBtn.disabled = false;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('❌ GPS location error:', error);
+                
+                // Show error message
+                alert(`GPS Error: ${error.message}\n\nPlease:\n1. Enable location permissions in your browser\n2. Make sure GPS is enabled on your device\n3. Try using WiFi for better location accuracy\n4. Use the manual URL input as an alternative`);
+                
+                // Reset button
+                gpsBtn.innerHTML = originalText;
+                gpsBtn.disabled = false;
+            }
         }
 
         async function updateHotelLocation() {
