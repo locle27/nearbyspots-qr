@@ -1359,8 +1359,8 @@
             culture: '🎭'
         };
 
-        // Initialize map
-        function initMap() {
+        // Initialize map (internal function)
+        function initializeGoogleMap() {
             console.log('initMap called');
             if (map) {
                 console.log('Map already exists, skipping initialization');
@@ -3012,17 +3012,22 @@
             window.open(url, '_blank');
         }
 
-        // Define the actual initialization function
-        function initializeMap() {
-            console.log('🗺️ Initializing Google Maps...');
-            initMap();
-        }
-
         // Global initMap function for Google Maps callback
         window.initMap = function() {
             console.log('🗺️ Google Maps API callback triggered');
-            initializeMap();
+            initializeMapInternal();
         };
+
+        // Define the actual initialization function
+        function initializeMapInternal() {
+            console.log('🗺️ Initializing Google Maps...');
+            // Call the actual map initialization function
+            try {
+                initializeGoogleMap();
+            } catch (error) {
+                console.error('Error initializing map:', error);
+            }
+        }
 
         // Initialize when page loads - with better timing and mobile support
         window.addEventListener('load', () => {
@@ -3031,7 +3036,7 @@
             // Check if Google Maps API is already loaded
             if (typeof google !== 'undefined' && google.maps) {
                 console.log('✅ Google Maps API already available');
-                initializeMap();
+                initializeMapInternal();
             } else {
                 console.log('⏳ Waiting for Google Maps API to load...');
                 // Set up a callback for when the API loads
@@ -3041,7 +3046,7 @@
                     if (typeof google !== 'undefined' && google.maps) {
                         console.log('✅ Google Maps API loaded after', attempts, 'attempts');
                         clearInterval(checkForGoogle);
-                        initializeMap();
+                        initializeMapInternal();
                     } else if (attempts > 20) {
                         console.error('❌ Google Maps API failed to load after 20 attempts');
                         clearInterval(checkForGoogle);
