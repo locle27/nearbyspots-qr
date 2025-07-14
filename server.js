@@ -291,19 +291,25 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 // Google Places API integration
 async function searchNearbyPlaces(latitude, longitude, radius, types) {
   try {
+    console.log(`🔍 Searching for ${types.join(', ')} within ${radius}m of ${latitude}, ${longitude}`);
+    
+    const requestBody = {
+      includedTypes: types,
+      maxResultCount: RESULTS_PER_CATEGORY,
+      locationRestriction: {
+        circle: {
+          center: { latitude, longitude },
+          radius: Math.min(radius, MAX_SEARCH_RADIUS)
+        }
+      },
+      languageCode: 'en'
+    };
+    
+    console.log('📤 API Request Body:', JSON.stringify(requestBody, null, 2));
+    
     const response = await axios.post(
       'https://places.googleapis.com/v1/places:searchNearby',
-      {
-        includedTypes: types,
-        maxResultCount: RESULTS_PER_CATEGORY,
-        locationRestriction: {
-          circle: {
-            center: { latitude, longitude },
-            radius: Math.min(radius, MAX_SEARCH_RADIUS)
-          }
-        },
-        languageCode: 'en'
-      },
+      requestBody,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -314,10 +320,32 @@ async function searchNearbyPlaces(latitude, longitude, radius, types) {
       }
     );
 
-    return response.data.places || [];
+    console.log(`📥 API Response Status: ${response.status}`);
+    console.log(`📥 API Response Data:`, JSON.stringify(response.data, null, 2));
+    
+    const places = response.data.places || [];
+    console.log(`✅ Found ${places.length} places for types: ${types.join(', ')}`);
+    
+    return places;
   } catch (error) {
-    console.error('Google Places API error:', error.response?.data || error.message);
-    throw new Error('Failed to fetch nearby places');
+    console.error('❌ Google Places API error:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      headers: error.response?.headers
+    });
+    
+    // Check for specific API errors
+    if (error.response?.status === 403) {
+      throw new Error('API key permission denied. Please check:\n- Places API (New) is enabled\n- API key has correct permissions\n- Billing is enabled');
+    } else if (error.response?.status === 400) {
+      throw new Error('Invalid API request. Please check:\n- includedTypes are valid for Places API (New)\n- Request format is correct');
+    } else if (error.response?.status === 429) {
+      throw new Error('API quota exceeded. Please check:\n- Daily quota limits\n- Requests per minute limits');
+    }
+    
+    throw new Error(`Failed to fetch nearby places: ${error.message}`);
   }
 }
 
@@ -813,16 +841,28 @@ app.post('/api/search-nearby', async (req, res) => {
   try {
     const { latitude, longitude, radius = DEFAULT_SEARCH_RADIUS } = req.body;
 
+    console.log(`🚀 Starting search-nearby request:`, { latitude, longitude, radius });
+
     if (!latitude || !longitude) {
+      console.error('❌ Missing coordinates:', { latitude, longitude });
       return res.status(400).json({ error: 'Latitude and longitude are required' });
     }
 
     if (!GOOGLE_MAPS_API_KEY) {
-      return res.status(500).json({ error: 'Google Maps API key not configured' });
+      console.error('❌ Missing Google Maps API key');
+      return res.status(500).json({ 
+        error: 'Google Maps API key not configured',
+        debug: 'Please set GOOGLE_MAPS_API_KEY environment variable'
+      });
     }
+
+    console.log(`🔑 API Key present: ${GOOGLE_MAPS_API_KEY ? 'Yes' : 'No'} (length: ${GOOGLE_MAPS_API_KEY?.length || 0})`);
+    console.log(`📏 Search radius: ${radius} -> ${Math.min(parseInt(radius), MAX_SEARCH_RADIUS)}m`);
+    console.log(`🎯 Location: ${latitude}, ${longitude}`);
 
     const searchRadius = Math.min(parseInt(radius), MAX_SEARCH_RADIUS);
     const results = {};
+    let totalPlacesFound = 0;
 
     // Add manual recommendations to results if they exist
     if (manualRecommendations.length > 0) {
@@ -1439,21 +1479,53 @@ app.post('/api/search-nearby', async (req, res) => {
           }
           return a.distance - b.distance; // Then by distance
         });
+        
+        console.log(`✅ Final ${category} results: ${results[category].length} places`);
+        totalPlacesFound += results[category].length;
       } catch (categoryError) {
-        console.error(`Error searching ${category}:`, categoryError);
+        console.error(`❌ Error searching ${category}:`, categoryError);
         results[category] = [];
       }
     }
 
-    res.json({
+    console.log(`🏁 Search completed. Total places found: ${totalPlacesFound}`);
+    console.log(`📊 Results summary:`, Object.keys(results).map(cat => `${cat}: ${results[cat]?.length || 0}`).join(', '));
+
+    // Check if no results found and provide debugging info
+    if (totalPlacesFound === 0) {
+      console.warn('⚠️ No places found in any category!');
+      console.warn('🔍 Debug info:', {
+        apiKey: GOOGLE_MAPS_API_KEY ? `${GOOGLE_MAPS_API_KEY.substring(0, 10)}...` : 'MISSING',
+        location: { latitude, longitude },
+        radius: searchRadius,
+        categories: Object.keys(PLACE_TYPES),
+        placeTypes: PLACE_TYPES
+      });
+    }
+
+    const responseData = {
       success: true,
       location: { latitude, longitude },
       radius: searchRadius,
-      results
-    });
+      results,
+      debug: {
+        totalPlacesFound,
+        apiKeyPresent: !!GOOGLE_MAPS_API_KEY,
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    res.json(responseData);
   } catch (error) {
-    console.error('Search nearby error:', error);
-    res.status(500).json({ error: 'Failed to search nearby places' });
+    console.error('❌ Search nearby critical error:', error);
+    res.status(500).json({ 
+      error: 'Failed to search nearby places',
+      message: error.message,
+      debug: {
+        apiKeyPresent: !!GOOGLE_MAPS_API_KEY,
+        timestamp: new Date().toISOString()
+      }
+    });
   }
 });
 

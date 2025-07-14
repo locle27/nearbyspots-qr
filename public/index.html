@@ -2272,11 +2272,22 @@
                     console.log('Response status:', response.status);
 
                     if (!response.ok) {
-                        throw new Error('Failed to load places');
+                        const errorData = await response.json().catch(() => ({}));
+                        console.error('API Error Response:', errorData);
+                        throw new Error(errorData.message || `Server error: ${response.status}`);
                     }
 
                     const data = await response.json();
                     console.log('API response:', data);
+                    
+                    // Enhanced error handling with debug info
+                    if (data.debug) {
+                        console.log('🔍 Debug info from server:', data.debug);
+                        if (data.debug.totalPlacesFound === 0) {
+                            console.warn('⚠️ Server returned 0 places despite successful API call');
+                            console.warn('🔑 API Key present on server:', data.debug.apiKeyPresent);
+                        }
+                    }
                     
                     if (data.success && data.results) {
                         console.log('Merging new places with existing');
@@ -2311,13 +2322,45 @@
                         adjustMapBounds();
                     } else {
                         console.error('API returned no results:', data);
-                        alert('No places found. Please try a different radius or check your internet connection.');
+                        
+                        // Enhanced no results message with debug info
+                        let errorMessage = 'No places found. ';
+                        if (data.debug && !data.debug.apiKeyPresent) {
+                            errorMessage += 'API configuration issue detected. ';
+                        } else if (data.debug && data.debug.totalPlacesFound === 0) {
+                            errorMessage += 'Google Places API returned empty results. ';
+                        }
+                        errorMessage += 'Try expanding your search radius or selecting different categories.';
+                        
+                        // Check if API returned error or empty results
+                        if (data.error) {
+                            console.error('API Error:', data.error);
+                            alert(`API Error: ${data.error}\n\nPlease check:\n- Google Maps API key is valid\n- Places API (New) is enabled\n- Billing is set up in Google Cloud\n- API quotas not exceeded`);
+                            return;
+                        }
+                        
+                        alert(errorMessage);
                     }
                 }
 
             } catch (error) {
                 console.error('Error loading places:', error);
-                alert('Failed to load places. Please try again.');
+                
+                // Enhanced error message based on error type
+                let errorMessage = 'Failed to load places. ';
+                if (error.message.includes('API key')) {
+                    errorMessage += 'API configuration issue. Please check server logs.';
+                } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                    errorMessage += 'Network connection issue. Please check your internet connection.';
+                } else if (error.message.includes('Server error: 403')) {
+                    errorMessage += 'API permissions issue. Check Google Cloud Console.';
+                } else if (error.message.includes('Server error: 429')) {
+                    errorMessage += 'API quota exceeded. Please try again later.';
+                } else {
+                    errorMessage += 'Please try again or contact support if the issue persists.';
+                }
+                
+                alert(errorMessage);
             } finally {
                 loadBtn.disabled = false;
                 loadBtn.textContent = '🗺️ Load Places on Map';
