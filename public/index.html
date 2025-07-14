@@ -1397,10 +1397,23 @@
                 fullscreenControl: false
             });
 
+            // Add map click listener to reset selection when clicking on empty areas
+            map.addListener('click', (event) => {
+                // Only reset if not clicking on a marker
+                console.log('Map clicked, resetting selection');
+                resetMarkerHighlighting();
+                
+                // Remove selection arrow
+                if (selectionArrow) {
+                    selectionArrow.setMap(null);
+                    selectionArrow = null;
+                }
+            });
+
             // Add hotel marker
             addHotelMarker();
 
-            // Set up event listeners
+            // Set up event listeners  
             setupEventListeners();
             
             // If there was a pending map update, do it now
@@ -2384,6 +2397,13 @@
             placeMarkers.forEach(marker => marker.setMap(null));
             placeMarkers = [];
             placeMarkerMap.clear();
+            
+            // Reset any selection when updating markers
+            resetMarkerHighlighting();
+            if (selectionArrow) {
+                selectionArrow.setMap(null);
+                selectionArrow = null;
+            }
 
             // Add markers for active categories
             Object.entries(allPlaces).forEach(([category, places]) => {
@@ -2456,11 +2476,14 @@
             });
 
             marker.addListener('click', () => {
-                // Just highlight corresponding place in list view
+                // Highlight this place on map (adds selection marker and effects)
+                highlightPlaceOnMap(place.id);
+                
+                // Highlight corresponding place in list view
                 highlightPlaceInList(place.id);
                 
                 // Show place details in modal
-                showPlaceDetails(place);
+                showPlaceDetails(Object.assign(place, { category }));
             });
 
             // Store the info window reference on the marker for cross-tab interaction
@@ -2662,92 +2685,152 @@
             map.panTo(markerPosition);
             
             selectionArrow = new google.maps.Marker({
-                position: arrowPosition,
+                position: markerPosition,
                 map: map,
                 icon: {
                     url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                        <svg width="120" height="80" viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+                        <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
                             <defs>
-                                <filter id="text-shadow" x="-50%" y="-50%" width="200%" height="200%">
-                                    <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
-                                    <feOffset dx="1" dy="1" result="offset"/>
-                                    <feFlood flood-color="#000000" flood-opacity="0.7"/>
-                                    <feComposite in2="offset" operator="in"/>
+                                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
                                     <feMerge> 
-                                        <feMergeNode/>
-                                        <feMergeNode in="SourceGraphic"/>
-                                    </feMerge>
-                                </filter>
-                                <filter id="arrow-shadow" x="-50%" y="-50%" width="200%" height="200%">
-                                    <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
-                                    <feOffset dx="0" dy="2" result="offset"/>
-                                    <feFlood flood-color="#000000" flood-opacity="0.5"/>
-                                    <feComposite in2="offset" operator="in"/>
-                                    <feMerge> 
-                                        <feMergeNode/>
+                                        <feMergeNode in="coloredBlur"/>
                                         <feMergeNode in="SourceGraphic"/>
                                     </feMerge>
                                 </filter>
                             </defs>
                             
-                            <!-- Background rectangle for text -->
-                            <rect x="5" y="5" width="110" height="25" rx="12" ry="12" 
-                                  fill="#FF1744" stroke="white" stroke-width="2" 
-                                  filter="url(#arrow-shadow)"/>
-                            
-                            <!-- Selection text -->
-                            <text x="60" y="22" text-anchor="middle" 
-                                  fill="white" font-size="14" font-weight="bold" 
-                                  font-family="Arial, sans-serif" filter="url(#text-shadow)">
-                                SELECTED
-                            </text>
-                            
-                            <!-- Downward pointing arrow -->
-                            <polygon points="60,35 75,50 65,50 65,65 55,65 55,50 45,50" 
-                                     fill="#FF1744" 
-                                     stroke="white" 
-                                     stroke-width="3" 
-                                     filter="url(#arrow-shadow)"/>
-                            
-                            <!-- Arrow tip pointing down -->
-                            <polygon points="60,65 70,75 50,75" 
-                                     fill="#FF1744" 
-                                     stroke="white" 
-                                     stroke-width="2" 
-                                     filter="url(#arrow-shadow)"/>
-                            
-                            <!-- Pulsing circle at the tip -->
-                            <circle cx="60" cy="75" r="4" fill="#FFEB3B" opacity="0.9">
-                                <animate attributeName="r" values="4;8;4" dur="1s" repeatCount="indefinite"/>
-                                <animate attributeName="opacity" values="0.9;0.4;0.9" dur="1s" repeatCount="indefinite"/>
+                            <!-- Outer pulsing ring (Google Maps style) -->
+                            <circle cx="40" cy="40" r="35" fill="none" stroke="#1976D2" stroke-width="4" opacity="0.3">
+                                <animate attributeName="r" values="35;45;35" dur="2s" repeatCount="indefinite"/>
+                                <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite"/>
                             </circle>
+                            
+                            <!-- Middle ring -->
+                            <circle cx="40" cy="40" r="28" fill="none" stroke="#1976D2" stroke-width="3" opacity="0.5">
+                                <animate attributeName="r" values="28;35;28" dur="1.5s" repeatCount="indefinite"/>
+                                <animate attributeName="opacity" values="0.5;0.2;0.5" dur="1.5s" repeatCount="indefinite"/>
+                            </circle>
+                            
+                            <!-- Inner solid circle -->
+                            <circle cx="40" cy="40" r="20" fill="#1976D2" opacity="0.8" filter="url(#glow)"/>
+                            
+                            <!-- Center dot -->
+                            <circle cx="40" cy="40" r="8" fill="white"/>
+                            <circle cx="40" cy="40" r="4" fill="#1976D2"/>
                         </svg>
                     `),
-                    scaledSize: new google.maps.Size(120, 80),
-                    anchor: new google.maps.Point(60, 75),
-                    zIndex: 10000 // Ensure arrow is on top
+                    scaledSize: new google.maps.Size(80, 80),
+                    anchor: new google.maps.Point(40, 40),
+                    zIndex: 1000 // Above normal markers but below other UI
                 },
-                zIndex: 10000
+                zIndex: 1000
             });
             
-            // Animate the selected marker by changing its size temporarily
-            const originalIcon = marker.getIcon();
+            // Dim all other markers and highlight the selected one
+            dimOtherMarkers(placeId);
             
-            // Create a larger version of the icon for highlighting
-            const highlightIcon = {
-                ...originalIcon,
-                scaledSize: new google.maps.Size(40, 40),
-                anchor: new google.maps.Point(20, 20)
-            };
-            
-            marker.setIcon(highlightIcon);
-            
-            // Restore original size after animation
+            // Add a subtle pulse animation to the selected marker
+            marker.setAnimation(google.maps.Animation.BOUNCE);
             setTimeout(() => {
-                marker.setIcon(originalIcon);
-            }, 1500);
+                marker.setAnimation(null);
+            }, 1000); // Shorter bounce duration
             
             // Arrow will stay visible until another location is selected
+        }
+        
+        // Global variable to track currently selected place
+        let currentlySelectedPlaceId = null;
+        
+        function dimOtherMarkers(selectedPlaceId) {
+            console.log('Dimming other markers, highlighting:', selectedPlaceId);
+            currentlySelectedPlaceId = selectedPlaceId;
+            
+            // Iterate through all markers
+            placeMarkerMap.forEach((marker, placeId) => {
+                const originalIcon = marker.getIcon();
+                
+                if (placeId === selectedPlaceId) {
+                    // Highlight selected marker - make it more prominent
+                    const highlightedIcon = {
+                        ...originalIcon,
+                        scaledSize: new google.maps.Size(50, 62), // Slightly larger
+                        anchor: new google.maps.Point(25, 56)
+                    };
+                    marker.setIcon(highlightedIcon);
+                    marker.setZIndex(2000); // Bring to front
+                } else {
+                    // Dim other markers - make them semi-transparent
+                    const dimmedIcon = {
+                        ...originalIcon,
+                        url: originalIcon.url.replace(/opacity="1"/g, 'opacity="0.4"')
+                                          .replace(/opacity: 1/g, 'opacity: 0.4')
+                                          .replace(/fill-opacity="1"/g, 'fill-opacity="0.4"')
+                                          .replace(/<svg/, '<svg style="opacity: 0.4"'),
+                        scaledSize: new google.maps.Size(32, 40), // Slightly smaller
+                        anchor: new google.maps.Point(16, 36)
+                    };
+                    marker.setIcon(dimmedIcon);
+                    marker.setZIndex(100); // Send to back
+                }
+            });
+        }
+        
+        function resetMarkerHighlighting() {
+            console.log('Resetting all marker highlighting');
+            currentlySelectedPlaceId = null;
+            
+            // Reset all markers to normal appearance
+            placeMarkerMap.forEach((marker, placeId) => {
+                // Find the original place data to recreate the correct icon
+                let originalCategory = null;
+                let originalPlace = null;
+                
+                Object.entries(allPlaces).forEach(([category, places]) => {
+                    const place = places.find(p => p.id === placeId);
+                    if (place) {
+                        originalCategory = category;
+                        originalPlace = place;
+                    }
+                });
+                
+                if (originalCategory && originalPlace) {
+                    // Recreate the original icon
+                    const color = CATEGORY_COLORS[originalCategory];
+                    const icon = CATEGORY_ICONS[originalCategory];
+                    
+                    const originalIcon = {
+                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                            <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <filter id="marker-shadow-${originalCategory}" x="-50%" y="-50%" width="200%" height="200%">
+                                        <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+                                        <feOffset dx="0" dy="2" result="offset"/>
+                                        <feFlood flood-color="#000000" flood-opacity="0.3"/>
+                                        <feComposite in2="offset" operator="in"/>
+                                        <feMerge>
+                                            <feMergeNode/>
+                                            <feMergeNode in="SourceGraphic"/>
+                                        </feMerge>
+                                    </filter>
+                                </defs>
+                                <path d="M20 5 C12 5, 6 11, 6 19 C6 27, 20 45, 20 45 C20 45, 34 27, 34 19 C34 11, 28 5, 20 5 Z" 
+                                      fill="${color}" 
+                                      stroke="white" 
+                                      stroke-width="3" 
+                                      filter="url(#marker-shadow-${originalCategory})"/>
+                                <circle cx="20" cy="19" r="10" fill="white"/>
+                                <text x="20" y="25" text-anchor="middle" fill="${color}" font-size="16" font-weight="bold">${icon}</text>
+                            </svg>
+                        `),
+                        scaledSize: new google.maps.Size(40, 50),
+                        anchor: new google.maps.Point(20, 45)
+                    };
+                    
+                    marker.setIcon(originalIcon);
+                    marker.setZIndex(500); // Normal z-index
+                }
+            });
         }
         
         function highlightPlaceInList(placeId) {
