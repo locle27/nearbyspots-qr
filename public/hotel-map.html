@@ -268,18 +268,18 @@
         </div>
 
         <div class="control-group">
-            <label>Categories to Show:</label>
+            <label>Select Categories to Load:</label>
             <div class="category-filters">
-                <div class="category-filter active" data-category="restaurants">
+                <div class="category-filter" data-category="restaurants">
                     🍽️ Restaurants
                 </div>
-                <div class="category-filter active" data-category="landmarks">
+                <div class="category-filter" data-category="landmarks">
                     🏛️ Landmarks
                 </div>
-                <div class="category-filter active" data-category="coffee">
+                <div class="category-filter" data-category="coffee">
                     ☕ Coffee
                 </div>
-                <div class="category-filter active" data-category="culture">
+                <div class="category-filter" data-category="culture">
                     🎭 Culture
                 </div>
             </div>
@@ -327,7 +327,7 @@
         let hotelMarker;
         let placeMarkers = [];
         let allPlaces = {};
-        let activeCategories = new Set(['restaurants', 'landmarks', 'coffee', 'culture']);
+        let activeCategories = new Set(); // Start with no categories selected
 
         // Hotel location
         const HOTEL_LOCATION = {
@@ -422,7 +422,11 @@
                         filter.classList.add('active');
                     }
                     
-                    updateMapMarkers();
+                    // Only update map if we already have data loaded
+                    if (Object.keys(allPlaces).length > 0) {
+                        updateMapMarkers();
+                        updateStats();
+                    }
                 });
             });
 
@@ -431,13 +435,19 @@
 
             // Radius change
             document.getElementById('radiusSelect').addEventListener('change', () => {
-                if (Object.keys(allPlaces).length > 0) {
+                if (Object.keys(allPlaces).length > 0 && activeCategories.size > 0) {
                     loadPlaces(); // Reload with new radius
                 }
             });
         }
 
         async function loadPlaces() {
+            // Check if any categories are selected
+            if (activeCategories.size === 0) {
+                alert('Please select at least one category (Restaurants, Landmarks, Coffee, or Culture) before loading places.');
+                return;
+            }
+
             const radius = parseInt(document.getElementById('radiusSelect').value);
             const loadBtn = document.getElementById('loadPlacesBtn');
             const loading = document.getElementById('loading');
@@ -447,7 +457,7 @@
             loading.classList.add('show');
 
             try {
-                console.log('Loading places with radius:', radius);
+                console.log('Loading places with radius:', radius, 'for categories:', Array.from(activeCategories));
                 const response = await fetch('/api/search-nearby', {
                     method: 'POST',
                     headers: {
@@ -562,21 +572,32 @@
         }
 
         function updateStats() {
-            const allPlacesList = Object.values(allPlaces).flat();
-            const totalPlaces = allPlacesList.length;
+            // Only count places from active categories
+            const activePlacesList = [];
+            
+            Object.entries(allPlaces).forEach(([category, places]) => {
+                if (activeCategories.has(category)) {
+                    activePlacesList.push(...places);
+                }
+            });
+            
+            const totalPlaces = activePlacesList.length;
             
             const avgRating = totalPlaces > 0 
-                ? (allPlacesList.reduce((sum, place) => sum + (place.rating || 0), 0) / totalPlaces).toFixed(1)
+                ? (activePlacesList.reduce((sum, place) => sum + (place.rating || 0), 0) / totalPlaces).toFixed(1)
                 : '0.0';
                 
             const maxDistance = totalPlaces > 0 
-                ? Math.max(...allPlacesList.map(place => place.distance))
+                ? Math.max(...activePlacesList.map(place => place.distance))
                 : 0;
                 
-            const categoryCounts = Object.entries(allPlaces).map(([cat, places]) => ({
-                category: cat,
-                count: places.length
-            })).sort((a, b) => b.count - a.count);
+            const categoryCounts = Object.entries(allPlaces)
+                .filter(([cat]) => activeCategories.has(cat))
+                .map(([cat, places]) => ({
+                    category: cat,
+                    count: places.length
+                }))
+                .sort((a, b) => b.count - a.count);
             
             const topCategory = categoryCounts[0]?.category || '-';
 
