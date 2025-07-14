@@ -309,6 +309,7 @@ async function searchNearbyPlaces(latitude, longitude, radius, types) {
     };
     
     console.log('📤 API Request Body:', JSON.stringify(requestBody, null, 2));
+    console.log('🔑 API Key (first 10 chars):', GOOGLE_MAPS_API_KEY ? `${GOOGLE_MAPS_API_KEY.substring(0, 10)}...` : 'MISSING');
     
     const response = await axios.post(
       'https://places.googleapis.com/v1/places:searchNearby',
@@ -324,10 +325,30 @@ async function searchNearbyPlaces(latitude, longitude, radius, types) {
     );
 
     console.log(`📥 API Response Status: ${response.status}`);
+    console.log(`📥 API Response Headers:`, response.headers);
     console.log(`📥 API Response Data:`, JSON.stringify(response.data, null, 2));
     
     const places = response.data.places || [];
     console.log(`✅ Found ${places.length} places for types: ${types.join(', ')}`);
+    
+    // Enhanced debugging for empty results
+    if (places.length === 0) {
+      console.warn('⚠️ No places found - potential issues:');
+      console.warn('1. Check Google Cloud Console:');
+      console.warn('   - Places API (New) is enabled');
+      console.warn('   - Billing account is active');
+      console.warn('   - API key has Places API (New) permissions');
+      console.warn('2. Check API quota limits');
+      console.warn('3. Verify location and radius are reasonable');
+      console.warn('4. Check if place types are valid for Places API (New)');
+      console.warn('🔍 Debug Details:', {
+        apiKeyLength: GOOGLE_MAPS_API_KEY?.length,
+        requestTypes: types,
+        location: { latitude, longitude },
+        radius: Math.min(radius, MAX_SEARCH_RADIUS),
+        maxResults
+      });
+    }
     
     return places;
   } catch (error) {
@@ -336,16 +357,45 @@ async function searchNearbyPlaces(latitude, longitude, radius, types) {
       status: error.response?.status,
       statusText: error.response?.statusText,
       data: error.response?.data,
-      headers: error.response?.headers
+      headers: error.response?.headers,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers
+      }
     });
     
-    // Check for specific API errors
+    // Enhanced error handling with specific suggestions
     if (error.response?.status === 403) {
-      throw new Error('API key permission denied. Please check:\n- Places API (New) is enabled\n- API key has correct permissions\n- Billing is enabled');
+      const errorMessage = 'API key permission denied. Please check:\n' +
+        '- Places API (New) is enabled in Google Cloud Console\n' +
+        '- API key has correct permissions for Places API (New)\n' +
+        '- Billing is enabled and active\n' +
+        '- API key restrictions allow your domain';
+      console.error('🚨 403 Error Details:', errorMessage);
+      throw new Error(errorMessage);
     } else if (error.response?.status === 400) {
-      throw new Error('Invalid API request. Please check:\n- includedTypes are valid for Places API (New)\n- Request format is correct');
+      const errorMessage = 'Invalid API request. Please check:\n' +
+        '- includedTypes are valid for Places API (New)\n' +
+        '- Request format is correct\n' +
+        '- Location coordinates are valid\n' +
+        '- Radius is within allowed limits';
+      console.error('🚨 400 Error Details:', errorMessage);
+      throw new Error(errorMessage);
     } else if (error.response?.status === 429) {
-      throw new Error('API quota exceeded. Please check:\n- Daily quota limits\n- Requests per minute limits');
+      const errorMessage = 'API quota exceeded. Please check:\n' +
+        '- Daily quota limits in Google Cloud Console\n' +
+        '- Requests per minute limits\n' +
+        '- Consider increasing quotas or implementing caching';
+      console.error('🚨 429 Error Details:', errorMessage);
+      throw new Error(errorMessage);
+    } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      const errorMessage = 'Network connection error. Please check:\n' +
+        '- Internet connection is stable\n' +
+        '- Firewall settings allow HTTPS requests\n' +
+        '- Google APIs are accessible from your location';
+      console.error('🚨 Network Error Details:', errorMessage);
+      throw new Error(errorMessage);
     }
     
     throw new Error(`Failed to fetch nearby places: ${error.message}`);
@@ -1504,6 +1554,19 @@ app.post('/api/search-nearby', async (req, res) => {
         categories: Object.keys(PLACE_TYPES),
         placeTypes: PLACE_TYPES
       });
+      
+      // Test a simple API call to diagnose the issue
+      console.warn('🧪 Testing API connectivity...');
+      try {
+        const testResponse = await axios.get(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`
+        );
+        console.warn('✅ Geocoding API test successful:', testResponse.status);
+        console.warn('🔍 API appears to be working. Issue may be with Places API (New) specifically.');
+      } catch (testError) {
+        console.warn('❌ Geocoding API test failed:', testError.message);
+        console.warn('🔍 This suggests an API key or network issue.');
+      }
     }
 
     const responseData = {
@@ -1695,6 +1758,84 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// API configuration test endpoint
+app.get('/api/test-config', async (req, res) => {
+  try {
+    const configTest = {
+      apiKeyPresent: !!GOOGLE_MAPS_API_KEY,
+      apiKeyLength: GOOGLE_MAPS_API_KEY?.length || 0,
+      placesApiEnabled: false,
+      geocodingApiEnabled: false,
+      timestamp: new Date().toISOString()
+    };
+
+    // Test Geocoding API
+    try {
+      const geocodeResponse = await axios.get(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=21.034087,105.85114&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      configTest.geocodingApiEnabled = geocodeResponse.status === 200;
+      configTest.geocodingStatus = geocodeResponse.status;
+    } catch (geocodeError) {
+      configTest.geocodingError = geocodeError.message;
+      configTest.geocodingStatus = geocodeError.response?.status || 'ERROR';
+    }
+
+    // Test Places API (New)
+    try {
+      const placesResponse = await axios.post(
+        'https://places.googleapis.com/v1/places:searchNearby',
+        {
+          includedTypes: ['restaurant'],
+          maxResultCount: 1,
+          locationRestriction: {
+            circle: {
+              center: { latitude: 21.034087, longitude: 105.85114 },
+              radius: 1000
+            }
+          },
+          languageCode: 'en'
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+            'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location'
+          },
+          timeout: 10000
+        }
+      );
+      configTest.placesApiEnabled = placesResponse.status === 200;
+      configTest.placesStatus = placesResponse.status;
+      configTest.placesResultCount = placesResponse.data.places?.length || 0;
+    } catch (placesError) {
+      configTest.placesError = placesError.message;
+      configTest.placesStatus = placesError.response?.status || 'ERROR';
+      configTest.placesErrorData = placesError.response?.data;
+    }
+
+    // Overall assessment
+    configTest.overallStatus = configTest.apiKeyPresent && configTest.placesApiEnabled ? 'HEALTHY' : 'ISSUES_DETECTED';
+    
+    res.json({
+      success: true,
+      config: configTest,
+      recommendations: !configTest.placesApiEnabled ? [
+        'Enable Places API (New) in Google Cloud Console',
+        'Check API key permissions',
+        'Verify billing is enabled',
+        'Ensure quota limits are not exceeded'
+      ] : []
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Configuration test failed',
+      message: error.message
+    });
+  }
 });
 
 // Error handling middleware

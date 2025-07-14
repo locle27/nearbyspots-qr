@@ -1,0 +1,59 @@
+[
+  {
+    "id": "rec_001",
+    "name": "Hanoi Old Quarter Walking Tour",
+    "address": "36 Streets, Hoan Kiem, Hanoi, Vietnam",
+    "location": {
+      "latitude": 21.033333,
+      "longitude": 105.85
+    },
+    "rating": 4.8,
+    "userRatingCount": 127,
+    "distance": 150,
+    "description": "Explore the historic heart of Hanoi with narrow streets, traditional shops, and colonial architecture.",
+    "category": "recommend",
+    "photos": [],
+    "websiteUri": "",
+    "addedBy": "hotel_management",
+    "addedDate": "2025-07-14T02:24:30.685Z",
+    "featured": true
+  },
+  {
+    "id": "rec_002",
+    "name": "Hoan Kiem Lake & Ngoc Son Temple",
+    "address": "Hoan Kiem Lake, Hanoi, Vietnam",
+    "location": {
+      "latitude": 21.028511,
+      "longitude": 105.852245
+    },
+    "rating": 4.6,
+    "userRatingCount": 89,
+    "distance": 300,
+    "description": "Peaceful lake in the city center with a beautiful temple on a small island.",
+    "category": "recommend",
+    "photos": [],
+    "websiteUri": "",
+    "addedBy": "hotel_management",
+    "addedDate": "2025-07-14T02:24:30.686Z",
+    "featured": true
+  },
+  {
+    "id": "rec_1752460892050_d9uxps",
+    "name": "PHỞ GÀ 79",
+    "address": "79 P.Phùng Hưng , Hàng Mã",
+    "location": {
+      "latitude": 21.0363407,
+      "longitude": 105.8436238
+    },
+    "rating": 0,
+    "userRatingCount": 0,
+    "distance": 0,
+    "description": "",
+    "category": "recommend",
+    "photos": [],
+    "websiteUri": "",
+    "addedBy": "manual_entry",
+    "addedDate": "2025-07-14T02:41:32.050Z",
+    "featured": false
+  }
+]

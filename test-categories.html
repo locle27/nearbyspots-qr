@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Selection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .category-filters {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .category-filter {
+            padding: 10px 18px;
+            border: 3px solid #e0e0e0;
+            border-radius: 25px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 500;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .category-filter.active {
+            background: #1976D2;
+            color: white;
+            border-color: #1976D2;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+        }
+
+        .category-filter:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+            border-color: #1976D2;
+        }
+        
+        .load-btn {
+            background: #ccc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+        
+        .debug-log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #222;
+            color: #0f0;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Category Selection Test</h1>
+        <p>This is a simplified test to debug the category selection issue.</p>
+        
+        <h3>Select Categories:</h3>
+        <div class="category-filters">
+            <div class="category-filter" data-category="restaurants">
+                🍽️ Restaurants
+            </div>
+            <div class="category-filter" data-category="landmarks">
+                🏛️ Landmarks
+            </div>
+            <div class="category-filter" data-category="coffee">
+                ☕ Coffee
+            </div>
+            <div class="category-filter" data-category="culture">
+                🎭 Culture
+            </div>
+        </div>
+        
+        <div class="status">
+            <div><strong>Active Categories:</strong> <span id="activeCategoriesDisplay">None</span></div>
+            <div><strong>Category Count:</strong> <span id="categoryCount">0</span></div>
+            <div><strong>Button Text:</strong> <span id="buttonTextDisplay">-</span></div>
+        </div>
+        
+        <button class="load-btn" id="loadBtn">🗺️ Select Categories First</button>
+        
+        <div class="debug-log" id="debugLog"></div>
+    </div>
+
+    <script>
+        // Global variables - exactly like the main app
+        let activeCategories = new Set();
+        
+        const CATEGORY_ICONS = {
+            restaurants: '🍽️',
+            landmarks: '🏛️', 
+            coffee: '☕',
+            culture: '🎭'
+        };
+        
+        function log(message) {
+            const debugLog = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.innerHTML += `[${timestamp}] ${message}<br>`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateDisplay() {
+            const activeCategoriesDisplay = document.getElementById('activeCategoriesDisplay');
+            const categoryCount = document.getElementById('categoryCount');
+            const buttonTextDisplay = document.getElementById('buttonTextDisplay');
+            const loadBtn = document.getElementById('loadBtn');
+            
+            // Update status display
+            if (activeCategories.size === 0) {
+                activeCategoriesDisplay.textContent = 'None';
+            } else {
+                activeCategoriesDisplay.textContent = Array.from(activeCategories).join(', ');
+            }
+            
+            categoryCount.textContent = activeCategories.size;
+            
+            // Update button
+            if (activeCategories.size === 0) {
+                loadBtn.textContent = '🗺️ Select Categories First';
+                loadBtn.style.background = '#ccc';
+                loadBtn.style.cursor = 'not-allowed';
+            } else {
+                const categories = Array.from(activeCategories).map(cat => CATEGORY_ICONS[cat]).join('');
+                loadBtn.textContent = `🗺️ Load ${categories} (${activeCategories.size} categories)`;
+                loadBtn.style.background = 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)';
+                loadBtn.style.cursor = 'pointer';
+            }
+            
+            buttonTextDisplay.textContent = loadBtn.textContent;
+            
+            log(`Updated display - Categories: [${Array.from(activeCategories).join(', ')}], Count: ${activeCategories.size}, Button: "${loadBtn.textContent}"`);
+        }
+        
+        function setupEventListeners() {
+            log('Setting up event listeners...');
+            
+            // Category filter toggles
+            document.querySelectorAll('.category-filter').forEach(filter => {
+                filter.addEventListener('click', () => {
+                    const category = filter.dataset.category;
+                    log(`Category clicked: ${category}`);
+                    
+                    if (activeCategories.has(category)) {
+                        activeCategories.delete(category);
+                        filter.classList.remove('active');
+                        log(`Removed category: ${category}`);
+                    } else {
+                        activeCategories.add(category);
+                        filter.classList.add('active');
+                        log(`Added category: ${category}`);
+                    }
+                    
+                    log(`Active categories: [${Array.from(activeCategories).join(', ')}]`);
+                    updateDisplay();
+                });
+            });
+            
+            // Load button
+            document.getElementById('loadBtn').addEventListener('click', () => {
+                log(`Load button clicked! Current activeCategories: [${Array.from(activeCategories).join(', ')}], Size: ${activeCategories.size}`);
+                
+                if (activeCategories.size === 0) {
+                    log('No categories selected, showing alert');
+                    alert('Please select at least one category!');
+                    return;
+                }
+                
+                log('Categories are selected, would proceed with load...');
+                alert(`Would load places for: ${Array.from(activeCategories).join(', ')}`);
+            });
+        }
+        
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            log('DOM loaded, initializing...');
+            setupEventListeners();
+            updateDisplay();
+            log('Initialization complete');
+        });
+    </script>
+</body>
+</html>

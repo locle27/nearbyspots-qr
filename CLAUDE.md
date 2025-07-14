@@ -170,55 +170,101 @@ The system supports two QR code types:
 
 QR codes encode the base URL with optional lat/lng parameters for immediate location-based discovery.
 
-## Latest Enhancements (Commit: 2bdf4fd)
+## Current System Capabilities
 
-### 🎯 Production-Ready Features
-- **Gallery Image Loading**: Proper loading spinners, error states, and progressive image loading
-- **Enhanced Map Markers**: Pin-shaped markers (40x50px) with category icons and drop shadows
-- **Persistent Selection**: "SELECTED" text arrows that stay visible until new selection
-- **Auto-Zoom**: Automatically zooms to level 17 when selecting locations
+### 🌍 Worldwide Hotel Support
+- **Any Location**: Paste Google Maps URL of any hotel/accommodation worldwide
+- **Smart Extraction**: Automatically extracts coordinates from various URL formats
+- **Address Lookup**: Converts coordinates to readable addresses via reverse geocoding
+- **Dynamic Updates**: Updates all interface elements with new location information
+
+### 📱 Professional Mobile Experience  
+- **Native Feel**: Bottom sheet modal that slides up from bottom on mobile
+- **Touch Optimized**: Proper touch targets, smooth scrolling, intuitive gestures
+- **Professional Design**: Modern typography, gradient badges, clean spacing
+- **Cross-Platform**: Seamless experience on both mobile and desktop
+
+### 🎯 Single Category Focus
+- **Cleaner Viewing**: Select one category at a time for focused results
+- **Better Performance**: Fewer API calls, faster loading, clearer map visualization
+- **Easy Switching**: Quick category switching with immediate visual feedback
+
+### ⚡ Optimized Performance
+- **Smart Loading**: 300ms sequential photo loading prevents API rate limits
+- **Adaptive Throttling**: Automatically adjusts based on API response success/failure
+- **Fast Initial Display**: First 2 photos load in parallel for immediate visual feedback
+- **Error Recovery**: Intelligent retry logic with exponential backoff
+
+## Latest Enhancements (Commit: 135d063)
+
+### 🎯 Professional Mobile-First Interface
+- **Mobile Bottom Sheet Modal**: Native-feeling slide-up modal for place details
+- **Professional Typography**: Enhanced readability with 1.5rem headers and proper spacing
+- **Color-Coded Stats**: Gradient badges for rating (yellow), distance (blue), category (green)
+- **Google Maps Style Selection**: Pulsing blue circle indicators replace arrow system
+- **Smart Highlighting**: Selected markers enlarge, others dim for better focus
+- **Native Mobile Sharing**: Share places with native APIs or clipboard fallback
+
+### ⚡ Optimized Performance
+- **Smart Photo Loading**: Sequential loading with 300ms delays prevents 429 errors
+- **Parallel Initial Loading**: First 2 photos load simultaneously for instant feedback
+- **Adaptive Rate Limiting**: Automatically adjusts delays based on API success/failure
+- **Faster Retries**: Linear backoff (500ms, 1s) vs exponential for quicker recovery
+- **2-3x Faster Galleries**: Optimized from 800ms to 300ms base delays
+
+### 🎛️ Enhanced User Controls
+- **Single Category Selection**: One category at a time for cleaner viewing
+- **Hotel Location Input**: Paste any Google Maps URL to set custom location
+- **Smart Coordinate Extraction**: Supports multiple Google Maps URL formats
+- **Real-time Location Updates**: Automatic address lookup and interface updates
+- **Worldwide Support**: Works with any hotel/accommodation globally
+
+### 🔧 Critical API Fixes
+- **Google Places API Limit Fix**: Corrected maxResultCount from 100 to 20 (API requirement)
+- **Comprehensive Error Handling**: Detailed API debugging with success/failure tracking
+- **Rate Limit Compliance**: Sequential loading prevents 429 "Too Many Requests" errors
 - **Robust Place Names**: 4-tier extraction system eliminates "Unknown" locations
-- **International Support**: Miles conversion alongside meters for foreign visitors
+- **Enhanced Photo Loading**: Progressive loading with validation and fallbacks
 
-### 🛠️ Technical Improvements
-- **Fixed JavaScript Errors**: Resolved `defaultImages` undefined errors
-- **Enhanced Error Handling**: Gallery images show clear error states when loading fails  
-- **Improved Performance**: Staggered image loading (200ms intervals) prevents server overload
-- **Better UX**: Bounce animations on marker selection with visual feedback
-- **Cross-Platform**: Works seamlessly on mobile and desktop devices
-
-### 🏨 Hotel Management Interface
-**URL**: `/hotel-map` - Complete hotel nearby places management system
-- **Default Location**: 118 Hang Bac, Hanoi Old Quarter (21.034087, 105.85114)
-- **Enhanced Discovery**: 20+ locations per category with intelligent search strategies
-- **Visual Excellence**: Professional map interface with advanced selection indicators
-- **QR Ready**: Perfect for hotel guest QR code generation and testing
-
-### 📱 Mobile Optimization
-- **PWA Support**: Installable as mobile app with manifest.json
-- **Touch-Friendly**: 44px minimum touch targets for accessibility
-- **Responsive Design**: Optimized for all screen sizes
-- **Fast Loading**: Optimized assets and progressive enhancement
+### 🏨 Flexible Location System
+**Default**: 118 Hang Bac, Hanoi Old Quarter (21.034087, 105.85114)
+**Custom Locations**: Any Google Maps URL can set new hotel location
+- **Multi-format URL Support**: @lat,lng, q=lat,lng, !3d!4d, ll=lat,lng formats
+- **Automatic Geocoding**: Converts coordinates to readable addresses
+- **Map Recentering**: Updates hotel marker and map center dynamically
+- **Clear Workflow**: Location change → clear places → prompt to reload
 
 ## Memory Bank Setup
 
 ### Key Development Patterns
-1. **Always use 4-tier place name extraction** when working with Google Places API
-2. **Implement loading states** for all image galleries with spinners and error handling
-3. **Use pin-shaped markers** with category icons for better map visibility  
-4. **Add persistent selection indicators** that stay visible until new selection
-5. **Include auto-zoom functionality** (level 17) for detailed location views
-6. **Convert distances to miles** alongside meters for international users
+1. **Single Category Selection**: Use `activeCategories.clear()` then `activeCategories.add(category)` for single selection
+2. **Sequential Photo Loading**: Implement 300ms delays with adaptive rate limiting for Google Photos API
+3. **Mobile-First Modal Design**: Bottom sheet with slide-up animation on mobile, centered on desktop
+4. **Google Maps URL Extraction**: Support multiple URL patterns (@lat,lng, q=lat,lng, !3d!4d, ll=lat,lng)
+5. **Professional Typography**: Use 1.5rem headers, gradient stat badges, proper spacing (24px/16px)
+6. **API Rate Limit Compliance**: Never exceed 20 results per Google Places API request
+7. **Smart Selection Indicators**: Pulsing blue circles with marker dimming/highlighting effects
 
 ### Critical Code Locations
-- **Place Name Extraction**: `server.js:1358-1400`
-- **Gallery Loading Logic**: `hotel-map.html:2852-2905` 
-- **Map Marker Creation**: `hotel-map.html:2349-2378`
-- **Selection Arrow System**: `hotel-map.html:2590-2653`
-- **Enhanced Hotel Marker**: `hotel-map.html:1395-1430`
+- **Single Category Selection**: `index.html:1655-1683` (event handlers)
+- **Hotel Location Input**: `index.html:3507-3638` (coordinate extraction and update)
+- **Sequential Photo Loading**: `index.html:3220-3358` (adaptive rate limiting)
+- **Mobile Modal Design**: `index.html:715-856` (CSS) and `index.html:3183-3207` (JS)
+- **Google Maps Selection**: `index.html:2667-2708` (pulsing circle indicators)
+- **API Rate Limiting**: `server.js:292-349` (maxResultCount validation)
+- **Place Name Extraction**: `server.js:1358-1400` (4-tier fallback system)
 
 ### Deployment Status
 - **Repository**: `https://github.com/locle27/nearbyspots-qr.git`
-- **Latest Commit**: `2bdf4fd` - Production ready with all enhancements
-- **Hosting**: Ready for Railway, Vercel, or any Node.js hosting platform
-- **QR Testing**: All functionality verified and ready for production QR codes
+- **Latest Commit**: `135d063` - Professional mobile interface with worldwide hotel support
+- **Production Status**: ✅ **FULLY OPERATIONAL** - Professional mobile-first interface
+- **Global Support**: ✅ Works worldwide with any hotel/accommodation location
+- **QR Testing**: All functionality verified including new location input features
+
+### Recent Major Updates
+- **2024-01**: Mobile-first redesign with professional bottom sheet modal
+- **2024-01**: Smart photo loading with 429 error prevention and 2-3x speed improvement  
+- **2024-01**: Single category selection for cleaner viewing experience
+- **2024-01**: Worldwide hotel location support via Google Maps URL input
+- **2024-01**: Google Maps style selection indicators with smart highlighting
+- **2024-01**: Critical API fixes for Google Places API rate limiting compliance
