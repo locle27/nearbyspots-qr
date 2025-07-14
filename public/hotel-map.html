@@ -427,6 +427,7 @@
             loading.classList.add('show');
 
             try {
+                console.log('Loading places with radius:', radius);
                 const response = await fetch('/api/search-nearby', {
                     method: 'POST',
                     headers: {
@@ -439,15 +440,25 @@
                     })
                 });
 
+                console.log('Response status:', response.status);
+
                 if (!response.ok) {
                     throw new Error('Failed to load places');
                 }
 
                 const data = await response.json();
-                allPlaces = data.results;
-
-                updateMapMarkers();
-                updateStats();
+                console.log('API response:', data);
+                
+                if (data.success && data.results) {
+                    allPlaces = data.results;
+                    console.log('Places loaded:', allPlaces);
+                    
+                    updateMapMarkers();
+                    updateStats();
+                } else {
+                    console.error('API returned no results:', data);
+                    alert('No places found. Please try a different radius or check your internet connection.');
+                }
 
                 // Adjust map bounds to show all markers
                 adjustMapBounds();
