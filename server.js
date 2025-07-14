@@ -371,10 +371,59 @@ function verifyQRAccess(req, res, next) {
   }
 }
 
-// Hotel management map page
+// Alternative routes for different interfaces
 app.get('/hotel-map', (req, res) => {
-  const htmlPath = path.join(__dirname, 'public', 'hotel-map.html');
-  res.sendFile(htmlPath);
+  // Redirect to main interface (now using hotel-map as default)
+  res.redirect('/');
+});
+
+// Legacy mobile interface (if needed for specific use cases)
+app.get('/mobile', verifyQRAccess, (req, res) => {
+  // Check for hotel parameter
+  const hotelId = req.query.hotel || 'hanoi-old-quarter';
+  const hotel = HOTEL_LOCATIONS[hotelId] || DEFAULT_HOTEL;
+  
+  // Check for direct coordinates from QR
+  const lat = req.query.lat;
+  const lng = req.query.lng;
+  const label = req.query.label;
+  
+  let locationData = null;
+  
+  if (lat && lng) {
+    // Use coordinates from QR code
+    locationData = {
+      latitude: parseFloat(lat),
+      longitude: parseFloat(lng),
+      source: 'qr_coordinates',
+      label: label || 'QR Location'
+    };
+  } else {
+    // Use default hotel location
+    locationData = {
+      latitude: hotel.latitude,
+      longitude: hotel.longitude,
+      source: 'hotel_default',
+      label: hotel.name,
+      address: hotel.address,
+      description: hotel.description
+    };
+  }
+  
+  // Read legacy HTML file and inject location data
+  const htmlPath = path.join(__dirname, 'public', 'index.html');
+  const html = require('fs').readFileSync(htmlPath, 'utf8');
+  
+  // Inject location data into HTML
+  const injectedHtml = html.replace(
+    '<script src="app.js?v=4"></script>',
+    `<script>
+      window.DEFAULT_LOCATION = ${JSON.stringify(locationData)};
+    </script>
+    <script src="app.js?v=4"></script>`
+  );
+  
+  res.send(injectedHtml);
 });
 
 // Main page with QR security verification
@@ -417,20 +466,9 @@ app.get('/', verifyQRAccess, (req, res) => {
     console.log(`🌐 Direct web access from ${req.ip} - Using ${hotel.name}`);
   }
   
-  // Read HTML file and inject location data
-  const htmlPath = path.join(__dirname, 'public', 'index.html');
-  const html = require('fs').readFileSync(htmlPath, 'utf8');
-  
-  // Inject location data into HTML
-  const injectedHtml = html.replace(
-    '<script src="app.js?v=4"></script>',
-    `<script>
-      window.DEFAULT_LOCATION = ${JSON.stringify(locationData)};
-    </script>
-    <script src="app.js?v=4"></script>`
-  );
-  
-  res.send(injectedHtml);
+  // Use enhanced hotel-map interface as main interface
+  const htmlPath = path.join(__dirname, 'public', 'hotel-map.html');
+  res.sendFile(htmlPath);
 });
 
 // Secure QR code generation endpoint
