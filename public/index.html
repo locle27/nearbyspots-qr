@@ -3612,10 +3612,8 @@
                 console.log('✅ GPS location obtained:', location);
                 
                 // Update the hotel location with GPS coordinates
-                hotelLocation = {
-                    latitude: location.latitude,
-                    longitude: location.longitude
-                };
+                HOTEL_LOCATION.lat = location.latitude;
+                HOTEL_LOCATION.lng = location.longitude;
                 
                 // Reverse geocode to get address
                 try {
@@ -3632,13 +3630,21 @@
                     
                     if (response.ok) {
                         const data = await response.json();
+                        HOTEL_LOCATION.address = data.address;
+                        HOTEL_LOCATION.name = 'Your GPS Location';
                         document.getElementById('currentLocationText').textContent = `📍 Current: ${data.address}`;
                     } else {
-                        document.getElementById('currentLocationText').textContent = `📍 Current: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+                        const coordsText = `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+                        HOTEL_LOCATION.address = coordsText;
+                        HOTEL_LOCATION.name = 'Your GPS Location';
+                        document.getElementById('currentLocationText').textContent = `📍 Current: ${coordsText}`;
                     }
                 } catch (geocodeError) {
                     console.warn('Reverse geocoding failed:', geocodeError);
-                    document.getElementById('currentLocationText').textContent = `📍 Current: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+                    const coordsText = `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+                    HOTEL_LOCATION.address = coordsText;
+                    HOTEL_LOCATION.name = 'Your GPS Location';
+                    document.getElementById('currentLocationText').textContent = `📍 Current: ${coordsText}`;
                 }
                 
                 // Clear the URL input since we're using GPS
@@ -3646,16 +3652,15 @@
                 
                 // Update map center if map is initialized
                 if (map) {
-                    const newCenter = { lat: location.latitude, lng: location.longitude };
-                    map.setCenter(newCenter);
+                    map.setCenter(HOTEL_LOCATION);
                     map.setZoom(15);
                     
                     // Add or update hotel marker
                     if (hotelMarker) {
-                        hotelMarker.setPosition(newCenter);
+                        hotelMarker.setPosition(HOTEL_LOCATION);
                     } else {
                         hotelMarker = new google.maps.Marker({
-                            position: newCenter,
+                            position: HOTEL_LOCATION,
                             map: map,
                             title: 'Your Location (GPS)',
                             icon: {
