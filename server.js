@@ -371,9 +371,8 @@ function verifyQRAccess(req, res, next) {
   }
 }
 
-// Alternative routes for different interfaces
+// Hotel-map route now redirects to main interface (they're the same)
 app.get('/hotel-map', (req, res) => {
-  // Redirect to main interface (now using hotel-map as default)
   res.redirect('/');
 });
 
@@ -410,64 +409,23 @@ app.get('/mobile', verifyQRAccess, (req, res) => {
     };
   }
   
-  // Read legacy HTML file and inject location data
-  const htmlPath = path.join(__dirname, 'public', 'index.html');
-  const html = require('fs').readFileSync(htmlPath, 'utf8');
-  
-  // Inject location data into HTML
-  const injectedHtml = html.replace(
-    '<script src="app.js?v=4"></script>',
-    `<script>
-      window.DEFAULT_LOCATION = ${JSON.stringify(locationData)};
-    </script>
-    <script src="app.js?v=4"></script>`
-  );
-  
-  res.send(injectedHtml);
+  // Legacy interface no longer available - redirect to main interface
+  console.log(`Legacy mobile interface requested, redirecting to main interface`);
+  res.redirect('/');
 });
 
-// Main page with QR security verification
+// Main page with QR security verification - now serves hotel-map directly
 app.get('/', verifyQRAccess, (req, res) => {
-  // Check for hotel parameter
-  const hotelId = req.query.hotel || 'hanoi-old-quarter';
-  const hotel = HOTEL_LOCATIONS[hotelId] || DEFAULT_HOTEL;
-  
-  // Check for direct coordinates from QR
-  const lat = req.query.lat;
-  const lng = req.query.lng;
-  const label = req.query.label;
-  
-  let locationData = null;
-  
-  if (lat && lng) {
-    // Use coordinates from QR code
-    locationData = {
-      latitude: parseFloat(lat),
-      longitude: parseFloat(lng),
-      source: 'qr_coordinates',
-      label: label || 'QR Location'
-    };
-  } else {
-    // Use default hotel location
-    locationData = {
-      latitude: hotel.latitude,
-      longitude: hotel.longitude,
-      source: 'hotel_default',
-      label: hotel.name,
-      address: hotel.address,
-      description: hotel.description
-    };
-  }
-  
   // Log access information
+  const clientIp = req.ip || req.connection.remoteAddress;
   if (req.qrVerified) {
-    console.log(`📱 Secure QR access verified for ${req.ip} - ${locationData.label}`);
+    console.log(`📱 Secure QR access verified for ${clientIp} - Loading hotel-map interface`);
   } else {
-    console.log(`🌐 Direct web access from ${req.ip} - Using ${hotel.name}`);
+    console.log(`🌐 Direct web access from ${clientIp} - Loading hotel-map interface`);
   }
   
-  // Use enhanced hotel-map interface as main interface
-  const htmlPath = path.join(__dirname, 'public', 'hotel-map.html');
+  // Serve the enhanced hotel-map interface directly (now copied to index.html)
+  const htmlPath = path.join(__dirname, 'public', 'index.html');
   res.sendFile(htmlPath);
 });
 
