@@ -80,27 +80,37 @@
         }
 
         .category-filter {
-            padding: 8px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 20px;
+            padding: 10px 18px;
+            border: 3px solid #e0e0e0;
+            border-radius: 25px;
             background: white;
             cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .category-filter.active {
             background: #1976D2;
             color: white;
             border-color: #1976D2;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
         }
 
         .category-filter:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+            border-color: #1976D2;
+        }
+
+        .category-filter:active {
+            transform: scale(0.98);
         }
 
         .load-btn {
@@ -413,14 +423,20 @@
             document.querySelectorAll('.category-filter').forEach(filter => {
                 filter.addEventListener('click', () => {
                     const category = filter.dataset.category;
+                    console.log('Category clicked:', category);
                     
                     if (activeCategories.has(category)) {
                         activeCategories.delete(category);
                         filter.classList.remove('active');
+                        console.log('Removed category:', category);
                     } else {
                         activeCategories.add(category);
                         filter.classList.add('active');
+                        console.log('Added category:', category);
                     }
+                    
+                    console.log('Active categories:', Array.from(activeCategories));
+                    updateLoadButtonText();
                     
                     // Only update map if we already have data loaded
                     if (Object.keys(allPlaces).length > 0) {
@@ -607,6 +623,20 @@
             document.getElementById('topCategory').textContent = CATEGORY_ICONS[topCategory] || '-';
         }
 
+        function updateLoadButtonText() {
+            const loadBtn = document.getElementById('loadPlacesBtn');
+            const selectedCount = activeCategories.size;
+            
+            if (selectedCount === 0) {
+                loadBtn.textContent = '🗺️ Select Categories First';
+                loadBtn.style.background = '#ccc';
+            } else {
+                const categories = Array.from(activeCategories).map(cat => CATEGORY_ICONS[cat]).join('');
+                loadBtn.textContent = `🗺️ Load ${categories} (${selectedCount} categories)`;
+                loadBtn.style.background = 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)';
+            }
+        }
+
         function adjustMapBounds() {
             if (placeMarkers.length === 0) return;
 
@@ -636,6 +666,7 @@
             // Load map when Google Maps API is ready
             if (typeof google !== 'undefined') {
                 initMap();
+                updateLoadButtonText(); // Initialize button text
             }
         });
     </script>
