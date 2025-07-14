@@ -205,19 +205,27 @@
 
         /* Custom marker info window styling */
         .marker-info {
-            max-width: 250px;
+            max-width: 280px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .marker-info img {
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .marker-info h3 {
-            margin: 0 0 8px 0;
+            margin: 8px 0 4px 0;
             color: #333;
             font-size: 1.1rem;
+            font-weight: 600;
         }
 
         .marker-info p {
             margin: 4px 0;
             color: #666;
             font-size: 0.9rem;
+            line-height: 1.4;
         }
 
         .marker-info .rating {
@@ -228,6 +236,17 @@
         .marker-info .distance {
             color: #1976D2;
             font-weight: bold;
+        }
+
+        .marker-info button {
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .marker-info button:hover {
+            background: #1565C0 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
     </style>
 </head>
@@ -362,13 +381,14 @@
                 title: HOTEL_LOCATION.name,
                 icon: {
                     url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="20" cy="20" r="18" fill="#1976D2" stroke="white" stroke-width="3"/>
-                            <text x="20" y="28" text-anchor="middle" fill="white" font-size="20">🏨</text>
+                        <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="25" cy="25" r="22" fill="#FF1744" stroke="white" stroke-width="4"/>
+                            <circle cx="25" cy="25" r="16" fill="#D32F2F" stroke="white" stroke-width="2"/>
+                            <text x="25" y="33" text-anchor="middle" fill="white" font-size="22">🏨</text>
                         </svg>
                     `),
-                    scaledSize: new google.maps.Size(40, 40),
-                    anchor: new google.maps.Point(20, 20)
+                    scaledSize: new google.maps.Size(50, 50),
+                    anchor: new google.maps.Point(25, 25)
                 }
             });
 
@@ -511,16 +531,22 @@
                 }
             });
 
+            // Get place image if available
+            const placeImage = place.photos && place.photos.length > 0 
+                ? `/api/place-photo/${place.photos[0].name}?maxHeightPx=150&maxWidthPx=200`
+                : null;
+            
             const infoWindow = new google.maps.InfoWindow({
                 content: `
-                    <div class="marker-info">
-                        <h3>${icon} ${place.name}</h3>
-                        <p>📍 ${place.address}</p>
-                        <p class="distance">🚶 ${place.distance}m from hotel</p>
-                        ${place.rating > 0 ? `<p class="rating">⭐ ${place.rating.toFixed(1)} (${place.userRatingCount} reviews)</p>` : ''}
+                    <div class="marker-info" style="max-width: 280px;">
+                        ${placeImage ? `<img src="${placeImage}" alt="${place.name}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;">` : ''}
+                        <h3 style="margin: 8px 0 4px 0; font-size: 1.1rem;">${icon} ${place.name}</h3>
+                        <p style="margin: 4px 0; color: #666; font-size: 0.9rem;">📍 ${place.address}</p>
+                        <p class="distance" style="margin: 4px 0; color: #1976D2; font-weight: bold;">🚶 ${place.distance}m from hotel</p>
+                        ${place.rating > 0 ? `<p class="rating" style="margin: 4px 0; color: #ff9800; font-weight: bold;">⭐ ${place.rating.toFixed(1)} (${place.userRatingCount} reviews)</p>` : ''}
                         <p style="margin-top: 8px;">
                             <button onclick="openDirections(${place.location.latitude}, ${place.location.longitude}, '${place.name}')" 
-                                    style="background: #1976D2; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
+                                    style="background: #1976D2; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">
                                 🗺️ Get Directions
                             </button>
                         </p>
