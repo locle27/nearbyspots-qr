@@ -82,7 +82,7 @@ GOOGLE_MAPS_API_KEY=your_api_key_here
 Optional with defaults:
 ```bash
 PORT=3000
-RESULTS_PER_CATEGORY=100       # Increased to 100 for better landmark coverage
+RESULTS_PER_CATEGORY=20        # Google Places API (New) maximum limit is 20
 DEFAULT_SEARCH_RADIUS=2000     # Increased from 1000m to 2000m for better coverage
 MAX_SEARCH_RADIUS=10000        # Maximum allowed search radius
 RATE_LIMIT_WINDOW_MS=900000    # 15 minutes rate limit window
@@ -147,8 +147,10 @@ API Restrictions:
 
 ## Common Issues & Solutions
 
-### Place Type Errors
-If you see "Unsupported types" errors, remove unsupported types from `PLACE_TYPES` object in `server.js`. Google Places API (New) has stricter type validation than the legacy API.
+### Google Places API (New) Limitations
+- **Maximum Results**: Only 1-20 results per request (set `RESULTS_PER_CATEGORY=20`)
+- **Unsupported Types**: Remove unsupported types from `PLACE_TYPES` object in `server.js`
+- **Stricter Validation**: Google Places API (New) has stricter type validation than legacy API
 
 ### Railway Deployment
 - Ensure `railway.toml` uses `builder = "dockerfile"`
