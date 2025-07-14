@@ -279,6 +279,7 @@
 
         <div class="control-group">
             <label>Select Categories to Load:</label>
+            <p style="font-size: 0.8rem; color: #666; margin: 5px 0;">Click to select/deselect categories</p>
             <div class="category-filters">
                 <div class="category-filter" data-category="restaurants">
                     🍽️ Restaurants
@@ -292,6 +293,9 @@
                 <div class="category-filter" data-category="culture">
                     🎭 Culture
                 </div>
+            </div>
+            <div id="selectedCategoriesDisplay" style="margin-top: 10px; font-size: 0.9rem; color: #1976D2; font-weight: bold;">
+                No categories selected
             </div>
         </div>
 
@@ -436,7 +440,10 @@
                     }
                     
                     console.log('Active categories:', Array.from(activeCategories));
+                    
+                    // Update displays
                     updateLoadButtonText();
+                    updateSelectedCategoriesDisplay();
                     
                     // Only update map if we already have data loaded
                     if (Object.keys(allPlaces).length > 0) {
@@ -625,15 +632,41 @@
 
         function updateLoadButtonText() {
             const loadBtn = document.getElementById('loadPlacesBtn');
+            if (!loadBtn) {
+                console.log('Load button not found yet');
+                return;
+            }
+            
             const selectedCount = activeCategories.size;
+            console.log('Updating button text, selected count:', selectedCount);
             
             if (selectedCount === 0) {
                 loadBtn.textContent = '🗺️ Select Categories First';
                 loadBtn.style.background = '#ccc';
+                loadBtn.style.cursor = 'not-allowed';
             } else {
                 const categories = Array.from(activeCategories).map(cat => CATEGORY_ICONS[cat]).join('');
                 loadBtn.textContent = `🗺️ Load ${categories} (${selectedCount} categories)`;
                 loadBtn.style.background = 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)';
+                loadBtn.style.cursor = 'pointer';
+            }
+        }
+
+        function updateSelectedCategoriesDisplay() {
+            const display = document.getElementById('selectedCategoriesDisplay');
+            if (!display) return;
+            
+            if (activeCategories.size === 0) {
+                display.textContent = 'No categories selected';
+                display.style.color = '#666';
+            } else {
+                const categoryNames = Array.from(activeCategories).map(cat => {
+                    const icon = CATEGORY_ICONS[cat];
+                    const name = cat.charAt(0).toUpperCase() + cat.slice(1);
+                    return `${icon} ${name}`;
+                }).join(', ');
+                display.textContent = `Selected: ${categoryNames}`;
+                display.style.color = '#1976D2';
             }
         }
 
@@ -666,8 +699,13 @@
             // Load map when Google Maps API is ready
             if (typeof google !== 'undefined') {
                 initMap();
-                updateLoadButtonText(); // Initialize button text
             }
+        });
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            updateLoadButtonText(); // Initialize button text
+            updateSelectedCategoriesDisplay(); // Initialize category display
         });
     </script>
 
