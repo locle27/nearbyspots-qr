@@ -34,6 +34,87 @@
             font-size: 1rem;
         }
 
+        /* Hotel Location Input Section */
+        .hotel-location-section {
+            background: white;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .location-input-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .location-input-header h3 {
+            margin: 0 0 5px 0;
+            color: #1976D2;
+            font-size: 1.3rem;
+        }
+
+        .location-input-header p {
+            margin: 0;
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .location-input-container {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 15px;
+        }
+
+        .btn-update-location {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-update-location:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-update-location:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .current-location-display {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .current-location-display span {
+            color: #2e7d32;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            .location-input-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn-update-location {
+                margin-top: 10px;
+            }
+        }
+
         .controls {
             background: white;
             padding: 20px;
@@ -1281,7 +1362,27 @@
 
     <div class="header">
         <h1>📍 Nearby Places</h1>
-        <p>Discover restaurants, landmarks, coffee shops & culture near 118 Hang Bac, Hanoi Old Quarter</p>
+        <p id="locationDescription">Discover restaurants, landmarks, coffee shops & culture near 118 Hang Bac, Hanoi Old Quarter</p>
+    </div>
+
+    <!-- Hotel Location Input Section -->
+    <div class="hotel-location-section">
+        <div class="location-input-header">
+            <h3>🏨 Hotel Location</h3>
+            <p>Change your hotel location to find nearby places anywhere</p>
+        </div>
+        <div class="location-input-container">
+            <div class="form-group" style="flex: 1;">
+                <label for="hotelMapsUrl">📍 Google Maps URL of your hotel/accommodation</label>
+                <input type="url" id="hotelMapsUrl" placeholder="Paste Google Maps link of your hotel location here..." style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem;">
+            </div>
+            <button type="button" id="updateLocationBtn" class="btn-update-location">
+                🔄 Update Location
+            </button>
+        </div>
+        <div class="current-location-display">
+            <span id="currentLocationText">📍 Current: 118 Hang Bac, Hanoi Old Quarter</span>
+        </div>
     </div>
 
     <div class="controls">
@@ -1296,13 +1397,13 @@
         </div>
 
         <div class="control-group">
-            <label>Select Categories to Load:</label>
-            <p style="font-size: 0.8rem; color: #666; margin: 5px 0;">Click to select/deselect categories</p>
+            <label>Select Category to Load:</label>
+            <p style="font-size: 0.8rem; color: #666; margin: 5px 0;">Click to select one category (single selection for easier viewing)</p>
             <div class="category-filters">
-                <div class="category-filter active" data-category="recommend">
+                <div class="category-filter" data-category="recommend">
                     ⭐ Recommended
                 </div>
-                <div class="category-filter" data-category="restaurants">
+                <div class="category-filter active" data-category="restaurants">
                     🍽️ Restaurants
                 </div>
                 <div class="category-filter" data-category="landmarks">
@@ -1487,7 +1588,7 @@
         let hotelMarker;
         let placeMarkers = [];
         let allPlaces = {};
-        let activeCategories = new Set(['recommend']); // Start with recommend selected by default
+        let activeCategories = new Set(['restaurants']); // Start with restaurants selected by default (single selection)
         let currentInfoWindow = null; // Track currently open info window
         let currentRadius = 2000; // Track current search radius (default to 2km for better coverage)
         let placeMarkerMap = new Map(); // Map place IDs to markers for cross-tab interaction
@@ -1651,21 +1752,22 @@
             console.log('Setting up event listeners');
             eventListenersSetup = true;
             
-            // Category filter toggles
+            // Category filter selection (single selection only)
             document.querySelectorAll('.category-filter').forEach(filter => {
                 filter.addEventListener('click', () => {
                     const category = filter.dataset.category;
                     console.log('Category clicked:', category);
                     
-                    if (activeCategories.has(category)) {
-                        activeCategories.delete(category);
-                        filter.classList.remove('active');
-                        console.log('Removed category:', category);
-                    } else {
-                        activeCategories.add(category);
-                        filter.classList.add('active');
-                        console.log('Added category:', category);
-                    }
+                    // Single selection: deactivate all categories first
+                    document.querySelectorAll('.category-filter').forEach(f => {
+                        f.classList.remove('active');
+                    });
+                    activeCategories.clear();
+                    
+                    // Activate the clicked category
+                    activeCategories.add(category);
+                    filter.classList.add('active');
+                    console.log('Selected single category:', category);
                     
                     console.log('Active categories:', Array.from(activeCategories));
                     
@@ -1683,6 +1785,9 @@
 
             // Load places button
             document.getElementById('loadPlacesBtn').addEventListener('click', loadPlaces);
+
+            // Hotel location update button
+            document.getElementById('updateLocationBtn').addEventListener('click', updateHotelLocation);
             
             // Clear places button
             document.getElementById('clearPlacesBtn').addEventListener('click', clearAllPlaces);
@@ -3396,6 +3501,139 @@
                     // Final fallback: open in new window
                     window.open(shareUrl, '_blank');
                 });
+            }
+        }
+
+        // Hotel Location Update Functions
+        function extractCoordinatesFromGoogleMapsUrl(url) {
+            console.log('Extracting coordinates from URL:', url);
+            
+            // Remove any whitespace
+            url = url.trim();
+            
+            // Different Google Maps URL patterns
+            const patterns = [
+                // Standard coordinates: @lat,lng,zoom
+                /@(-?\d+\.?\d*),(-?\d+\.?\d*),?\d*z?/,
+                // Query coordinates: q=lat,lng
+                /q=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+                // Place coordinates: !3d-lat!4d-lng
+                /!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/,
+                // Another format: ll=lat,lng
+                /ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+                // Data coordinates: data=lat,lng
+                /data=.*?(-?\d+\.?\d*),(-?\d+\.?\d*)/
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) {
+                    const lat = parseFloat(match[1]);
+                    const lng = parseFloat(match[2]);
+                    
+                    // Validate coordinates
+                    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                        console.log('Found coordinates:', { lat, lng });
+                        return { lat, lng };
+                    }
+                }
+            }
+            
+            console.log('No valid coordinates found in URL');
+            return null;
+        }
+
+        async function updateHotelLocation() {
+            const urlInput = document.getElementById('hotelMapsUrl');
+            const updateBtn = document.getElementById('updateLocationBtn');
+            const currentLocationText = document.getElementById('currentLocationText');
+            const locationDescription = document.getElementById('locationDescription');
+            
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                alert('Please paste a Google Maps URL first');
+                return;
+            }
+            
+            // Disable button and show loading
+            updateBtn.disabled = true;
+            updateBtn.textContent = '🔄 Extracting...';
+            
+            try {
+                // Extract coordinates from URL
+                const coordinates = extractCoordinatesFromGoogleMapsUrl(url);
+                
+                if (!coordinates) {
+                    throw new Error('Could not extract coordinates from the URL. Please make sure it\'s a valid Google Maps link.');
+                }
+                
+                // Update the global hotel location
+                HOTEL_LOCATION.lat = coordinates.lat;
+                HOTEL_LOCATION.lng = coordinates.lng;
+                
+                // Try to get address from coordinates using reverse geocoding
+                updateBtn.textContent = '🌐 Getting address...';
+                
+                try {
+                    const response = await fetch('/api/geocode-coordinates', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            latitude: coordinates.lat,
+                            longitude: coordinates.lng
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        HOTEL_LOCATION.address = data.address;
+                        HOTEL_LOCATION.name = 'Your Hotel Location';
+                        
+                        // Update displays
+                        currentLocationText.textContent = `📍 Current: ${data.address}`;
+                        locationDescription.textContent = `Discover restaurants, landmarks, coffee shops & culture near ${data.address}`;
+                    } else {
+                        // Use coordinates if reverse geocoding fails
+                        const coordsText = `${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}`;
+                        HOTEL_LOCATION.address = coordsText;
+                        HOTEL_LOCATION.name = 'Your Hotel Location';
+                        
+                        currentLocationText.textContent = `📍 Current: ${coordsText}`;
+                        locationDescription.textContent = `Discover restaurants, landmarks, coffee shops & culture near ${coordsText}`;
+                    }
+                } catch (geocodeError) {
+                    console.log('Reverse geocoding failed, using coordinates:', geocodeError);
+                    const coordsText = `${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}`;
+                    HOTEL_LOCATION.address = coordsText;
+                    HOTEL_LOCATION.name = 'Your Hotel Location';
+                    
+                    currentLocationText.textContent = `📍 Current: ${coordsText}`;
+                    locationDescription.textContent = `Discover restaurants, landmarks, coffee shops & culture near ${coordsText}`;
+                }
+                
+                // Update map if it exists
+                if (map && hotelMarker) {
+                    map.setCenter(HOTEL_LOCATION);
+                    hotelMarker.setPosition(HOTEL_LOCATION);
+                    map.setZoom(14);
+                }
+                
+                // Clear existing places so user knows to reload
+                clearAllPlaces();
+                
+                // Clear the input
+                urlInput.value = '';
+                
+                alert('✅ Hotel location updated successfully! Click "Load Places on Map" to find nearby places.');
+                
+            } catch (error) {
+                console.error('Error updating hotel location:', error);
+                alert('❌ Error: ' + error.message);
+            } finally {
+                // Re-enable button
+                updateBtn.disabled = false;
+                updateBtn.textContent = '🔄 Update Location';
             }
         }
         
