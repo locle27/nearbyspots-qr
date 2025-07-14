@@ -62,7 +62,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 const DEFAULT_SEARCH_RADIUS = parseInt(process.env.DEFAULT_SEARCH_RADIUS) || 2000; // Increased from 1000m to 2000m for better coverage
 const MAX_SEARCH_RADIUS = parseInt(process.env.MAX_SEARCH_RADIUS) || 10000;
-const RESULTS_PER_CATEGORY = parseInt(process.env.RESULTS_PER_CATEGORY) || 100; // Increased to 100 for better landmark coverage
+const RESULTS_PER_CATEGORY = Math.min(parseInt(process.env.RESULTS_PER_CATEGORY) || 20, 20); // Google Places API (New) max limit is 20
 
 // Default Hotel Location - 118 Hang Bac, Hanoi Old Quarter
 const DEFAULT_HOTEL = {
@@ -293,9 +293,12 @@ async function searchNearbyPlaces(latitude, longitude, radius, types) {
   try {
     console.log(`🔍 Searching for ${types.join(', ')} within ${radius}m of ${latitude}, ${longitude}`);
     
+    // Ensure maxResultCount is within Google Places API (New) limits
+    const maxResults = Math.min(Math.max(RESULTS_PER_CATEGORY, 1), 20);
+    
     const requestBody = {
       includedTypes: types,
-      maxResultCount: RESULTS_PER_CATEGORY,
+      maxResultCount: maxResults,
       locationRestriction: {
         circle: {
           center: { latitude, longitude },
@@ -907,7 +910,7 @@ app.post('/api/search-nearby', async (req, res) => {
                     radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
                   }
                 },
-                maxResultCount: RESULTS_PER_CATEGORY,
+                maxResultCount: Math.min(RESULTS_PER_CATEGORY, 20),
                 languageCode: 'en'
               },
               {
@@ -972,7 +975,7 @@ app.post('/api/search-nearby', async (req, res) => {
                     radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
                   }
                 },
-                maxResultCount: RESULTS_PER_CATEGORY,
+                maxResultCount: Math.min(RESULTS_PER_CATEGORY, 20),
                 languageCode: 'en'
               },
               {
@@ -1045,7 +1048,7 @@ app.post('/api/search-nearby', async (req, res) => {
                     radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
                   }
                 },
-                maxResultCount: RESULTS_PER_CATEGORY,
+                maxResultCount: Math.min(RESULTS_PER_CATEGORY, 20),
                 languageCode: 'en'
               },
               {
@@ -1111,7 +1114,7 @@ app.post('/api/search-nearby', async (req, res) => {
                     radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
                   }
                 },
-                maxResultCount: RESULTS_PER_CATEGORY,
+                maxResultCount: Math.min(RESULTS_PER_CATEGORY, 20),
                 languageCode: 'en'
               },
               {
@@ -1184,7 +1187,7 @@ app.post('/api/search-nearby', async (req, res) => {
                     radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
                   }
                 },
-                maxResultCount: RESULTS_PER_CATEGORY,
+                maxResultCount: Math.min(RESULTS_PER_CATEGORY, 20),
                 languageCode: 'en'
               },
               {
@@ -1249,7 +1252,7 @@ app.post('/api/search-nearby', async (req, res) => {
                     radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
                   }
                 },
-                maxResultCount: RESULTS_PER_CATEGORY,
+                maxResultCount: Math.min(RESULTS_PER_CATEGORY, 20),
                 languageCode: 'en'
               },
               {
@@ -1322,7 +1325,7 @@ app.post('/api/search-nearby', async (req, res) => {
                     radius: Math.min(searchRadius, MAX_SEARCH_RADIUS)
                   }
                 },
-                maxResultCount: RESULTS_PER_CATEGORY,
+                maxResultCount: Math.min(RESULTS_PER_CATEGORY, 20),
                 languageCode: 'en'
               },
               {
