@@ -3054,14 +3054,55 @@
             }, 100);
         }
         
+        // Global variables for adaptive loading
+        let currentLoadingDelay = 300; // Start with 300ms delay
+        let recentFailures = 0;
+        
         function loadGalleryImages(place) {
             console.log('Loading gallery images for:', place.name);
             
             // Get all gallery images
             const galleryImages = document.querySelectorAll('.gallery-image');
             
-            // Load images sequentially with longer delays to avoid 429 errors
-            loadImageSequentially(galleryImages, 0);
+            if (galleryImages.length === 0) return;
+            
+            // Reset adaptive delay for new gallery
+            currentLoadingDelay = 300;
+            recentFailures = 0;
+            
+            // Load first 2 images in parallel for faster initial display
+            if (galleryImages.length >= 2) {
+                console.log('🚀 Loading first 2 images in parallel for faster display');
+                
+                const img1 = galleryImages[0];
+                const img2 = galleryImages[1];
+                
+                if (img1.getAttribute('data-real-src')) {
+                    loadImageWithRetry(img1, img1.getAttribute('data-real-src'), 
+                        document.getElementById(img1.getAttribute('data-loading-id')),
+                        document.getElementById(img1.getAttribute('data-error-id')), 1, 0, (success) => {
+                            if (!success) recentFailures++;
+                        });
+                }
+                
+                setTimeout(() => {
+                    if (img2.getAttribute('data-real-src')) {
+                        loadImageWithRetry(img2, img2.getAttribute('data-real-src'),
+                            document.getElementById(img2.getAttribute('data-loading-id')),
+                            document.getElementById(img2.getAttribute('data-error-id')), 2, 0, (success) => {
+                                if (!success) recentFailures++;
+                            });
+                    }
+                }, 150); // Small delay for second image
+                
+                // Continue with remaining images sequentially
+                setTimeout(() => {
+                    loadImageSequentially(galleryImages, 2);
+                }, currentLoadingDelay);
+            } else {
+                // Single image or fallback to sequential
+                loadImageSequentially(galleryImages, 0);
+            }
         }
         
         function loadImageSequentially(galleryImages, currentIndex) {
@@ -3087,9 +3128,26 @@
             console.log(`Loading gallery image ${currentIndex + 1}/${galleryImages.length}:`, realSrc);
             
             // Try loading with retry logic
-            loadImageWithRetry(img, realSrc, loadingEl, errorEl, currentIndex + 1, 0, () => {
-                // Success or final failure - move to next image
-                setTimeout(() => loadImageSequentially(galleryImages, currentIndex + 1), 800); // 800ms between images
+            loadImageWithRetry(img, realSrc, loadingEl, errorEl, currentIndex + 1, 0, (success) => {
+                // Adjust delay based on success/failure
+                if (!success) {
+                    recentFailures++;
+                    if (recentFailures >= 2) {
+                        // Increase delay if we're getting rate limited
+                        currentLoadingDelay = Math.min(currentLoadingDelay * 1.5, 1000);
+                        console.log(`⚠️ Increased loading delay to ${currentLoadingDelay}ms due to failures`);
+                    }
+                } else {
+                    // Decrease delay on success
+                    if (recentFailures > 0) recentFailures--;
+                    if (recentFailures === 0 && currentLoadingDelay > 300) {
+                        currentLoadingDelay = Math.max(currentLoadingDelay * 0.8, 300);
+                        console.log(`✅ Decreased loading delay to ${currentLoadingDelay}ms`);
+                    }
+                }
+                
+                // Move to next image with adaptive delay
+                setTimeout(() => loadImageSequentially(galleryImages, currentIndex + 1), currentLoadingDelay);
             });
         }
         
@@ -3108,15 +3166,15 @@
                 // Show actual image
                 img.src = realSrc;
                 img.style.display = 'block';
-                onComplete();
+                onComplete(true); // Success
             };
             
             testImg.onerror = () => {
                 console.log(`❌ Gallery image ${imageNumber} failed to load (attempt ${retryCount + 1})`);
                 
                 if (retryCount < maxRetries) {
-                    // Retry with exponential backoff
-                    const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+                    // Faster retry delays: 500ms, 1s
+                    const delay = (retryCount + 1) * 500; // 500ms, 1000ms
                     console.log(`Retrying image ${imageNumber} in ${delay}ms...`);
                     setTimeout(() => {
                         loadImageWithRetry(img, realSrc, loadingEl, errorEl, imageNumber, retryCount + 1, onComplete);
@@ -3130,7 +3188,7 @@
                     if (errorEl) {
                         errorEl.style.display = 'flex';
                     }
-                    onComplete();
+                    onComplete(false); // Failure
                 }
             };
             
