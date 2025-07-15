@@ -168,13 +168,58 @@ function loadRecommendations() {
   }
 }
 
-// Save recommendations to file
+// Save recommendations to file with backup
 function saveRecommendations() {
   try {
+    // Create backup directory if it doesn't exist
+    const backupDir = path.join(__dirname, 'data', 'backups');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+    
+    // Create backup file with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupFile = path.join(backupDir, `recommendations_backup_${timestamp}.json`);
+    
+    // If main file exists, create backup before saving
+    if (fs.existsSync(RECOMMENDATIONS_FILE)) {
+      fs.copyFileSync(RECOMMENDATIONS_FILE, backupFile);
+      console.log(`📋 Created backup: ${backupFile}`);
+    }
+    
+    // Save main file
     fs.writeFileSync(RECOMMENDATIONS_FILE, JSON.stringify(manualRecommendations, null, 2));
     console.log(`💾 Saved ${manualRecommendations.length} recommendations`);
+    
+    // Keep only last 10 backups to prevent storage overflow
+    cleanupOldBackups(backupDir);
+    
   } catch (error) {
     console.error('Error saving recommendations:', error);
+  }
+}
+
+// Clean up old backup files (keep only last 10)
+function cleanupOldBackups(backupDir) {
+  try {
+    const files = fs.readdirSync(backupDir)
+      .filter(file => file.startsWith('recommendations_backup_'))
+      .map(file => ({
+        name: file,
+        path: path.join(backupDir, file),
+        mtime: fs.statSync(path.join(backupDir, file)).mtime
+      }))
+      .sort((a, b) => b.mtime - a.mtime); // Sort by modification time, newest first
+    
+    // Keep only the 10 most recent backups
+    const filesToDelete = files.slice(10);
+    filesToDelete.forEach(file => {
+      fs.unlinkSync(file.path);
+      console.log(`🗑️ Deleted old backup: ${file.name}`);
+    });
+    
+  } catch (error) {
+    console.error('Error cleaning up backups:', error);
   }
 }
 
@@ -899,6 +944,112 @@ app.delete('/api/recommendations/:id', (req, res) => {
   } catch (error) {
     console.error('Error deleting recommendation:', error);
     res.status(500).json({ error: 'Failed to delete recommendation' });
+  }
+});
+
+// Backup management endpoints
+app.get('/api/backups', (req, res) => {
+  try {
+    const backupDir = path.join(__dirname, 'data', 'backups');
+    
+    if (!fs.existsSync(backupDir)) {
+      return res.json({ success: true, backups: [] });
+    }
+    
+    const files = fs.readdirSync(backupDir)
+      .filter(file => file.startsWith('recommendations_backup_'))
+      .map(file => {
+        const filePath = path.join(backupDir, file);
+        const stats = fs.statSync(filePath);
+        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        
+        return {
+          id: file,
+          filename: file,
+          created: stats.mtime,
+          size: stats.size,
+          count: data.length,
+          path: filePath
+        };
+      })
+      .sort((a, b) => b.created - a.created); // Sort by creation time, newest first
+    
+    res.json({ success: true, backups: files });
+  } catch (error) {
+    console.error('Error listing backups:', error);
+    res.status(500).json({ error: 'Failed to list backups' });
+  }
+});
+
+app.post('/api/backups/restore/:backupId', (req, res) => {
+  try {
+    const { backupId } = req.params;
+    const backupDir = path.join(__dirname, 'data', 'backups');
+    const backupFile = path.join(backupDir, backupId);
+    
+    if (!fs.existsSync(backupFile)) {
+      return res.status(404).json({ error: 'Backup file not found' });
+    }
+    
+    // Create backup of current state before restoring
+    const currentBackupTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const currentBackupFile = path.join(backupDir, `recommendations_backup_pre_restore_${currentBackupTimestamp}.json`);
+    
+    if (fs.existsSync(RECOMMENDATIONS_FILE)) {
+      fs.copyFileSync(RECOMMENDATIONS_FILE, currentBackupFile);
+      console.log(`📋 Created pre-restore backup: ${currentBackupFile}`);
+    }
+    
+    // Restore from backup
+    const backupData = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
+    manualRecommendations = backupData;
+    
+    // Save restored data
+    fs.writeFileSync(RECOMMENDATIONS_FILE, JSON.stringify(manualRecommendations, null, 2));
+    
+    console.log(`🔄 Restored ${manualRecommendations.length} recommendations from backup: ${backupId}`);
+    
+    res.json({
+      success: true,
+      message: 'Backup restored successfully',
+      restored: manualRecommendations.length,
+      backupId: backupId
+    });
+    
+  } catch (error) {
+    console.error('Error restoring backup:', error);
+    res.status(500).json({ error: 'Failed to restore backup' });
+  }
+});
+
+app.get('/api/backups/:backupId', (req, res) => {
+  try {
+    const { backupId } = req.params;
+    const backupDir = path.join(__dirname, 'data', 'backups');
+    const backupFile = path.join(backupDir, backupId);
+    
+    if (!fs.existsSync(backupFile)) {
+      return res.status(404).json({ error: 'Backup file not found' });
+    }
+    
+    const stats = fs.statSync(backupFile);
+    const data = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
+    
+    res.json({
+      success: true,
+      backup: {
+        id: backupId,
+        filename: backupId,
+        created: stats.mtime,
+        size: stats.size,
+        count: data.length,
+        recommendations: data
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error getting backup details:', error);
+    res.status(500).json({ error: 'Failed to get backup details' });
   }
 });
 

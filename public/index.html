@@ -757,6 +757,30 @@
             background: rgba(255,0,0,0.8);
         }
 
+        .image-extract-address {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: rgba(0, 123, 255, 0.9);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 11px;
+            padding: 4px 8px;
+            transition: background-color 0.3s;
+            font-weight: 500;
+        }
+
+        .image-extract-address:hover {
+            background: rgba(0, 123, 255, 1);
+        }
+
+        .image-extract-address:disabled {
+            background: rgba(128, 128, 128, 0.8);
+            cursor: not-allowed;
+        }
+
         /* Structured Content Styles */
         .structured-content-section {
             margin-bottom: 20px;
@@ -4317,6 +4341,7 @@ Summary: Description of the place..."></textarea>
                 previewItem.innerHTML = `
                     <img src="${e.target.result}" alt="Preview">
                     <button type="button" class="image-preview-remove" onclick="removeImagePreview('${imageId}')">×</button>
+                    <button type="button" class="image-extract-address" onclick="extractAddressFromImage('${imageId}', '${e.target.result}')">📍 Extract Address</button>
                 `;
                 
                 previewContainer.appendChild(previewItem);
@@ -4604,6 +4629,145 @@ Summary: Description of the place..."></textarea>
             
             // Fallback: generate directions URL from address
             return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+        }
+
+        // Extract address from image using OCR
+        async function extractAddressFromImage(imageId, imageDataUrl) {
+            const button = document.querySelector(`[data-image-id="${imageId}"] .image-extract-address`);
+            const originalText = button.textContent;
+            
+            try {
+                button.textContent = '🔍 Extracting...';
+                button.disabled = true;
+                
+                console.log('📸 Extracting address from image:', imageId);
+                
+                // Use Tesseract.js for OCR (Client-side OCR)
+                if (typeof Tesseract === 'undefined') {
+                    // Load Tesseract.js dynamically
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js';
+                    document.head.appendChild(script);
+                    
+                    // Wait for library to load
+                    await new Promise((resolve) => {
+                        script.onload = resolve;
+                    });
+                }
+                
+                button.textContent = '🔍 Reading text...';
+                
+                // Extract text from image
+                const result = await Tesseract.recognize(imageDataUrl, 'eng+vie', {
+                    logger: m => console.log('OCR:', m)
+                });
+                
+                const extractedText = result.data.text;
+                console.log('📝 Extracted text:', extractedText);
+                
+                if (!extractedText || extractedText.trim().length === 0) {
+                    throw new Error('No text found in image');
+                }
+                
+                button.textContent = '🔍 Finding address...';
+                
+                // Try to find address patterns in the extracted text
+                const addressPatterns = [
+                    // Vietnamese address patterns
+                    /\d+[\/\-]?\d*\s+[^,\n]+,\s*[^,\n]+/gi,
+                    // Street number + street name
+                    /\d+\s+[A-Za-z\s]+\s+(Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Boulevard|Blvd|Drive|Dr|Way|Phố|Đường|phố|đường)/gi,
+                    // Any line with numbers and common address keywords
+                    /.*\d+.*(?:Street|St|Road|Rd|Avenue|Ave|Phố|Đường|phố|đường).*$/gmi,
+                    // Generic patterns for addresses
+                    /\d+[A-Za-z]?\s+[^,\n]+(?:,\s*[^,\n]+)*/gi
+                ];
+                
+                let detectedAddress = null;
+                
+                for (const pattern of addressPatterns) {
+                    const matches = extractedText.match(pattern);
+                    if (matches && matches.length > 0) {
+                        // Take the first match and clean it up
+                        detectedAddress = matches[0].trim().replace(/\s+/g, ' ');
+                        break;
+                    }
+                }
+                
+                if (!detectedAddress) {
+                    // Fallback: look for any line with numbers (potential address)
+                    const lines = extractedText.split('\n').filter(line => line.trim().length > 0);
+                    for (const line of lines) {
+                        if (/\d+/.test(line) && line.length > 5) {
+                            detectedAddress = line.trim();
+                            break;
+                        }
+                    }
+                }
+                
+                if (!detectedAddress) {
+                    throw new Error('No address pattern found in extracted text');
+                }
+                
+                console.log('📍 Detected address:', detectedAddress);
+                
+                button.textContent = '📍 Generating map...';
+                
+                // Generate Google Maps URL
+                const googleMapsUrl = await generateGoogleMapsUrl(detectedAddress);
+                
+                // Auto-populate the address field
+                document.getElementById('recAddress').value = detectedAddress;
+                
+                // Auto-populate the Google Maps URL field
+                if (googleMapsUrl) {
+                    document.getElementById('googleMapsUrl').value = googleMapsUrl;
+                    
+                    // Show the generated URL
+                    const urlDisplay = document.getElementById('generatedUrlDisplay');
+                    const urlLink = document.getElementById('generatedUrlLink');
+                    urlLink.href = googleMapsUrl;
+                    urlLink.textContent = googleMapsUrl;
+                    urlDisplay.style.display = 'block';
+                }
+                
+                // Try to get coordinates for the address
+                try {
+                    const coordinates = await getCoordinatesFromAddress(detectedAddress);
+                    if (coordinates) {
+                        document.getElementById('recLatitude').value = coordinates.latitude;
+                        document.getElementById('recLongitude').value = coordinates.longitude;
+                    }
+                } catch (error) {
+                    console.warn('Could not get coordinates for address:', error);
+                }
+                
+                button.textContent = '✅ Address extracted!';
+                button.style.background = 'rgba(40, 167, 69, 0.9)';
+                
+                // Show success message
+                alert(`📍 Address extracted successfully!\n\nAddress: ${detectedAddress}\n\nThe address has been automatically filled in the form. You can now submit the recommendation.`);
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = 'rgba(0, 123, 255, 0.9)';
+                    button.disabled = false;
+                }, 3000);
+                
+            } catch (error) {
+                console.error('❌ Error extracting address:', error);
+                
+                button.textContent = '❌ Failed';
+                button.style.background = 'rgba(220, 53, 69, 0.9)';
+                
+                alert(`❌ Could not extract address from image.\n\nError: ${error.message}\n\nPlease try:\n1. Using a clearer image\n2. Ensuring the address is visible and not obscured\n3. Manually entering the address`);
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = 'rgba(0, 123, 255, 0.9)';
+                    button.disabled = false;
+                }, 3000);
+            }
         }
 
         async function quickAddRecommendation() {
