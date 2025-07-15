@@ -505,8 +505,8 @@ app.get('/', verifyQRAccess, (req, res) => {
     console.log(`🌐 Direct web access from ${clientIp} - Loading hotel-map interface`);
   }
   
-  // Serve the enhanced hotel-map interface directly (now copied to index.html)
-  const htmlPath = path.join(__dirname, 'public', 'index.html');
+  // Serve the enhanced hotel-map interface directly
+  const htmlPath = path.join(__dirname, 'public', 'hotel-map.html');
   res.sendFile(htmlPath);
 });
 
@@ -746,7 +746,8 @@ app.post('/api/recommendations', (req, res) => {
       userRatingCount = 0,
       description = '',
       websiteUri = '',
-      featured = false
+      featured = false,
+      images = []
     } = req.body;
     
     // Validation
@@ -780,6 +781,11 @@ app.post('/api/recommendations', (req, res) => {
       description: sanitizeInput(description, 'string'),
       category: 'recommend',
       photos: [],
+      images: Array.isArray(images) ? images.map(img => ({
+        id: sanitizeInput(img.id, 'string'),
+        name: sanitizeInput(img.name, 'string'),
+        dataUrl: img.dataUrl // Store base64 data URL for uploaded images
+      })) : [],
       websiteUri: sanitizeInput(websiteUri, 'string'),
       addedBy: 'manual_entry',
       addedDate: new Date().toISOString(),

@@ -677,6 +677,86 @@
             border-color: #FFD700;
         }
 
+        /* Image Upload Styles */
+        .image-upload-area {
+            width: 100%;
+        }
+
+        .image-drop-zone {
+            border: 2px dashed #e0e0e0;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .image-drop-zone:hover,
+        .image-drop-zone.drag-over {
+            border-color: #1976D2;
+            background: #f3f7ff;
+        }
+
+        .drop-zone-content {
+            pointer-events: none;
+        }
+
+        .drop-zone-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .drop-zone-hint {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .image-preview-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .image-preview-item img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .image-preview-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-preview-remove:hover {
+            background: rgba(255,0,0,0.8);
+        }
+
         .form-actions {
             display: flex;
             gap: 10px;
@@ -1506,6 +1586,20 @@
                 <label for="recDescription">Description</label>
                 <textarea id="recDescription" rows="3" placeholder="Brief description of this place..."></textarea>
             </div>
+            <div class="form-group">
+                <label for="recImages">📸 Images (Paste or Upload)</label>
+                <div class="image-upload-area" id="imageUploadArea">
+                    <div class="image-drop-zone" id="imageDropZone">
+                        <div class="drop-zone-content">
+                            <span class="drop-zone-icon">📷</span>
+                            <p>Paste images (Ctrl+V) or click to upload</p>
+                            <p class="drop-zone-hint">Supports JPG, PNG, GIF • Max 5MB per image</p>
+                        </div>
+                        <input type="file" id="imageFileInput" accept="image/*" multiple style="display: none;">
+                    </div>
+                    <div class="image-preview-container" id="imagePreviewContainer"></div>
+                </div>
+            </div>
             <div class="form-row">
                 <div class="form-group">
                     <label for="recWebsite">Website URL</label>
@@ -2146,6 +2240,7 @@
                 adminBackdrop.classList.remove('show');
                 document.body.style.overflow = 'auto';
                 addRecommendationForm.reset();
+                clearImagePreviews();
             }
             
             closeAdminBtn.addEventListener('click', hideAdminPanel);
@@ -2333,7 +2428,12 @@
                 rating: parseFloat(document.getElementById('recRating').value) || 0,
                 description: document.getElementById('recDescription').value.trim(),
                 websiteUri: document.getElementById('recWebsite').value.trim(),
-                featured: document.getElementById('recFeatured').checked
+                featured: document.getElementById('recFeatured').checked,
+                images: uploadedImages.map(img => ({
+                    id: img.id,
+                    name: img.name,
+                    dataUrl: img.dataUrl
+                }))
             };
             
             // Validation
@@ -2392,6 +2492,7 @@
                     document.getElementById('adminBackdrop').classList.remove('show');
                     document.body.style.overflow = 'auto';
                     form.reset();
+                    clearImagePreviews();
                     
                     console.log(`Added recommendation: ${newRec.name} at ${distance}m from hotel`);
                 } else {
@@ -3878,6 +3979,117 @@
                 });
             }
         });
+
+        // Image upload functionality
+        let uploadedImages = [];
+
+        function initImageUpload() {
+            const dropZone = document.getElementById('imageDropZone');
+            const fileInput = document.getElementById('imageFileInput');
+            const previewContainer = document.getElementById('imagePreviewContainer');
+
+            // Click to upload
+            dropZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // File input change
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+
+            // Drag and drop
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            // Global paste event for images
+            document.addEventListener('paste', (e) => {
+                const adminPanel = document.getElementById('adminPanel');
+                if (adminPanel.style.display !== 'none') {
+                    const items = e.clipboardData.items;
+                    for (let item of items) {
+                        if (item.type.startsWith('image/')) {
+                            const file = item.getAsFile();
+                            handleFiles([file]);
+                        }
+                    }
+                }
+            });
+        }
+
+        function handleFiles(files) {
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                        alert('Image size must be less than 5MB');
+                        continue;
+                    }
+                    addImagePreview(file);
+                }
+            }
+        }
+
+        function addImagePreview(file) {
+            const reader = new FileReader();
+            const imageId = 'img_' + Date.now() + '_' + Math.random().toString(36).substring(7);
+            
+            reader.onload = (e) => {
+                const previewContainer = document.getElementById('imagePreviewContainer');
+                const previewItem = document.createElement('div');
+                previewItem.className = 'image-preview-item';
+                previewItem.dataset.imageId = imageId;
+                
+                previewItem.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview">
+                    <button type="button" class="image-preview-remove" onclick="removeImagePreview('${imageId}')">×</button>
+                `;
+                
+                previewContainer.appendChild(previewItem);
+                
+                // Store image data
+                uploadedImages.push({
+                    id: imageId,
+                    file: file,
+                    dataUrl: e.target.result,
+                    name: file.name
+                });
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function removeImagePreview(imageId) {
+            // Remove from DOM
+            const previewItem = document.querySelector(`[data-image-id="${imageId}"]`);
+            if (previewItem) {
+                previewItem.remove();
+            }
+            
+            // Remove from uploaded images array
+            uploadedImages = uploadedImages.filter(img => img.id !== imageId);
+        }
+
+        function clearImagePreviews() {
+            uploadedImages = [];
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            previewContainer.innerHTML = '';
+        }
+
+        // Initialize image upload when DOM is ready
+        document.addEventListener('DOMContentLoaded', initImageUpload);
     </script>
 
     <!-- Load Google Maps API -->
