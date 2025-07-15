@@ -866,6 +866,39 @@
             text-decoration: underline;
         }
 
+        /* Delete Button Styles */
+        .delete-recommendation-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #dc3545;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .delete-recommendation-btn:hover {
+            background: #dc3545;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .delete-recommendation-btn:active {
+            transform: scale(0.95);
+        }
+
+        .place-item {
+            position: relative;
+        }
+
         .form-actions {
             display: flex;
             gap: 10px;
@@ -2288,6 +2321,13 @@ Summary: Description of the place..."></textarea>
             // Test to ensure the image container exists
             console.log(`Setting innerHTML for place item ${place.name}`);
             
+            // Add delete button only for recommendations
+            const deleteButtonHtml = place.category === 'recommend' ? `
+                <button class="delete-recommendation-btn" onclick="deleteRecommendation('${place.id}', event)" title="Delete this recommendation">
+                    🗑️
+                </button>
+            ` : '';
+
             item.innerHTML = `
                 ${imageElement}
                 <div class="place-details">
@@ -2301,6 +2341,7 @@ Summary: Description of the place..."></textarea>
                         </span>
                     </div>
                 </div>
+                ${deleteButtonHtml}
             `;
             
             // Debug: Check if the image was actually added to the DOM
@@ -2562,38 +2603,65 @@ Summary: Description of the place..."></textarea>
             }
         }
 
+        let isSubmitting = false; // Global flag to prevent duplicate submissions
+        
         async function addNewRecommendation() {
-            const form = document.getElementById('addRecommendationForm');
-            const formData = new FormData(form);
-            
-            const recommendation = {
-                name: document.getElementById('recName').value.trim(),
-                address: document.getElementById('recAddress').value.trim(),
-                latitude: parseFloat(document.getElementById('recLatitude').value),
-                longitude: parseFloat(document.getElementById('recLongitude').value),
-                rating: parseFloat(document.getElementById('recRating').value) || 0,
-                description: document.getElementById('recDescription').value.trim(),
-                websiteUri: document.getElementById('recWebsite').value.trim(),
-                featured: document.getElementById('recFeatured').checked,
-                images: uploadedImages.map(img => ({
-                    id: img.id,
-                    name: img.name,
-                    dataUrl: img.dataUrl
-                }))
-            };
-            
-            // Validation
-            if (!recommendation.name || !recommendation.address || !recommendation.latitude || !recommendation.longitude) {
-                alert('Please fill in all required fields (Name, Address, Latitude, Longitude)');
+            // Prevent duplicate submissions
+            if (isSubmitting) {
+                console.log('⚠️ Submission already in progress, ignoring duplicate request');
                 return;
             }
             
-            if (isNaN(recommendation.latitude) || isNaN(recommendation.longitude)) {
-                alert('Please enter valid coordinates');
-                return;
+            const form = document.getElementById('addRecommendationForm');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const formData = new FormData(form);
+            
+            // Set submission state with visual feedback
+            isSubmitting = true;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span style="display: inline-block; animation: spin 1s linear infinite;">⏳</span> Adding...';
+            
+            // Add spinner animation if not already defined
+            if (!document.querySelector('#spinner-style')) {
+                const style = document.createElement('style');
+                style.id = 'spinner-style';
+                style.textContent = `
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                `;
+                document.head.appendChild(style);
             }
             
             try {
+                const recommendation = {
+                    name: document.getElementById('recName').value.trim(),
+                    address: document.getElementById('recAddress').value.trim(),
+                    latitude: parseFloat(document.getElementById('recLatitude').value),
+                    longitude: parseFloat(document.getElementById('recLongitude').value),
+                    rating: parseFloat(document.getElementById('recRating').value) || 0,
+                    description: document.getElementById('recDescription').value.trim(),
+                    websiteUri: document.getElementById('recWebsite').value.trim(),
+                    featured: document.getElementById('recFeatured').checked,
+                    images: uploadedImages.map(img => ({
+                        id: img.id,
+                        name: img.name,
+                        dataUrl: img.dataUrl
+                    }))
+                };
+                
+                // Validation
+                if (!recommendation.name || !recommendation.address || !recommendation.latitude || !recommendation.longitude) {
+                    alert('Please fill in all required fields (Name, Address, Latitude, Longitude)');
+                    return;
+                }
+                
+                if (isNaN(recommendation.latitude) || isNaN(recommendation.longitude)) {
+                    alert('Please enter valid coordinates');
+                    return;
+                }
+                
                 console.log('Adding new recommendation:', recommendation);
                 
                 const response = await fetch('/api/recommendations', {
@@ -2647,6 +2715,11 @@ Summary: Description of the place..."></textarea>
             } catch (error) {
                 console.error('Error adding recommendation:', error);
                 alert('❌ Network error. Please try again.');
+            } finally {
+                // Reset submission state
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Add Recommendation';
             }
         }
 
@@ -4272,6 +4345,55 @@ Summary: Description of the place..."></textarea>
         // Initialize image upload when DOM is ready
         document.addEventListener('DOMContentLoaded', initImageUpload);
 
+        // Delete recommendation functionality
+        async function deleteRecommendation(recommendationId, event) {
+            // Prevent triggering the place click event
+            event.stopPropagation();
+            
+            // Find the recommendation
+            const recommendation = allPlaces.recommend?.find(rec => rec.id === recommendationId);
+            if (!recommendation) {
+                alert('Recommendation not found');
+                return;
+            }
+            
+            // Confirm deletion
+            const confirmDelete = confirm(`Are you sure you want to delete "${recommendation.name}"?`);
+            if (!confirmDelete) {
+                return;
+            }
+            
+            try {
+                // Call the delete API
+                const response = await fetch(`/api/recommendations/${recommendationId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // Remove from local data
+                    allPlaces.recommend = allPlaces.recommend.filter(rec => rec.id !== recommendationId);
+                    
+                    // Update displays
+                    updateMapMarkers();
+                    updateStats();
+                    updatePlacesList();
+                    
+                    alert(`✅ Successfully deleted: ${recommendation.name}`);
+                    console.log(`Deleted recommendation: ${recommendation.name}`);
+                } else {
+                    alert(`❌ Failed to delete recommendation: ${result.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Error deleting recommendation:', error);
+                alert('❌ Network error. Please try again.');
+            }
+        }
+
         // Structured content parsing functionality
         let parsedData = null;
 
@@ -4482,9 +4604,16 @@ Summary: Description of the place..."></textarea>
                 return;
             }
             
+            // Prevent duplicate submissions
+            if (isSubmitting) {
+                console.log('⚠️ Submission already in progress, ignoring quick add request');
+                return;
+            }
+            
             const quickAddBtn = document.getElementById('quickAddBtn');
+            isSubmitting = true;
             quickAddBtn.disabled = true;
-            quickAddBtn.textContent = 'Adding...';
+            quickAddBtn.innerHTML = '<span style="display: inline-block; animation: spin 1s linear infinite;">⏳</span> Adding...';
             
             try {
                 // Generate Google Maps URL
@@ -4598,8 +4727,9 @@ Summary: Description of the place..."></textarea>
                 console.error('Error in quick add:', error);
                 alert('❌ Error adding recommendation: ' + error.message);
             } finally {
+                isSubmitting = false;
                 quickAddBtn.disabled = false;
-                quickAddBtn.textContent = 'Quick Add Recommendation';
+                quickAddBtn.innerHTML = 'Quick Add Recommendation';
             }
         }
 
