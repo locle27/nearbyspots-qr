@@ -2365,7 +2365,8 @@ Summary: Description of the place..."></textarea>
 
         async function fetchManualRecommendations() {
             try {
-                console.log('Fetching manual recommendations from API...');
+                console.log('🔍 Fetching manual recommendations from API...');
+                console.log('🌍 Hotel location:', HOTEL_LOCATION);
                 
                 const response = await fetch(`/api/recommendations?latitude=${HOTEL_LOCATION.lat}&longitude=${HOTEL_LOCATION.lng}`);
                 
@@ -2374,29 +2375,37 @@ Summary: Description of the place..."></textarea>
                 }
                 
                 const data = await response.json();
-                console.log('Manual recommendations response:', data);
+                console.log('📊 Manual recommendations response:', data);
+                console.log('📈 Total recommendations from API:', data.recommendations?.length || 0);
                 
                 if (data.success && data.recommendations) {
                     // Store recommendations in allPlaces under 'recommend' category
                     if (!allPlaces.recommend) {
                         allPlaces.recommend = [];
+                        console.log('📂 Created new recommend category in allPlaces');
                     }
+                    
+                    const beforeCount = allPlaces.recommend.length;
                     
                     // Merge with existing recommendations (avoid duplicates)
                     const existingIds = new Set(allPlaces.recommend.map(place => place.id));
                     const newRecommendations = data.recommendations.filter(rec => !existingIds.has(rec.id));
+                    
+                    console.log('🔄 Filtering: existing =', existingIds.size, 'new =', newRecommendations.length);
                     
                     allPlaces.recommend.push(...newRecommendations);
                     
                     // Sort by distance
                     allPlaces.recommend.sort((a, b) => a.distance - b.distance);
                     
-                    console.log(`Added ${newRecommendations.length} new manual recommendations, total: ${allPlaces.recommend.length}`);
+                    console.log(`✅ Added ${newRecommendations.length} new manual recommendations`);
+                    console.log(`📊 Total recommendations: ${beforeCount} → ${allPlaces.recommend.length}`);
+                    console.log('📍 All recommendations:', allPlaces.recommend.map(r => ({ id: r.id, name: r.name, distance: r.distance })));
                 } else {
-                    console.warn('No recommendations received from API');
+                    console.warn('⚠️ No recommendations received from API');
                 }
             } catch (error) {
-                console.error('Error fetching manual recommendations:', error);
+                console.error('❌ Error fetching manual recommendations:', error);
                 // Don't show alert for recommendations - it's not critical
             }
         }
@@ -4760,8 +4769,40 @@ Summary: Description of the place..."></textarea>
             document.getElementById('quickAddBtn').addEventListener('click', quickAddRecommendation);
             
             // Auto-load places when page loads
-            console.log('Page loaded, auto-loading places...');
-            loadPlaces();
+            console.log('🚀 Page loaded, auto-loading places...');
+            
+            // Add visual feedback for auto-loading
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.id = 'autoLoadingIndicator';
+            loadingIndicator.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4CAF50;
+                color: white;
+                padding: 10px 15px;
+                border-radius: 5px;
+                z-index: 9999;
+                font-size: 14px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            `;
+            loadingIndicator.innerHTML = '🔄 Auto-loading recommendations...';
+            document.body.appendChild(loadingIndicator);
+            
+            loadPlaces().then(() => {
+                console.log('✅ Auto-loading completed successfully');
+                loadingIndicator.innerHTML = '✅ Recommendations loaded!';
+                setTimeout(() => {
+                    loadingIndicator.remove();
+                }, 2000);
+            }).catch(error => {
+                console.error('❌ Auto-loading failed:', error);
+                loadingIndicator.innerHTML = '❌ Loading failed';
+                loadingIndicator.style.background = '#f44336';
+                setTimeout(() => {
+                    loadingIndicator.remove();
+                }, 3000);
+            });
         });
     </script>
 
