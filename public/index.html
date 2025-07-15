@@ -691,12 +691,63 @@
             cursor: pointer;
             transition: all 0.3s ease;
             margin-bottom: 15px;
+            position: relative;
+            min-height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .image-drop-zone:hover,
         .image-drop-zone.drag-over {
             border-color: #1976D2;
             background: #f3f7ff;
+        }
+
+        .image-drop-zone::before {
+            content: "📋 PASTE ZONE - Press Ctrl+V";
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #007bff;
+            font-weight: bold;
+            opacity: 0.8;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2px 8px;
+            border-radius: 3px;
+            border: 1px solid #007bff;
+        }
+
+        .image-drop-zone.paste-active {
+            border-color: #28a745;
+            background: #f8fff8;
+            box-shadow: 0 0 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .image-drop-zone.paste-active::before {
+            content: "✅ PASTING...";
+            color: #28a745;
+            border-color: #28a745;
+        }
+
+        .image-drop-zone.focused {
+            border-color: #007bff;
+            background: #f8f9fa;
+            box-shadow: 0 0 15px rgba(0, 123, 255, 0.2);
+        }
+
+        .image-drop-zone.focused::before {
+            content: "📋 READY TO PASTE - Press Ctrl+V";
+            color: #007bff;
+            border-color: #007bff;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
         }
 
         .drop-zone-content {
@@ -1785,8 +1836,10 @@ Summary: Description of the place..."></textarea>
                     <div class="image-drop-zone" id="imageDropZone">
                         <div class="drop-zone-content">
                             <span class="drop-zone-icon">📷</span>
-                            <p>Paste images (Ctrl+V) or click to upload</p>
+                            <p><strong>📋 PASTE IMAGES HERE (Ctrl+V)</strong></p>
+                            <p>or drag & drop files or click to upload</p>
                             <p class="drop-zone-hint">Supports JPG, PNG, GIF • Max 5MB per image</p>
+                            <p class="drop-zone-hint">✨ Paste → Extract Address → Auto-fill Form</p>
                         </div>
                         <input type="file" id="imageFileInput" accept="image/*" multiple style="display: none;">
                     </div>
@@ -4279,6 +4332,18 @@ Summary: Description of the place..."></textarea>
                 fileInput.click();
             });
 
+            // Focus/blur events for paste zone visibility
+            dropZone.addEventListener('focus', () => {
+                dropZone.classList.add('focused');
+            });
+
+            dropZone.addEventListener('blur', () => {
+                dropZone.classList.remove('focused');
+            });
+
+            // Make it focusable for keyboard navigation and paste hints
+            dropZone.setAttribute('tabindex', '0');
+
             // File input change
             fileInput.addEventListener('change', (e) => {
                 handleFiles(e.target.files);
@@ -4301,16 +4366,70 @@ Summary: Description of the place..."></textarea>
                 handleFiles(e.dataTransfer.files);
             });
 
-            // Global paste event for images
+            // Enhanced paste event for images with visual feedback
             document.addEventListener('paste', (e) => {
                 const adminPanel = document.getElementById('adminPanel');
                 if (adminPanel.style.display !== 'none') {
                     const items = e.clipboardData.items;
+                    let hasImage = false;
+                    
                     for (let item of items) {
                         if (item.type.startsWith('image/')) {
+                            hasImage = true;
                             const file = item.getAsFile();
+                            
+                            // Show visual feedback
+                            const dropZone = document.getElementById('imageDropZone');
+                            dropZone.classList.add('paste-active');
+                            
+                            // Show paste feedback
+                            const pasteNotification = document.createElement('div');
+                            pasteNotification.style.cssText = `
+                                position: fixed;
+                                top: 20px;
+                                right: 20px;
+                                background: #28a745;
+                                color: white;
+                                padding: 10px 15px;
+                                border-radius: 5px;
+                                z-index: 10000;
+                                font-size: 14px;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                            `;
+                            pasteNotification.innerHTML = '📋 Image pasted! Processing...';
+                            document.body.appendChild(pasteNotification);
+                            
                             handleFiles([file]);
+                            
+                            // Reset visual feedback
+                            setTimeout(() => {
+                                dropZone.classList.remove('paste-active');
+                                pasteNotification.remove();
+                            }, 2000);
                         }
+                    }
+                    
+                    // If no image was pasted, show helpful message
+                    if (!hasImage && e.clipboardData.items.length > 0) {
+                        const noImageNotification = document.createElement('div');
+                        noImageNotification.style.cssText = `
+                            position: fixed;
+                            top: 20px;
+                            right: 20px;
+                            background: #ffc107;
+                            color: #212529;
+                            padding: 10px 15px;
+                            border-radius: 5px;
+                            z-index: 10000;
+                            font-size: 14px;
+                            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                        `;
+                        noImageNotification.innerHTML = '⚠️ No image in clipboard. Copy an image first!';
+                        document.body.appendChild(noImageNotification);
+                        
+                        setTimeout(() => {
+                            noImageNotification.remove();
+                        }, 3000);
                     }
                 }
             });
