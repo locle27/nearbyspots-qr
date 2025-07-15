@@ -1653,9 +1653,6 @@
         </div>
 
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="load-btn" id="loadPlacesBtn" style="flex: 1;">
-                🗺️ Load Places on Map
-            </button>
             <button class="load-btn" id="clearPlacesBtn" style="background: #f44336; flex: 0 0 auto; min-width: 120px;">
                 🗑️ Clear All
             </button>
@@ -2047,7 +2044,7 @@ Summary: Description of the place..."></textarea>
                     console.log('Active categories:', Array.from(activeCategories));
                     
                     // Update displays
-                    updateLoadButtonText();
+                    // updateLoadButtonText(); // Removed since no load button
                     updateSelectedCategoriesDisplay();
                     
                     // Only update map if we already have data loaded
@@ -2058,8 +2055,8 @@ Summary: Description of the place..."></textarea>
                 });
             });
 
-            // Load places button
-            document.getElementById('loadPlacesBtn').addEventListener('click', loadPlaces);
+            // Auto-load places on page load
+            // loadPlaces functionality will be called automatically
 
             // Hotel location update button
             document.getElementById('updateLocationBtn').addEventListener('click', updateHotelLocation);
@@ -2813,16 +2810,25 @@ Summary: Description of the place..."></textarea>
         }
 
         async function loadPlaces() {
-            console.log('Load button clicked! Current activeCategories:', Array.from(activeCategories), 'Size:', activeCategories.size);
+            console.log('Auto-loading places! Current activeCategories:', Array.from(activeCategories), 'Size:', activeCategories.size);
             
-            // Check if any categories are selected
+            // Auto-select recommend category if no categories are selected
             if (activeCategories.size === 0) {
-                console.log('No categories selected, showing alert');
-                alert('Please select at least one category (Restaurants, Landmarks, Coffee, or Culture) before loading places.');
-                return;
+                console.log('No categories selected, auto-selecting recommend category');
+                activeCategories.add('recommend');
+                
+                // Update UI to show recommend category as selected
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                const recommendBtn = document.querySelector('.category-btn[data-category="recommend"]');
+                if (recommendBtn) {
+                    recommendBtn.classList.add('active');
+                }
+                updateSelectedCategoriesDisplay();
             }
             
-            console.log('Categories are selected, proceeding with load...');
+            console.log('Categories selected, proceeding with load...');
 
             const radius = parseInt(document.getElementById('radiusSelect').value);
             const previousRadius = currentRadius;
@@ -2830,12 +2836,8 @@ Summary: Description of the place..."></textarea>
             
             console.log(`Radius change: ${previousRadius}m → ${radius}m`);
             
-            const loadBtn = document.getElementById('loadPlacesBtn');
             const loadingMap = document.getElementById('loadingMap');
             const loadingList = document.getElementById('loadingList');
-
-            loadBtn.disabled = true;
-            loadBtn.textContent = '🔄 Loading...';
             
             // Show loading indicators on both tabs
             if (loadingMap) loadingMap.classList.add('show');
@@ -2970,10 +2972,7 @@ Summary: Description of the place..."></textarea>
                 }
                 
                 alert(errorMessage);
-            } finally {
-                loadBtn.disabled = false;
-                loadBtn.textContent = '🗺️ Load Places on Map';
-                
+            } finally {                
                 // Hide loading indicators on both tabs
                 if (loadingMap) loadingMap.classList.remove('show');
                 if (loadingList) loadingList.classList.remove('show');
@@ -4759,6 +4758,10 @@ Summary: Description of the place..."></textarea>
             });
             
             document.getElementById('quickAddBtn').addEventListener('click', quickAddRecommendation);
+            
+            // Auto-load places when page loads
+            console.log('Page loaded, auto-loading places...');
+            loadPlaces();
         });
     </script>
 
