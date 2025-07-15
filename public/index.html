@@ -757,6 +757,115 @@
             background: rgba(255,0,0,0.8);
         }
 
+        /* Structured Content Styles */
+        .structured-content-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .structured-content-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-parse {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-parse:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-quick-add {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-quick-add:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+
+        .parsed-content-preview {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            font-size: 0.9rem;
+        }
+
+        .parsed-content-preview h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+            font-size: 1rem;
+        }
+
+        .parsed-content-preview .parsed-item {
+            margin-bottom: 8px;
+            padding: 4px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .parsed-content-preview .parsed-item:last-child {
+            border-bottom: none;
+        }
+
+        .parsed-content-preview .parsed-label {
+            font-weight: 600;
+            color: #495057;
+            display: inline-block;
+            min-width: 80px;
+        }
+
+        .parsed-content-preview .parsed-value {
+            color: #6c757d;
+        }
+
+        /* URL Display Styles */
+        .generated-url-display {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #e8f5e8;
+            border-radius: 8px;
+            border: 1px solid #d4edda;
+        }
+
+        .url-display-box {
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .url-display-box a {
+            color: #155724;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .url-display-box a:hover {
+            text-decoration: underline;
+        }
+
         .form-actions {
             display: flex;
             gap: 10px;
@@ -1554,6 +1663,36 @@
                     <input type="url" id="googleMapsUrl" placeholder="Paste Google Maps link here - we'll extract everything automatically!">
                 </div>
                 <button type="button" id="extractFromUrlBtn" class="btn-extract">Extract Info</button>
+            </div>
+            <div class="generated-url-display" id="generatedUrlDisplay" style="display: none;">
+                <div class="form-group">
+                    <label>🔗 Generated Google Maps URL:</label>
+                    <div class="url-display-box" id="urlDisplayBox">
+                        <a href="#" target="_blank" id="generatedUrlLink">Click to view on Google Maps</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-divider">OR paste structured content below:</div>
+            
+            <div class="structured-content-section">
+                <div class="form-group">
+                    <label for="structuredContent">📝 Structured Content (Auto-Parse)</label>
+                    <textarea id="structuredContent" rows="8" placeholder="Paste content like:
+File: Restaurant_name_1752583415.mp3
+Prices: 30k, 33k, 38k
+Addresses: 74 Lac Trung Hai Ba Trung
+Places: Lac Trung Hai Ba Trung, Be bakery
+Hours: 8am to 9pm
+Food Items: cheese panini, egg panini, chicken burger
+Sentiment: positive
+Summary: Description of the place..."></textarea>
+                </div>
+                <div class="structured-content-actions">
+                    <button type="button" id="parseContentBtn" class="btn-parse">Parse Content</button>
+                    <button type="button" id="quickAddBtn" class="btn-quick-add" style="display: none;">Quick Add Recommendation</button>
+                </div>
+                <div class="parsed-content-preview" id="parsedContentPreview" style="display: none;"></div>
             </div>
             
             <div class="form-divider">OR fill manually below:</div>
@@ -4090,6 +4229,287 @@
 
         // Initialize image upload when DOM is ready
         document.addEventListener('DOMContentLoaded', initImageUpload);
+
+        // Structured content parsing functionality
+        let parsedData = null;
+
+        function parseStructuredContent(content) {
+            const lines = content.split('\n').filter(line => line.trim());
+            const parsed = {};
+            
+            lines.forEach(line => {
+                const parts = line.split(':');
+                if (parts.length >= 2) {
+                    const key = parts[0].trim().toLowerCase();
+                    const value = parts.slice(1).join(':').trim();
+                    
+                    switch (key) {
+                        case 'file':
+                            // Extract business name from filename
+                            const filename = value.split('/').pop().replace(/\.[^/.]+$/, '');
+                            parsed.filename = filename;
+                            break;
+                        case 'prices':
+                            parsed.prices = value;
+                            break;
+                        case 'addresses':
+                        case 'address':
+                            parsed.address = value;
+                            break;
+                        case 'places':
+                        case 'place':
+                            parsed.places = value;
+                            // Extract business name from places
+                            const placeParts = value.split(',').map(p => p.trim());
+                            parsed.businessName = placeParts.length > 1 ? placeParts[1] : placeParts[0];
+                            break;
+                        case 'hours':
+                            parsed.hours = value;
+                            break;
+                        case 'food items':
+                        case 'items':
+                            parsed.foodItems = value;
+                            break;
+                        case 'sentiment':
+                            parsed.sentiment = value;
+                            break;
+                        case 'summary':
+                            parsed.summary = value;
+                            break;
+                    }
+                }
+            });
+            
+            return parsed;
+        }
+
+        async function displayParsedContent(parsed) {
+            const previewContainer = document.getElementById('parsedContentPreview');
+            const quickAddBtn = document.getElementById('quickAddBtn');
+            
+            let previewHTML = '<h4>📋 Parsed Content:</h4>';
+            
+            if (parsed.businessName) {
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Name:</span> <span class="parsed-value">${parsed.businessName}</span></div>`;
+            }
+            if (parsed.prices) {
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Prices:</span> <span class="parsed-value">${parsed.prices}</span></div>`;
+            }
+            if (parsed.address) {
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Address:</span> <span class="parsed-value">${parsed.address}</span></div>`;
+            }
+            if (parsed.hours) {
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Hours:</span> <span class="parsed-value">${parsed.hours}</span></div>`;
+            }
+            if (parsed.foodItems) {
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Menu:</span> <span class="parsed-value">${parsed.foodItems}</span></div>`;
+            }
+            if (parsed.summary) {
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Summary:</span> <span class="parsed-value">${parsed.summary}</span></div>`;
+            }
+            
+            // Generate and display Google Maps URL
+            if (parsed.address) {
+                const googleMapsUrl = await generateGoogleMapsUrl(parsed.address);
+                if (googleMapsUrl) {
+                    previewHTML += `<div class="parsed-item"><span class="parsed-label">Maps URL:</span> <span class="parsed-value"><a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a></span></div>`;
+                    
+                    // Also show in the main URL display
+                    const urlDisplay = document.getElementById('generatedUrlDisplay');
+                    const urlLink = document.getElementById('generatedUrlLink');
+                    urlLink.href = googleMapsUrl;
+                    urlLink.textContent = googleMapsUrl;
+                    urlDisplay.style.display = 'block';
+                }
+            }
+            
+            previewContainer.innerHTML = previewHTML;
+            previewContainer.style.display = 'block';
+            quickAddBtn.style.display = 'inline-block';
+        }
+
+        async function generateGoogleMapsUrl(address) {
+            if (!address) return '';
+            
+            try {
+                // Use the existing geocoding endpoint to get coordinates
+                const response = await fetch('/api/geocode-address', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ address: address })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        // Generate Google Maps URL from coordinates
+                        return `https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error generating Google Maps URL:', error);
+            }
+            
+            // Fallback: generate URL from address
+            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+        }
+
+        async function quickAddRecommendation() {
+            if (!parsedData) {
+                alert('Please parse content first');
+                return;
+            }
+            
+            const quickAddBtn = document.getElementById('quickAddBtn');
+            quickAddBtn.disabled = true;
+            quickAddBtn.textContent = 'Adding...';
+            
+            try {
+                // Generate Google Maps URL
+                const googleMapsUrl = await generateGoogleMapsUrl(parsedData.address);
+                
+                // Create description from parsed data
+                let description = '';
+                if (parsedData.summary) {
+                    description = parsedData.summary;
+                } else {
+                    description = `${parsedData.businessName || 'Restaurant'}`;
+                    if (parsedData.hours) description += `. Hours: ${parsedData.hours}`;
+                    if (parsedData.prices) description += `. Prices: ${parsedData.prices}`;
+                    if (parsedData.foodItems) description += `. Menu: ${parsedData.foodItems}`;
+                }
+                
+                // Try to extract coordinates from the generated URL
+                if (googleMapsUrl.includes('query=') && googleMapsUrl.includes(',')) {
+                    const coords = googleMapsUrl.split('query=')[1].split(',');
+                    if (coords.length >= 2) {
+                        const lat = parseFloat(coords[0]);
+                        const lng = parseFloat(coords[1]);
+                        
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            const recommendation = {
+                                name: parsedData.businessName || 'Parsed Location',
+                                address: parsedData.address || 'Address not provided',
+                                latitude: lat,
+                                longitude: lng,
+                                rating: 0,
+                                description: description,
+                                websiteUri: '',
+                                featured: false,
+                                images: uploadedImages.map(img => ({
+                                    id: img.id,
+                                    name: img.name,
+                                    dataUrl: img.dataUrl
+                                })),
+                                parsedData: {
+                                    prices: parsedData.prices || '',
+                                    hours: parsedData.hours || '',
+                                    foodItems: parsedData.foodItems || '',
+                                    googleMapsUrl: googleMapsUrl
+                                }
+                            };
+                            
+                            // Submit the recommendation
+                            const response = await fetch('/api/recommendations', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(recommendation)
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (response.ok && result.success) {
+                                alert(`✅ Successfully added: ${recommendation.name}`);
+                                
+                                // Update the display
+                                if (!allPlaces.recommend) {
+                                    allPlaces.recommend = [];
+                                }
+                                
+                                const distance = Math.round(calculateDistance(
+                                    HOTEL_LOCATION.lat, HOTEL_LOCATION.lng,
+                                    recommendation.latitude, recommendation.longitude
+                                ));
+                                
+                                const newRec = {
+                                    ...result.recommendation,
+                                    distance: distance
+                                };
+                                
+                                allPlaces.recommend.push(newRec);
+                                allPlaces.recommend.sort((a, b) => a.distance - b.distance);
+                                
+                                // Update displays
+                                updateMapMarkers();
+                                updateStats();
+                                updatePlacesList();
+                                
+                                // Hide admin panel and clear form
+                                document.getElementById('adminPanel').style.display = 'none';
+                                document.getElementById('adminBackdrop').classList.remove('show');
+                                document.body.style.overflow = 'auto';
+                                document.getElementById('addRecommendationForm').reset();
+                                clearImagePreviews();
+                                
+                                // Clear parsed content
+                                parsedData = null;
+                                document.getElementById('parsedContentPreview').style.display = 'none';
+                                document.getElementById('quickAddBtn').style.display = 'none';
+                                document.getElementById('structuredContent').value = '';
+                                
+                            } else {
+                                alert(`❌ Failed to add recommendation: ${result.error || 'Unknown error'}`);
+                            }
+                        } else {
+                            alert('❌ Could not extract valid coordinates from address');
+                        }
+                    } else {
+                        alert('❌ Could not extract coordinates from address');
+                    }
+                } else {
+                    alert('❌ Could not generate valid Google Maps URL');
+                }
+                
+            } catch (error) {
+                console.error('Error in quick add:', error);
+                alert('❌ Error adding recommendation: ' + error.message);
+            } finally {
+                quickAddBtn.disabled = false;
+                quickAddBtn.textContent = 'Quick Add Recommendation';
+            }
+        }
+
+        // Event listeners for structured content
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('parseContentBtn').addEventListener('click', async function() {
+                const content = document.getElementById('structuredContent').value.trim();
+                if (!content) {
+                    alert('Please paste some structured content first');
+                    return;
+                }
+                
+                const parseBtn = this;
+                parseBtn.disabled = true;
+                parseBtn.textContent = 'Parsing...';
+                
+                try {
+                    parsedData = parseStructuredContent(content);
+                    await displayParsedContent(parsedData);
+                } catch (error) {
+                    console.error('Error parsing content:', error);
+                    alert('Error parsing content: ' + error.message);
+                } finally {
+                    parseBtn.disabled = false;
+                    parseBtn.textContent = 'Parse Content';
+                }
+            });
+            
+            document.getElementById('quickAddBtn').addEventListener('click', quickAddRecommendation);
+        });
     </script>
 
     <!-- Load Google Maps API -->

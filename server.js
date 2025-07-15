@@ -747,7 +747,8 @@ app.post('/api/recommendations', (req, res) => {
       description = '',
       websiteUri = '',
       featured = false,
-      images = []
+      images = [],
+      parsedData = null
     } = req.body;
     
     // Validation
@@ -789,7 +790,13 @@ app.post('/api/recommendations', (req, res) => {
       websiteUri: sanitizeInput(websiteUri, 'string'),
       addedBy: 'manual_entry',
       addedDate: new Date().toISOString(),
-      featured: Boolean(featured)
+      featured: Boolean(featured),
+      parsedData: parsedData ? {
+        prices: sanitizeInput(parsedData.prices || '', 'string'),
+        hours: sanitizeInput(parsedData.hours || '', 'string'),
+        foodItems: sanitizeInput(parsedData.foodItems || '', 'string'),
+        googleMapsUrl: sanitizeInput(parsedData.googleMapsUrl || '', 'string')
+      } : null
     };
     
     // Add to recommendations
