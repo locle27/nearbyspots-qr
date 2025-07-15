@@ -2226,7 +2226,14 @@ Summary: Description of the place..."></textarea>
                 `)
             };
             
-            if (place.photos && place.photos.length > 0) {
+            // Check for uploaded images first (custom images take priority)
+            if (place.images && place.images.length > 0) {
+                // Use uploaded image (base64 data URL)
+                const uploadedImage = place.images[0];
+                console.log(`📸 Place ${place.name} has uploaded image`);
+                
+                imageElement = `<img class="place-image" src="${uploadedImage.dataUrl}" alt="${place.name}" style="display: block;">`;
+            } else if (place.photos && place.photos.length > 0) {
                 // Validate photo reference
                 const photo = place.photos[0];
                 const hasValidPhoto = photo && photo.name && photo.name.trim().length > 0 && 
@@ -3444,9 +3451,13 @@ Summary: Description of the place..."></textarea>
                 `)
             };
             
-            // Get main image
+            // Get main image - prioritize uploaded images
             let mainImageHtml = '';
-            if (place.photos && place.photos.length > 0) {
+            if (place.images && place.images.length > 0) {
+                // Use uploaded image as main image
+                const uploadedImage = place.images[0];
+                mainImageHtml = `<img class="place-main-image" src="${uploadedImage.dataUrl}" alt="${place.name}" style="display: block;">`;
+            } else if (place.photos && place.photos.length > 0) {
                 const photo = place.photos[0];
                 const hasValidPhoto = photo && photo.name && photo.name.trim().length > 0 && 
                                     !photo.name.includes('undefined') && !photo.name.includes('null');
@@ -3480,10 +3491,34 @@ Summary: Description of the place..."></textarea>
                 mainImageHtml = `<img class="place-main-image" src="${fallbackImage}" alt="${place.name}">`;
             }
             
-            // Build photo gallery
+            // Build photo gallery - include uploaded images
             let galleryHtml = '';
-            if (place.photos && place.photos.length > 1) {
-                const galleryImages = place.photos.slice(1, 9).map((photo, index) => {
+            let allGalleryImages = [];
+            
+            // Add uploaded images first (starting from index 1 if we used first image as main)
+            if (place.images && place.images.length > 0) {
+                const startIndex = 1; // Skip first image as it's used as main
+                const uploadedGalleryImages = place.images.slice(startIndex).map((uploadedImage, index) => {
+                    const timestamp = Date.now();
+                    const imageId = `gallery-uploaded-${timestamp}-${index}`;
+                    return `
+                        <div class="gallery-image-container" id="container-${imageId}">
+                            <img class="gallery-image" 
+                                 id="${imageId}"
+                                 src="${uploadedImage.dataUrl}" 
+                                 alt="${place.name}" 
+                                 onclick="openFullImage('${uploadedImage.dataUrl}', '${place.name}')" 
+                                 style="cursor: pointer; display: block;">
+                        </div>
+                    `;
+                });
+                allGalleryImages.push(...uploadedGalleryImages);
+            }
+            
+            // Add Google Places photos
+            if (place.photos && place.photos.length > 0) {
+                const startIndex = (place.images && place.images.length > 0) ? 0 : 1; // If we have uploaded images, include all photos in gallery
+                const photoGalleryImages = place.photos.slice(startIndex, 9).map((photo, index) => {
                     if (photo && photo.name && photo.name.trim().length > 0 && 
                         !photo.name.includes('undefined') && !photo.name.includes('null')) {
                         const encodedPhotoName = encodeURIComponent(photo.name);
@@ -3516,13 +3551,20 @@ Summary: Description of the place..."></textarea>
                         `;
                     }
                     return '';
-                }).filter(img => img.length > 0).join('');
-                
+                }).filter(img => img.length > 0);
+                allGalleryImages.push(...photoGalleryImages);
+            }
+            
+            const galleryImagesHtml = allGalleryImages.join('');
+            
+            // Generate gallery HTML
+            if (allGalleryImages.length > 0) {
+                const totalImages = (place.images ? place.images.length - 1 : 0) + (place.photos ? place.photos.length - (place.images && place.images.length > 0 ? 0 : 1) : 0);
                 galleryHtml = `
                     <div class="photo-gallery">
-                        <div class="gallery-title">📸 More Photos (${place.photos.length - 1})</div>
+                        <div class="gallery-title">📸 More Photos (${totalImages})</div>
                         <div class="photo-grid">
-                            ${galleryImages}
+                            ${galleryImagesHtml}
                         </div>
                     </div>
                 `;
@@ -4309,9 +4351,15 @@ Summary: Description of the place..."></textarea>
             }
             
             // Generate and display Google Maps URL
+            let googleMapsUrl = '';
+            let coordinates = null;
+            
             if (parsed.address) {
-                const googleMapsUrl = await generateGoogleMapsUrl(parsed.address);
+                googleMapsUrl = await generateGoogleMapsUrl(parsed.address);
                 if (googleMapsUrl) {
+                    // Get coordinates for form population
+                    coordinates = await getCoordinatesFromAddress(parsed.address);
+                    
                     previewHTML += `<div class="parsed-item"><span class="parsed-label">Maps URL:</span> <span class="parsed-value"><a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a></span></div>`;
                     
                     // Also show in the main URL display
@@ -4323,9 +4371,81 @@ Summary: Description of the place..."></textarea>
                 }
             }
             
+            // Auto-populate form fields
+            await populateFormFromParsedData(parsed, coordinates, googleMapsUrl);
+            
             previewContainer.innerHTML = previewHTML;
             previewContainer.style.display = 'block';
             quickAddBtn.style.display = 'inline-block';
+        }
+
+        async function getCoordinatesFromAddress(address) {
+            try {
+                const response = await fetch('/api/geocode-address', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ address: address })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        return {
+                            latitude: data.latitude,
+                            longitude: data.longitude
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error('Error getting coordinates:', error);
+            }
+            return null;
+        }
+
+        async function populateFormFromParsedData(parsed, coordinates, googleMapsUrl) {
+            // Populate form fields with parsed data
+            if (parsed.businessName) {
+                document.getElementById('recName').value = parsed.businessName;
+            }
+            
+            if (parsed.address) {
+                document.getElementById('recAddress').value = parsed.address;
+            }
+            
+            if (coordinates) {
+                document.getElementById('recLatitude').value = coordinates.latitude;
+                document.getElementById('recLongitude').value = coordinates.longitude;
+            }
+            
+            // Create comprehensive description
+            let description = '';
+            if (parsed.summary) {
+                description = parsed.summary;
+            } else {
+                description = `${parsed.businessName || 'Restaurant'}`;
+            }
+            
+            // Add additional details to description
+            const details = [];
+            if (parsed.hours) details.push(`Hours: ${parsed.hours}`);
+            if (parsed.prices) details.push(`Prices: ${parsed.prices}`);
+            if (parsed.foodItems) details.push(`Menu: ${parsed.foodItems}`);
+            
+            if (details.length > 0) {
+                description += (description ? '\n\n' : '') + details.join('\n');
+            }
+            
+            document.getElementById('recDescription').value = description;
+            
+            // Populate Google Maps URL field
+            if (googleMapsUrl) {
+                document.getElementById('googleMapsUrl').value = googleMapsUrl;
+            }
+            
+            // Set a default rating if not provided
+            document.getElementById('recRating').value = '4.0';
         }
 
         async function generateGoogleMapsUrl(address) {
@@ -4344,16 +4464,16 @@ Summary: Description of the place..."></textarea>
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
-                        // Generate Google Maps URL from coordinates
-                        return `https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`;
+                        // Generate Google Maps URL with directions (more useful for navigation)
+                        return `https://www.google.com/maps/dir/?api=1&destination=${data.latitude},${data.longitude}&destination_place_id=${encodeURIComponent(data.address)}`;
                     }
                 }
             } catch (error) {
                 console.error('Error generating Google Maps URL:', error);
             }
             
-            // Fallback: generate URL from address
-            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+            // Fallback: generate directions URL from address
+            return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
         }
 
         async function quickAddRecommendation() {
