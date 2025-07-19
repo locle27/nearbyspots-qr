@@ -3108,68 +3108,8 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         function updatePlacesList() {
-            console.log('Updating places list...');
-            const placesList = document.getElementById('placesList');
-            
-            if (!placesList) {
-                console.error('Places list container not found');
-                return;
-            }
-            
-            // Clear existing content
-            placesList.innerHTML = '';
-            
-            // Collect all active places
-            const activePlaces = [];
-            Object.entries(allPlaces).forEach(([category, places]) => {
-                if (activeCategories.has(category)) {
-                    places.forEach(place => {
-                        activePlaces.push({
-                            ...place,
-                            category: category
-                        });
-                    });
-                }
-            });
-            
-            console.log(`Found ${activePlaces.length} active places to display`);
-            
-            // Update place count and map info
-            const placeCount = document.getElementById('placeCount');
-            const mapInfo = document.getElementById('mapInfo');
-            
-            if (placeCount) {
-                placeCount.textContent = `${activePlaces.length} place${activePlaces.length !== 1 ? 's' : ''}`;
-            }
-            
-            if (mapInfo && activePlaces.length > 0) {
-                const distances = activePlaces.map(place => place.distance);
-                const minDistance = Math.min(...distances);
-                const maxDistance = Math.max(...distances);
-                mapInfo.textContent = `${minDistance}m - ${maxDistance}m from hotel`;
-            } else if (mapInfo) {
-                mapInfo.textContent = 'Visual distance reference';
-            }
-            
-            if (activePlaces.length === 0) {
-                placesList.innerHTML = `
-                    <div class="no-places-message">
-                        ${activeCategories.size === 0 
-                            ? 'Select categories and click "Load" to see recommendations' 
-                            : 'No places found. Try expanding your search radius or selecting different categories.'}
-                    </div>
-                `;
-                return;
-            }
-            
-            // Sort places by distance
-            activePlaces.sort((a, b) => a.distance - b.distance);
-            
-            // Create place items
-            activePlaces.forEach((place, index) => {
-                const placeItem = createPlaceListItem(place, index);
-                placesList.appendChild(placeItem);
-            });
+            console.log('🔄 updatePlacesList called - delegating to updatePlacesListWithSearch');
+            updatePlacesListWithSearch();
         }
 
         function createPlaceListItem(place, index) {
@@ -4380,20 +4320,38 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 selectionArrow = null;
             }
 
-            // Add markers for active categories
-            Object.entries(allPlaces).forEach(([category, places]) => {
-                if (!activeCategories.has(category)) return;
-
-                places.forEach(place => {
-                    addPlaceMarker(place, category);
+            // Add markers for active categories (search results or normal)
+            if (currentSearchFilter) {
+                // Use filtered search results
+                activeCategories.forEach(category => {
+                    if (currentSearchFilter.filteredPlaces[category]) {
+                        currentSearchFilter.filteredPlaces[category].forEach(place => {
+                            addPlaceMarker(place, category);
+                        });
+                    }
                 });
-            });
+            } else {
+                // Use normal places
+                Object.entries(allPlaces).forEach(([category, places]) => {
+                    if (!activeCategories.has(category)) return;
+
+                    places.forEach(place => {
+                        addPlaceMarker(place, category);
+                    });
+                });
+            }
             
             // Always update places list in split-screen view
             updatePlacesList();
         }
 
         function addPlaceMarker(place, category) {
+            // Safety check for place data
+            if (!place || !place.location || typeof place.location.latitude !== 'number' || typeof place.location.longitude !== 'number') {
+                console.error('❌ Invalid place data for marker:', place);
+                return null;
+            }
+            
             const color = CATEGORY_COLORS[category];
             const icon = CATEGORY_ICONS[category];
 
@@ -7443,25 +7401,104 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             return currentSearchFilter !== null;
         }
 
-        // Modified updatePlacesList to handle search results
-        const originalUpdatePlacesList = updatePlacesList;
-        function updatePlacesList() {
+        // Enhanced updatePlacesList to handle search results
+        function updatePlacesListWithSearch() {
+            console.log('🔄 Updating places list, search active:', !!currentSearchFilter);
+            
+            const placesList = document.getElementById('placesList');
+            
+            if (!placesList) {
+                console.error('Places list container not found');
+                return;
+            }
+            
+            // Clear existing content
+            placesList.innerHTML = '';
+            
+            // Collect all active places (either filtered or normal)
+            let activePlaces = [];
+            
             if (currentSearchFilter) {
-                // Show search results
-                originalUpdatePlacesList();
+                // Show search results with filtered data
+                console.log('📋 Using search filtered places');
                 
-                // Add search info to the places list
-                const placesList = document.querySelector('.places-list');
-                if (placesList && placesList.firstChild) {
-                    const searchInfo = document.createElement('div');
-                    searchInfo.style.cssText = 'background: #e8f5e8; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #a5d6a7; text-align: center; font-size: 0.9rem; color: #2e7d32;';
-                    searchInfo.innerHTML = `🔮 Showing AI-filtered results for "${currentSearchFilter.query}"`;
-                    placesList.insertBefore(searchInfo, placesList.firstChild);
-                }
+                // Add search info header
+                const searchInfo = document.createElement('div');
+                searchInfo.style.cssText = 'background: #e8f5e8; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #a5d6a7; text-align: center; font-size: 0.9rem; color: #2e7d32;';
+                searchInfo.innerHTML = `🔮 Showing AI-filtered results for "${currentSearchFilter.query}"`;
+                placesList.appendChild(searchInfo);
+                
+                // Get filtered places for active categories
+                activeCategories.forEach(category => {
+                    if (currentSearchFilter.filteredPlaces[category] && currentSearchFilter.filteredPlaces[category].length > 0) {
+                        currentSearchFilter.filteredPlaces[category].forEach(place => {
+                            activePlaces.push({
+                                ...place,
+                                category: category
+                            });
+                        });
+                    }
+                });
             } else {
                 // Show normal results
-                originalUpdatePlacesList();
+                console.log('📋 Using normal places');
+                Object.entries(allPlaces).forEach(([category, places]) => {
+                    if (activeCategories.has(category)) {
+                        places.forEach(place => {
+                            activePlaces.push({
+                                ...place,
+                                category: category
+                            });
+                        });
+                    }
+                });
             }
+            
+            console.log(`Found ${activePlaces.length} active places to display`);
+            
+            // Update place count and map info
+            const placeCount = document.getElementById('placeCount');
+            const mapInfo = document.getElementById('mapInfo');
+            
+            if (placeCount) {
+                placeCount.textContent = `${activePlaces.length} place${activePlaces.length !== 1 ? 's' : ''}`;
+            }
+            
+            if (mapInfo && activePlaces.length > 0) {
+                const distances = activePlaces.map(place => place.distance);
+                const minDistance = Math.min(...distances);
+                const maxDistance = Math.max(...distances);
+                mapInfo.textContent = `${minDistance}m - ${maxDistance}m from hotel`;
+            } else if (mapInfo) {
+                mapInfo.textContent = 'Visual distance reference';
+            }
+            
+            if (activePlaces.length === 0) {
+                let message;
+                if (currentSearchFilter) {
+                    message = 'No places found matching your search.';
+                } else {
+                    message = activeCategories.size === 0 
+                        ? 'Select categories and click "Load" to see recommendations' 
+                        : 'No places found. Try expanding your search radius or selecting different categories.';
+                }
+                
+                placesList.innerHTML += `
+                    <div class="no-places-message">
+                        ${message}
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort places by distance
+            activePlaces.sort((a, b) => a.distance - b.distance);
+            
+            // Create place items
+            activePlaces.forEach((place, index) => {
+                const placeItem = createPlaceListItem(place, index);
+                placesList.appendChild(placeItem);
+            });
         }
 
         // Edit Place Modal Functions
