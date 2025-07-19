@@ -1605,6 +1605,98 @@
             border-left: 4px solid #1976D2;
         }
 
+        /* Opening Hours Styles */
+        .opening-hours-section {
+            margin-bottom: 16px;
+            background: #fff9f0;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #fed7aa;
+            box-shadow: 0 2px 8px rgba(251, 146, 60, 0.1);
+        }
+
+        .opening-hours-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ea580c;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .opening-hours-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .hours-day {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #fed7aa;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .hours-day:hover {
+            background: #fef3e2;
+            border-color: #fb923c;
+        }
+
+        .hours-day.today {
+            background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
+            color: white;
+            font-weight: 600;
+            border-color: #ea580c;
+            box-shadow: 0 2px 8px rgba(234, 88, 12, 0.3);
+        }
+
+        .day-name {
+            font-weight: 600;
+        }
+
+        .day-hours {
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .opening-hours-simple {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #fed7aa;
+            font-size: 0.95rem;
+            color: #7c2d12;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .opening-hours-unavailable {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .opening-hours-unavailable span {
+            display: block;
+            color: #dc2626;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .opening-hours-unavailable small {
+            color: #7f1d1d;
+            font-size: 0.8rem;
+        }
+
         .place-actions {
             display: flex;
             gap: 12px;
@@ -4195,6 +4287,94 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         // Professional Place Details Modal Functions
+        function generateOpeningHoursHtml(place) {
+            // Check if place has opening hours data
+            if (!place.currentOpeningHours && !place.regularOpeningHours && !place.openingHours) {
+                return `
+                    <div class="opening-hours-section">
+                        <div class="opening-hours-title">🕒 Opening Hours</div>
+                        <div class="opening-hours-unavailable">
+                            <span>⚠️ Opening hours not available</span>
+                            <small>Please call or visit their website for current hours</small>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Try to get opening hours from different possible fields
+            let openingHours = place.currentOpeningHours || place.regularOpeningHours || place.openingHours;
+            
+            // If opening hours is an object with weekdayDescriptions, use that
+            if (openingHours && openingHours.weekdayDescriptions) {
+                const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                
+                let hoursHtml = '';
+                openingHours.weekdayDescriptions.forEach((dayHours, index) => {
+                    const isToday = index === today;
+                    const dayClass = isToday ? 'today' : '';
+                    const todayIndicator = isToday ? ' 📍' : '';
+                    
+                    hoursHtml += `
+                        <div class="hours-day ${dayClass}">
+                            <span class="day-name">${days[index]}${todayIndicator}</span>
+                            <span class="day-hours">${dayHours}</span>
+                        </div>
+                    `;
+                });
+
+                return `
+                    <div class="opening-hours-section">
+                        <div class="opening-hours-title">🕒 Opening Hours</div>
+                        <div class="opening-hours-list">
+                            ${hoursHtml}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // If opening hours is a simple array of strings
+            if (Array.isArray(openingHours)) {
+                const hoursHtml = openingHours.map(hours => `
+                    <div class="hours-day">
+                        <span class="day-hours">${hours}</span>
+                    </div>
+                `).join('');
+
+                return `
+                    <div class="opening-hours-section">
+                        <div class="opening-hours-title">🕒 Opening Hours</div>
+                        <div class="opening-hours-list">
+                            ${hoursHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // If it's just a string
+            if (typeof openingHours === 'string') {
+                return `
+                    <div class="opening-hours-section">
+                        <div class="opening-hours-title">🕒 Opening Hours</div>
+                        <div class="opening-hours-simple">
+                            ${openingHours}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Fallback if no recognizable format
+            return `
+                <div class="opening-hours-section">
+                    <div class="opening-hours-title">🕒 Opening Hours</div>
+                    <div class="opening-hours-unavailable">
+                        <span>⚠️ Opening hours format not recognized</span>
+                        <small>Please call or visit their website for current hours</small>
+                    </div>
+                </div>
+            `;
+        }
+
         function showPlaceDetails(place) {
             console.log('Showing place details for:', place.name);
             
@@ -4405,6 +4585,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                             <div class="place-stat distance">🌍 ${distanceInMiles} mi</div>
                             <div class="place-stat category">${categoryIcon} ${place.category.charAt(0).toUpperCase() + place.category.slice(1)}</div>
                         </div>
+                        ${generateOpeningHoursHtml(place)}
                         ${place.description ? `<div class="place-description-full">💭 ${place.description}</div>` : `<div class="place-description-full">📱 Tap the buttons below to get directions or visit their website for more information about this ${place.category}.</div>`}
                     </div>
                 </div>
