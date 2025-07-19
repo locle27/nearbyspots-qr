@@ -17,7 +17,6 @@ function generateSecureQRToken(metadata = {}) {
     const payload = {
       type: 'qr_access',
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
       qrId: crypto.randomUUID(),
       clientType: 'customer',
       maxUses: MAX_USES_PER_TOKEN,
@@ -35,6 +34,10 @@ function generateSecureQRToken(metadata = {}) {
       algorithm: 'HS256',
       expiresIn: TOKEN_EXPIRY 
     });
+    
+    // Get expiration time for response
+    const decoded = jwt.decode(token);
+    const expiresAt = new Date(decoded.exp * 1000);
 
     // Initialize usage tracking
     tokenUsage.set(payload.qrId, {
@@ -46,7 +49,7 @@ function generateSecureQRToken(metadata = {}) {
     });
 
     console.log(`🔐 Generated secure QR token: ${payload.qrId}`);
-    return { token, qrId: payload.qrId, expiresAt: new Date(payload.exp * 1000) };
+    return { token, qrId: payload.qrId, expiresAt };
   } catch (error) {
     console.error('❌ Error generating QR token:', error);
     throw error;
