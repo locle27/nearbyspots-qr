@@ -3382,32 +3382,60 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             const hotelPosition = hotelMarker.getPosition();
             const distance = selectedPlace ? selectedPlace.distance : null;
 
-            // Create bounds that include both hotel and place
+            // Create expanded bounds to force wider view
             const bounds = new google.maps.LatLngBounds();
+            
+            // Calculate the center point between hotel and place
+            const centerLat = (hotelPosition.lat() + placePosition.lat()) / 2;
+            const centerLng = (hotelPosition.lng() + placePosition.lng()) / 2;
+            
+            // Calculate distance between points to determine expansion
+            const latDiff = Math.abs(hotelPosition.lat() - placePosition.lat());
+            const lngDiff = Math.abs(hotelPosition.lng() - placePosition.lng());
+            
+            // Expand bounds significantly beyond the two points
+            let expansionFactor = 3; // Default 3x expansion
+            if (distance) {
+                if (distance < 200) {
+                    expansionFactor = 4; // 4x expansion for very close places
+                } else if (distance < 500) {
+                    expansionFactor = 3.5; // 3.5x expansion
+                } else if (distance < 1000) {
+                    expansionFactor = 3; // 3x expansion
+                } else {
+                    expansionFactor = 2.5; // 2.5x expansion for far places
+                }
+            }
+            
+            // Create expanded bounds
+            const expandedLatDiff = Math.max(latDiff * expansionFactor, 0.01); // Minimum 0.01 degree expansion
+            const expandedLngDiff = Math.max(lngDiff * expansionFactor, 0.01); // Minimum 0.01 degree expansion
+            
+            // Add the expanded boundary points
+            bounds.extend(new google.maps.LatLng(
+                centerLat - expandedLatDiff,
+                centerLng - expandedLngDiff
+            ));
+            bounds.extend(new google.maps.LatLng(
+                centerLat + expandedLatDiff,
+                centerLng + expandedLngDiff
+            ));
+            
+            // Also include the original points
             bounds.extend(hotelPosition);
             bounds.extend(placePosition);
 
-            // Add maximum padding for complete area overview showing both locations
-            let paddingOptions = { top: 800, bottom: 800, left: 600, right: 600 };
+            // Apply the expanded bounds with minimal padding
+            map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
             
-            if (distance) {
-                if (distance < 200) {
-                    // Very close - huge padding to show full walking area context
-                    paddingOptions = { top: 700, bottom: 700, left: 500, right: 500 };
-                } else if (distance < 500) {
-                    // Close - massive padding for complete street network view
-                    paddingOptions = { top: 800, bottom: 800, left: 600, right: 600 };
-                } else if (distance < 1000) {
-                    // Medium distance - extra large padding for full district view
-                    paddingOptions = { top: 1000, bottom: 1000, left: 800, right: 800 };
-                } else {
-                    // Far - maximum possible padding for complete city area overview
-                    paddingOptions = { top: 1200, bottom: 1200, left: 1000, right: 1000 };
+            // Set maximum zoom level to ensure overview
+            setTimeout(() => {
+                const currentZoom = map.getZoom();
+                const maxZoom = 15; // Maximum zoom level for overview
+                if (currentZoom > maxZoom) {
+                    map.setZoom(maxZoom);
                 }
-            }
-
-            // Smooth animated zoom to bounds
-            map.fitBounds(bounds, paddingOptions);
+            }, 100);
 
             // Add visual connection line temporarily
             if (distance && distance > 100) {
