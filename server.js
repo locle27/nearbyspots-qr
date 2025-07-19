@@ -629,6 +629,33 @@ function verifyQRAccess(req, res, next) {
   }
 }
 
+// PRIORITY HEALTH ENDPOINTS - Must be first to avoid middleware issues
+// Ultra-minimal health check for Render (no JSON, no processing)
+app.get('/health', (req, res) => {
+  console.log('Health check requested');
+  res.status(200).end('OK');
+});
+
+app.get('/api/health', (req, res) => {
+  console.log('API health check requested');
+  res.json({
+    success: true,
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Health check with HTML page (no JavaScript execution)
+app.get('/health.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'health.html'));
+});
+
+// Root health check
+app.get('/healthcheck', (req, res) => {
+  res.status(200).send('Healthy');
+});
+
 // Hotel-map route now redirects to main interface (they're the same)
 app.get('/hotel-map', (req, res) => {
   res.redirect('/');
@@ -2413,31 +2440,6 @@ app.get('/api/place-photo/:photoName', async (req, res) => {
     console.error('Photo fetch error:', error);
     res.status(500).json({ error: 'Failed to fetch photo' });
   }
-});
-
-// Health check endpoint for deployment platforms
-// Ultra-minimal health check for Render (no JSON, no processing)
-app.get('/health', (req, res) => {
-  res.status(200).end('OK');
-});
-
-app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    timestamp: new Date().toISOString(),
-    version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
-// Health check with HTML page (no JavaScript execution)
-app.get('/health.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'health.html'));
-});
-
-// Root health check
-app.get('/healthcheck', (req, res) => {
-  res.status(200).send('Healthy');
 });
 
 // Prevent main page access during health checks
