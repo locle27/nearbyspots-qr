@@ -573,17 +573,21 @@ app.post('/api/generate-secure-qr', async (req, res) => {
   
   try {
     const { hotelName, customMessage } = req.body;
+    console.log('🔍 QR generation request:', { hotelName, customMessage });
     
     // Get base URL from request or environment
     const baseUrl = process.env.RENDER_EXTERNAL_URL || `${req.protocol}://${req.get('host')}`;
+    console.log('🔍 Base URL for QR:', baseUrl);
     
     // Generate secure QR with metadata
+    console.log('🔍 Generating secure QR URL...');
     const qrData = generateSecureQRURL(baseUrl, {
       hotelName: hotelName || 'Hotel Guest Access',
       customMessage: customMessage || 'Secure access to hotel recommendations',
       generatedBy: clientIp,
       userAgent: userAgent
     });
+    console.log('🔍 QR data generated:', { qrId: qrData.qrId, url: qrData.url.substring(0, 100) + '...' });
     
     // Generate QR code image
     const qrCodeDataURL = await QRCode.toDataURL(qrData.url, {
@@ -617,10 +621,12 @@ app.post('/api/generate-secure-qr', async (req, res) => {
     
   } catch (error) {
     console.error('❌ Error generating secure QR:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to generate secure QR code',
-      details: error.message 
+      details: error.message,
+      debug: process.env.NODE_ENV !== 'production' ? error.stack : undefined
     });
   }
 });

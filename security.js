@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const bcrypt = require('bcrypt');
 
 // Security configuration
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
@@ -14,37 +13,44 @@ const blacklistedTokens = new Set();
 
 // Generate secure QR token
 function generateSecureQRToken(metadata = {}) {
-  const payload = {
-    type: 'qr_access',
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
-    qrId: crypto.randomUUID(),
-    clientType: 'customer',
-    maxUses: MAX_USES_PER_TOKEN,
-    metadata: {
-      generatedAt: new Date().toISOString(),
-      version: '1.0',
-      ...metadata
-    }
-  };
+  try {
+    const payload = {
+      type: 'qr_access',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
+      qrId: crypto.randomUUID(),
+      clientType: 'customer',
+      maxUses: MAX_USES_PER_TOKEN,
+      metadata: {
+        generatedAt: new Date().toISOString(),
+        version: '1.0',
+        ...metadata
+      }
+    };
+    
+    console.log('🔍 Generating JWT with payload:', { qrId: payload.qrId, type: payload.type });
 
-  // Sign with QR-specific secret
-  const token = jwt.sign(payload, JWT_SECRET, { 
-    algorithm: 'HS256',
-    expiresIn: TOKEN_EXPIRY 
-  });
+    // Sign with QR-specific secret
+    const token = jwt.sign(payload, JWT_SECRET, { 
+      algorithm: 'HS256',
+      expiresIn: TOKEN_EXPIRY 
+    });
 
-  // Initialize usage tracking
-  tokenUsage.set(payload.qrId, {
-    uses: 0,
-    firstUsed: null,
-    lastUsed: null,
-    ipAddresses: new Set(),
-    userAgents: new Set()
-  });
+    // Initialize usage tracking
+    tokenUsage.set(payload.qrId, {
+      uses: 0,
+      firstUsed: null,
+      lastUsed: null,
+      ipAddresses: new Set(),
+      userAgents: new Set()
+    });
 
-  console.log(`🔐 Generated secure QR token: ${payload.qrId}`);
-  return { token, qrId: payload.qrId, expiresAt: new Date(payload.exp * 1000) };
+    console.log(`🔐 Generated secure QR token: ${payload.qrId}`);
+    return { token, qrId: payload.qrId, expiresAt: new Date(payload.exp * 1000) };
+  } catch (error) {
+    console.error('❌ Error generating QR token:', error);
+    throw error;
+  }
 }
 
 // Verify QR token
