@@ -9,6 +9,7 @@ const axios = require('axios');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { initDatabase, db } = require('./database');
+const { generateSecureQRURL, authenticateQRToken, getTokenStats, revokeQRToken } = require('./security');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -502,6 +503,12 @@ app.get('/hotel-map', (req, res) => {
   res.redirect('/');
 });
 
+// QR Admin page - for generating secure QR codes (no authentication required for admin access)
+app.get('/qr-admin', (req, res) => {
+  const htmlPath = path.join(__dirname, 'public', 'qr-admin.html');
+  res.sendFile(htmlPath);
+});
+
 // Legacy mobile interface (if needed for specific use cases)
 app.get('/mobile', verifyQRAccess, (req, res) => {
   // Check for hotel parameter
@@ -541,21 +548,84 @@ app.get('/mobile', verifyQRAccess, (req, res) => {
 });
 
 // Main page with QR security verification - now serves hotel-map directly
-app.get('/', verifyQRAccess, (req, res) => {
-  // Log access information
+app.get('/', authenticateQRToken, (req, res) => {
+  // Log secure access information
   const clientIp = req.ip || req.connection.remoteAddress;
-  if (req.qrVerified) {
-    console.log(`📱 Secure QR access verified for ${clientIp} - Loading hotel-map interface`);
-  } else {
-    console.log(`🌐 Direct web access from ${clientIp} - Loading hotel-map interface`);
-  }
+  const qrInfo = req.qrAuth;
+  
+  console.log(`🔐 Secure QR access verified for ${clientIp}`);
+  console.log(`📱 QR ID: ${qrInfo.qrId}, Uses: ${qrInfo.usage.uses}/${qrInfo.usage.maxUses}`);
+  
+  // Add security headers
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   
   // Serve the enhanced index interface with Gemini AI address extraction
   const htmlPath = path.join(__dirname, 'public', 'index.html');
   res.sendFile(htmlPath);
 });
 
-// Secure QR code generation endpoint
+// Secure QR code generation endpoint - PROTECTED
+app.post('/api/generate-secure-qr', async (req, res) => {
+  const clientIp = req.ip || req.connection.remoteAddress;
+  const userAgent = req.get('User-Agent') || 'Unknown';
+  
+  try {
+    const { hotelName, customMessage } = req.body;
+    
+    // Get base URL from request or environment
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || `${req.protocol}://${req.get('host')}`;
+    
+    // Generate secure QR with metadata
+    const qrData = generateSecureQRURL(baseUrl, {
+      hotelName: hotelName || 'Hotel Guest Access',
+      customMessage: customMessage || 'Secure access to hotel recommendations',
+      generatedBy: clientIp,
+      userAgent: userAgent
+    });
+    
+    // Generate QR code image
+    const qrCodeDataURL = await QRCode.toDataURL(qrData.url, {
+      errorCorrectionLevel: 'H', // High error correction for better reliability
+      type: 'image/png',
+      quality: 0.92,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      },
+      width: 512 // High resolution
+    });
+    
+    console.log(`🔐 Generated secure QR code: ${qrData.qrId} for ${clientIp}`);
+    
+    res.json({
+      success: true,
+      qrCode: qrCodeDataURL,
+      qrId: qrData.qrId,
+      secureUrl: qrData.url,
+      expiresAt: qrData.expiresAt,
+      securityInfo: qrData.securityInfo,
+      instructions: {
+        usage: 'This QR code provides secure access to your hotel recommendations app',
+        maxUses: qrData.securityInfo.maxUses,
+        validFor: qrData.securityInfo.validFor,
+        security: 'Each scan is tracked and limited for maximum security'
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error generating secure QR:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to generate secure QR code',
+      details: error.message 
+    });
+  }
+});
+
+// Legacy QR endpoint for compatibility
 app.post('/api/generate-qr', async (req, res) => {
   const clientIp = req.ip || req.connection.remoteAddress;
   const userAgent = req.get('User-Agent') || 'Unknown';

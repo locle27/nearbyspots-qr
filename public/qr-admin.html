@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Secure QR Code Generator - Hotel Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .admin-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #2d3748;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .generate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .qr-result {
+            margin-top: 30px;
+            padding: 30px;
+            background: #f7fafc;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+        }
+
+        .qr-code-image {
+            max-width: 300px;
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+
+        .security-info {
+            background: #edf2f7;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .security-info h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .security-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid #cbd5e0;
+        }
+
+        .security-item:last-child {
+            border-bottom: none;
+        }
+
+        .download-btn {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            background: #ed8936;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-weight: 600;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #2f855a;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="header">
+            <h1>🔐 Secure QR Generator</h1>
+            <p>Generate ultra-secure QR codes for your hotel guests</p>
+        </div>
+
+        <form id="qrForm">
+            <div class="form-group">
+                <label for="hotelName">Hotel Name</label>
+                <input type="text" id="hotelName" placeholder="e.g., Grand Hotel Hanoi" required>
+            </div>
+
+            <div class="form-group">
+                <label for="customMessage">Custom Message (Optional)</label>
+                <textarea id="customMessage" rows="3" placeholder="Welcome to our hotel! Scan to discover amazing nearby places..."></textarea>
+            </div>
+
+            <button type="submit" class="generate-btn" id="generateBtn">
+                🔐 Generate Secure QR Code
+            </button>
+        </form>
+
+        <div id="qrResult" class="qr-result">
+            <h2>🎉 Your Secure QR Code is Ready!</h2>
+            <img id="qrCodeImage" class="qr-code-image" alt="Secure QR Code">
+            
+            <div>
+                <button class="download-btn" onclick="downloadQR()">📥 Download QR</button>
+                <button class="copy-btn" onclick="copyURL()">📋 Copy URL</button>
+            </div>
+
+            <div class="security-info">
+                <h3>🛡️ Security Information</h3>
+                <div class="security-item">
+                    <span>QR Code ID:</span>
+                    <span id="qrId">-</span>
+                </div>
+                <div class="security-item">
+                    <span>Maximum Uses:</span>
+                    <span id="maxUses">-</span>
+                </div>
+                <div class="security-item">
+                    <span>Valid For:</span>
+                    <span id="validFor">-</span>
+                </div>
+                <div class="security-item">
+                    <span>Expires At:</span>
+                    <span id="expiresAt">-</span>
+                </div>
+                <div class="security-item">
+                    <span>Security Level:</span>
+                    <span style="color: #e53e3e; font-weight: bold;">HIGH</span>
+                </div>
+            </div>
+
+            <div class="alert alert-success">
+                <strong>✅ Security Features Active:</strong><br>
+                • JWT Token Authentication<br>
+                • Usage Limits & Tracking<br>
+                • IP Address Monitoring<br>
+                • Automatic Expiration<br>
+                • Tamper-Proof URLs
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+    </div>
+
+    <script>
+        let currentQRData = null;
+
+        document.getElementById('qrForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await generateSecureQR();
+        });
+
+        async function generateSecureQR() {
+            const generateBtn = document.getElementById('generateBtn');
+            const hotelName = document.getElementById('hotelName').value;
+            const customMessage = document.getElementById('customMessage').value;
+
+            // Update button state
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<span class="loading">⏳</span> Generating Secure QR...';
+
+            try {
+                const response = await fetch('/api/generate-secure-qr', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        hotelName,
+                        customMessage
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentQRData = data;
+                    displayQRResult(data);
+                    showAlert('success', '🎉 Secure QR code generated successfully!');
+                } else {
+                    throw new Error(data.error || 'Failed to generate QR code');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', `❌ Error: ${error.message}`);
+            } finally {
+                // Reset button
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '🔐 Generate Secure QR Code';
+            }
+        }
+
+        function displayQRResult(data) {
+            const qrResult = document.getElementById('qrResult');
+            const qrImage = document.getElementById('qrCodeImage');
+            
+            // Set QR code image
+            qrImage.src = data.qrCode;
+            
+            // Fill security info
+            document.getElementById('qrId').textContent = data.qrId;
+            document.getElementById('maxUses').textContent = data.securityInfo.maxUses;
+            document.getElementById('validFor').textContent = data.securityInfo.validFor;
+            document.getElementById('expiresAt').textContent = new Date(data.expiresAt).toLocaleString();
+            
+            // Show result
+            qrResult.style.display = 'block';
+            qrResult.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function downloadQR() {
+            if (!currentQRData) return;
+            
+            const link = document.createElement('a');
+            link.download = `secure-qr-${currentQRData.qrId}.png`;
+            link.href = currentQRData.qrCode;
+            link.click();
+            
+            showAlert('success', '📥 QR code downloaded successfully!');
+        }
+
+        function copyURL() {
+            if (!currentQRData) return;
+            
+            navigator.clipboard.writeText(currentQRData.secureUrl).then(() => {
+                showAlert('success', '📋 Secure URL copied to clipboard!');
+            }).catch(() => {
+                showAlert('error', '❌ Failed to copy URL');
+            });
+        }
+
+        function showAlert(type, message) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = message;
+            
+            container.appendChild(alert);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
