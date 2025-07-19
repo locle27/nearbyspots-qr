@@ -4896,16 +4896,36 @@ Summary: Description of the place..."></textarea>
             document.addEventListener('paste', (e) => {
                 const adminPanel = document.getElementById('adminPanel');
                 if (adminPanel.style.display !== 'none') {
+                    console.log('📋 Paste event detected in admin panel');
+                    
                     // Check if we're focused on address zone or if address section is visible
                     const addressZone = document.getElementById('addressDropZone');
                     const isAddressFocused = document.activeElement === addressZone || 
                                            addressZone.classList.contains('focused');
                     
-                    if (isAddressFocused) {
+                    // Also check if we're anywhere in the address extraction section
+                    const addressSection = document.querySelector('.address-extraction-section');
+                    const isInAddressSection = addressSection && addressSection.contains(document.activeElement);
+                    
+                    console.log('📍 Address zone focused:', isAddressFocused);
+                    console.log('📍 In address section:', isInAddressSection);
+                    console.log('📍 Active element:', document.activeElement);
+                    console.log('📍 Address zone classes:', addressZone.classList.toString());
+                    
+                    // Check if we should handle address image paste
+                    const addressPreviewContainer = document.getElementById('addressPreviewContainer');
+                    const hasAddressImage = addressPreviewContainer && addressPreviewContainer.children.length > 0;
+                    
+                    // If address zone is focused OR we're in the address section OR no address image exists yet, handle address image paste
+                    if (isAddressFocused || isInAddressSection || !hasAddressImage) {
                         const items = e.clipboardData.items;
+                        console.log('📋 Clipboard items:', items.length);
+                        
                         for (let item of items) {
+                            console.log('📋 Item type:', item.type);
                             if (item.type.startsWith('image/')) {
                                 const file = item.getAsFile();
+                                console.log('📍 Address image file:', file);
                                 
                                 // Show paste feedback for address zone
                                 addressDropZone.classList.add('processing');
@@ -4938,32 +4958,96 @@ Summary: Description of the place..."></textarea>
                             }
                         }
                     }
+                    
+                    // If no address focus, check for regular image paste
+                    const regularDropZone = document.getElementById('imageDropZone');
+                    const isRegularFocused = document.activeElement === regularDropZone || 
+                                           regularDropZone.classList.contains('focused');
+                    
+                    console.log('📷 Regular zone focused:', isRegularFocused);
+                    
+                    if (isRegularFocused) {
+                        const items = e.clipboardData.items;
+                        for (let item of items) {
+                            if (item.type.startsWith('image/')) {
+                                const file = item.getAsFile();
+                                console.log('📷 Regular image file:', file);
+                                
+                                // Show paste feedback for regular zone
+                                regularDropZone.classList.add('paste-active');
+                                
+                                const pasteNotification = document.createElement('div');
+                                pasteNotification.style.cssText = `
+                                    position: fixed;
+                                    top: 20px;
+                                    right: 20px;
+                                    background: #28a745;
+                                    color: white;
+                                    padding: 10px 15px;
+                                    border-radius: 5px;
+                                    z-index: 10000;
+                                    font-size: 14px;
+                                    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                                `;
+                                pasteNotification.innerHTML = '📋 Image pasted! Processing...';
+                                document.body.appendChild(pasteNotification);
+                                
+                                handleFiles([file]);
+                                
+                                setTimeout(() => {
+                                    regularDropZone.classList.remove('paste-active');
+                                    pasteNotification.remove();
+                                }, 2000);
+                                
+                                e.preventDefault();
+                                return;
+                            }
+                        }
+                    }
                 }
             });
         }
 
         function handleAddressImage(file) {
+            console.log('📍 handleAddressImage called with file:', file);
+            
             if (!file.type.startsWith('image/')) {
+                console.error('❌ Invalid file type:', file.type);
                 alert('Please select an image file');
                 return;
             }
 
             if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                console.error('❌ File too large:', file.size);
                 alert('Image size must be less than 5MB');
                 return;
             }
 
+            console.log('✅ File is valid, reading as data URL...');
             const reader = new FileReader();
             reader.onload = (e) => {
+                console.log('✅ File read successfully, displaying preview...');
                 displayAddressPreview(e.target.result);
                 addressImage = e.target.result;
+            };
+            reader.onerror = (e) => {
+                console.error('❌ Error reading file:', e);
+                alert('Error reading file');
             };
             reader.readAsDataURL(file);
         }
 
         function displayAddressPreview(imageDataUrl) {
+            console.log('📍 displayAddressPreview called');
+            
             const previewContainer = document.getElementById('addressPreviewContainer');
+            if (!previewContainer) {
+                console.error('❌ Address preview container not found');
+                return;
+            }
+            
             const imageId = 'addr_' + Date.now() + '_' + Math.random().toString(36).substring(7);
+            console.log('📍 Generated image ID:', imageId);
             
             previewContainer.innerHTML = `
                 <div class="address-preview-item" data-image-id="${imageId}">
@@ -4972,6 +5056,8 @@ Summary: Description of the place..."></textarea>
                     <button type="button" class="address-extract-btn" onclick="extractAddressFromAddressImage('${imageId}', '${imageDataUrl}')">🔍 Extract Address</button>
                 </div>
             `;
+            
+            console.log('✅ Address preview displayed');
         }
 
         function removeAddressPreview() {
@@ -5411,7 +5497,7 @@ Summary: Description of the place..."></textarea>
             return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
         }
 
-        // Extract address from address image using OCR
+        // Extract address from address image using Gemini AI OCR
         async function extractAddressFromAddressImage(imageId, imageDataUrl) {
             const button = document.querySelector(`[data-image-id="${imageId}"] .address-extract-btn`);
             const originalText = button.textContent;
@@ -5422,74 +5508,40 @@ Summary: Description of the place..."></textarea>
                 
                 console.log('📸 Extracting address from address image:', imageId);
                 
-                // Use Tesseract.js for OCR (Client-side OCR)
-                if (typeof Tesseract === 'undefined') {
-                    // Load Tesseract.js dynamically
-                    const script = document.createElement('script');
-                    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js';
-                    document.head.appendChild(script);
-                    
-                    // Wait for library to load
-                    await new Promise((resolve) => {
-                        script.onload = resolve;
-                    });
-                }
+                button.textContent = '🤖 AI Processing...';
                 
-                button.textContent = '🔍 Reading text...';
-                
-                // Extract text from image
-                const result = await Tesseract.recognize(imageDataUrl, 'eng+vie', {
-                    logger: m => console.log('OCR:', m)
+                // Use Gemini AI for OCR (Server-side OCR)
+                const response = await fetch('/api/extract-address', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        imageData: imageDataUrl
+                    })
                 });
                 
-                const extractedText = result.data.text;
-                console.log('📝 Extracted text:', extractedText);
-                
-                if (!extractedText || extractedText.trim().length === 0) {
-                    throw new Error('No text found in image');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to extract address');
                 }
                 
-                button.textContent = '🔍 Finding address...';
+                const result = await response.json();
+                console.log('📝 Gemini AI result:', result);
                 
-                // Try to find address patterns in the extracted text
-                const addressPatterns = [
-                    // Vietnamese address patterns
-                    /\d+[\/\-]?\d*\s+[^,\n]+,\s*[^,\n]+/gi,
-                    // Street number + street name
-                    /\d+\s+[A-Za-z\s]+\s+(Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Boulevard|Blvd|Drive|Dr|Way|Phố|Đường|phố|đường)/gi,
-                    // Any line with numbers and common address keywords
-                    /.*\d+.*(?:Street|St|Road|Rd|Avenue|Ave|Phố|Đường|phố|đường).*$/gmi,
-                    // Generic patterns for addresses
-                    /\d+[A-Za-z]?\s+[^,\n]+(?:,\s*[^,\n]+)*/gi
-                ];
-                
-                let detectedAddress = null;
-                
-                for (const pattern of addressPatterns) {
-                    const matches = extractedText.match(pattern);
-                    if (matches && matches.length > 0) {
-                        // Take the first match and clean it up
-                        detectedAddress = matches[0].trim().replace(/\s+/g, ' ');
-                        break;
-                    }
+                if (!result.success || !result.data) {
+                    throw new Error('No data extracted from image');
                 }
+                
+                const extractedData = result.data;
+                console.log('📍 Extracted data:', extractedData);
+                
+                // Use business name as fallback if address not found
+                const detectedAddress = extractedData.address || extractedData.businessName;
                 
                 if (!detectedAddress) {
-                    // Fallback: look for any line with numbers (potential address)
-                    const lines = extractedText.split('\n').filter(line => line.trim().length > 0);
-                    for (const line of lines) {
-                        if (/\d+/.test(line) && line.length > 5) {
-                            detectedAddress = line.trim();
-                            break;
-                        }
-                    }
+                    throw new Error('No address or business name found in image');
                 }
-                
-                if (!detectedAddress) {
-                    throw new Error('No address pattern found in extracted text');
-                }
-                
-                console.log('📍 Detected address:', detectedAddress);
                 
                 button.textContent = '📍 Generating map...';
                 
@@ -5504,16 +5556,25 @@ Summary: Description of the place..."></textarea>
                     console.warn('Could not get coordinates for address:', error);
                 }
                 
-                // Store extracted address data
+                // Store extracted address data with enhanced information
                 extractedAddressData = {
                     address: detectedAddress,
+                    businessName: extractedData.businessName,
+                    phone: extractedData.phone,
+                    website: extractedData.website,
+                    description: extractedData.description,
                     googleMapsUrl: googleMapsUrl,
                     coordinates: coordinates,
-                    extractedText: extractedText
+                    extractedText: extractedData.allText
                 };
                 
                 // Display extracted address
                 displayExtractedAddress(extractedAddressData);
+                
+                // Auto-populate form if business name is available
+                if (extractedData.businessName) {
+                    document.getElementById('recName').value = extractedData.businessName;
+                }
                 
                 button.textContent = '✅ Address extracted!';
                 button.style.background = 'rgba(40, 167, 69, 0.9)';
@@ -5545,18 +5606,27 @@ Summary: Description of the place..."></textarea>
             const extractedText = document.getElementById('extractedAddressText');
             
             extractedText.innerHTML = `
+                ${addressData.businessName ? `<strong>Business Name:</strong> ${addressData.businessName}<br>` : ''}
                 <strong>Address:</strong> ${addressData.address}<br>
+                ${addressData.phone ? `<strong>Phone:</strong> ${addressData.phone}<br>` : ''}
+                ${addressData.website ? `<strong>Website:</strong> ${addressData.website}<br>` : ''}
                 <strong>Google Maps URL:</strong> <a href="${addressData.googleMapsUrl}" target="_blank">${addressData.googleMapsUrl}</a><br>
                 ${addressData.coordinates ? `<strong>Coordinates:</strong> ${addressData.coordinates.latitude}, ${addressData.coordinates.longitude}<br>` : ''}
+                ${addressData.description ? `<br><strong>Description:</strong> ${addressData.description}<br>` : ''}
                 <br>
                 <strong>Full extracted text:</strong><br>
-                ${addressData.extractedText.replace(/\n/g, '<br>')}
+                ${addressData.extractedText ? addressData.extractedText.replace(/\n/g, '<br>') : 'No text extracted'}
             `;
             
             extractedDisplay.style.display = 'block';
         }
 
         function populateFormWithAddress(addressData) {
+            // Auto-populate the business name field
+            if (addressData.businessName) {
+                document.getElementById('recName').value = addressData.businessName;
+            }
+            
             // Auto-populate the address field
             document.getElementById('recAddress').value = addressData.address;
             
@@ -5581,7 +5651,8 @@ Summary: Description of the place..."></textarea>
             }
             
             // Show success message
-            alert(`📍 Address information populated successfully!\n\nAddress: ${addressData.address}\n\nAll form fields have been filled. You can now submit the recommendation.`);
+            const businessInfo = addressData.businessName ? `\nBusiness: ${addressData.businessName}` : '';
+            alert(`📍 Address information populated successfully!${businessInfo}\n\nAddress: ${addressData.address}\n\nAll form fields have been filled. You can now submit the recommendation.`);
         }
 
         // Extract address from image using OCR

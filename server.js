@@ -17,10 +17,10 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://maps.googleapis.com", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://maps.googleapis.com"],
       scriptSrcAttr: ["'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https://places.googleapis.com", "https://maps.googleapis.com", "https://lh3.googleusercontent.com", "https://maps.gstatic.com"],
-      connectSrc: ["'self'", "https://places.googleapis.com", "https://maps.googleapis.com", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+      connectSrc: ["'self'", "https://places.googleapis.com", "https://maps.googleapis.com", "https://fonts.googleapis.com", "https://generativelanguage.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"]
     }
   }
@@ -550,8 +550,8 @@ app.get('/', verifyQRAccess, (req, res) => {
     console.log(`🌐 Direct web access from ${clientIp} - Loading hotel-map interface`);
   }
   
-  // Serve the enhanced hotel-map interface directly
-  const htmlPath = path.join(__dirname, 'public', 'hotel-map.html');
+  // Serve the enhanced index interface with Gemini AI address extraction
+  const htmlPath = path.join(__dirname, 'public', 'index.html');
   res.sendFile(htmlPath);
 });
 
@@ -1050,6 +1050,115 @@ app.get('/api/backups/:backupId', (req, res) => {
   } catch (error) {
     console.error('Error getting backup details:', error);
     res.status(500).json({ error: 'Failed to get backup details' });
+  }
+});
+
+// Gemini OCR endpoint for address extraction
+app.post('/api/extract-address', async (req, res) => {
+  try {
+    const { imageData } = req.body;
+    
+    if (!imageData) {
+      return res.status(400).json({ error: 'Image data is required' });
+    }
+    
+    console.log('🔍 Starting Gemini OCR extraction...');
+    
+    // Remove data URL prefix if present
+    const base64Image = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
+    
+    // Prepare the request to Gemini
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    if (!geminiApiKey) {
+      return res.status(500).json({ error: 'Gemini API key not configured' });
+    }
+    
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+    
+    const requestBody = {
+      contents: [{
+        parts: [
+          {
+            text: `Analyze this image and extract the following information in JSON format:
+            
+            {
+              "businessName": "extracted business name",
+              "address": "extracted address",
+              "phone": "extracted phone number if any",
+              "website": "extracted website if any",
+              "description": "brief description of what you see",
+              "allText": "all text found in the image"
+            }
+            
+            Rules:
+            - Extract the business name (usually the largest text or at the top)
+            - Extract the complete address with street number, street name, district, city
+            - Be very careful with Vietnamese addresses and names
+            - If no clear business name is found, return null
+            - Return only valid JSON, no additional text
+            - If address is not found, return null for address`
+          },
+          {
+            inline_data: {
+              mime_type: "image/jpeg",
+              data: base64Image
+            }
+          }
+        ]
+      }],
+      generationConfig: {
+        temperature: 0.1,
+        topK: 32,
+        topP: 1,
+        maxOutputTokens: 1024,
+      }
+    };
+    
+    console.log('📤 Sending request to Gemini API...');
+    
+    const response = await axios.post(geminiUrl, requestBody, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: 30000 // 30 seconds timeout
+    });
+    
+    console.log('📥 Received response from Gemini API');
+    
+    if (response.data && response.data.candidates && response.data.candidates[0]) {
+      const generatedText = response.data.candidates[0].content.parts[0].text;
+      console.log('📝 Gemini response:', generatedText);
+      
+      try {
+        // Parse the JSON response
+        const extractedData = JSON.parse(generatedText);
+        
+        console.log('✅ Extracted data:', extractedData);
+        
+        res.json({
+          success: true,
+          data: extractedData,
+          rawResponse: generatedText
+        });
+        
+      } catch (parseError) {
+        console.error('❌ Error parsing Gemini response:', parseError);
+        res.status(500).json({ 
+          error: 'Failed to parse Gemini response',
+          rawResponse: generatedText
+        });
+      }
+    } else {
+      console.error('❌ Invalid Gemini API response structure');
+      res.status(500).json({ error: 'Invalid response from Gemini API' });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error in Gemini OCR extraction:', error);
+    res.status(500).json({ 
+      error: 'Failed to extract address using Gemini',
+      details: error.message
+    });
   }
 });
 
