@@ -7,6 +7,8 @@ const path = require('path');
 const QRCode = require('qrcode');
 const axios = require('axios');
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
+const { initDatabase, db } = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -225,9 +227,7 @@ function cleanupOldBackups(backupDir) {
 
 // Generate unique ID for recommendations
 function generateRecommendationId() {
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 8);
-  return `rec_${timestamp}_${random}`;
+  return `rec_${uuidv4()}`;
 }
 
 // Security Functions
@@ -844,11 +844,24 @@ app.post('/api/recommendations', (req, res) => {
       } : null
     };
     
-    // Add to recommendations
-    manualRecommendations.push(newRecommendation);
-    saveRecommendations();
-    
-    console.log(`➕ Added new recommendation: ${newRecommendation.name}`);
+    // Add to recommendations (database or file)
+    if (useDatabase) {
+      const dbResult = await db.addRecommendation(newRecommendation);
+      if (dbResult) {
+        // Refresh in-memory cache from database
+        const dbRecommendations = await db.getAllRecommendations();
+        if (dbRecommendations) {
+          manualRecommendations = dbRecommendations;
+        }
+        console.log(`➕ Added new recommendation to database: ${newRecommendation.name}`);
+      } else {
+        throw new Error('Failed to save to database');
+      }
+    } else {
+      manualRecommendations.push(newRecommendation);
+      saveRecommendations();
+      console.log(`➕ Added new recommendation to file: ${newRecommendation.name}`);
+    }
     
     res.status(201).json({
       success: true,
@@ -921,20 +934,36 @@ app.put('/api/recommendations/:id', (req, res) => {
 });
 
 // Delete recommendation endpoint
-app.delete('/api/recommendations/:id', (req, res) => {
+app.delete('/api/recommendations/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Find and remove recommendation
+    // Find recommendation first
     const recIndex = manualRecommendations.findIndex(rec => rec.id === id);
     if (recIndex === -1) {
       return res.status(404).json({ error: 'Recommendation not found' });
     }
     
-    const deletedRec = manualRecommendations.splice(recIndex, 1)[0];
-    saveRecommendations();
+    const deletedRec = manualRecommendations[recIndex];
     
-    console.log(`🗑️ Deleted recommendation: ${deletedRec.name}`);
+    // Delete from database or file
+    if (useDatabase) {
+      const dbResult = await db.deleteRecommendation(id);
+      if (dbResult) {
+        // Refresh in-memory cache from database
+        const dbRecommendations = await db.getAllRecommendations();
+        if (dbRecommendations) {
+          manualRecommendations = dbRecommendations;
+        }
+        console.log(`🗑️ Deleted recommendation from database: ${deletedRec.name}`);
+      } else {
+        throw new Error('Failed to delete from database');
+      }
+    } else {
+      manualRecommendations.splice(recIndex, 1);
+      saveRecommendations();
+      console.log(`🗑️ Deleted recommendation from file: ${deletedRec.name}`);
+    }
     
     res.json({
       success: true,
@@ -2248,14 +2277,42 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Load recommendations on startup
-loadRecommendations();
+// Database and app initialization
+let useDatabase = false;
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 NearbySpots QR Discovery Server running on port ${PORT}`);
-  console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🗺️  Google Maps API: ${GOOGLE_MAPS_API_KEY ? 'Configured' : 'Missing'}`);
-  console.log(`⭐ Manual Recommendations: ${manualRecommendations.length} loaded`);
-  console.log(`🌐 Server accessible at http://0.0.0.0:${PORT}`);
-});
+async function initializeApp() {
+  try {
+    // Try to connect to database first
+    useDatabase = await initDatabase();
+    
+    if (useDatabase) {
+      console.log('🗄️ Using PostgreSQL database for storage');
+      // Load existing recommendations from database
+      const dbRecommendations = await db.getAllRecommendations();
+      if (dbRecommendations) {
+        manualRecommendations = dbRecommendations;
+        console.log(`📋 Loaded ${manualRecommendations.length} recommendations from database`);
+      }
+    } else {
+      console.log('📁 Using file storage as fallback');
+      loadRecommendations();
+    }
+    
+    // Start server after initialization
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 NearbySpots QR Discovery Server running on port ${PORT}`);
+      console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🗺️  Google Maps API: ${GOOGLE_MAPS_API_KEY ? 'Configured' : 'Missing'}`);
+      console.log(`⭐ Manual Recommendations: ${manualRecommendations.length} loaded`);
+      console.log(`🗄️ Storage: ${useDatabase ? 'PostgreSQL Database' : 'File System'}`);
+      console.log(`🌐 Server accessible at http://0.0.0.0:${PORT}`);
+    });
+    
+  } catch (error) {
+    console.error('❌ Failed to initialize app:', error);
+    process.exit(1);
+  }
+}
+
+// Initialize the application
+initializeApp();
