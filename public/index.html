@@ -3324,22 +3324,28 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             // Clear any previous selection highlighting
             resetAllMarkerHighlights();
             
-            // Highlight the selected location with a red pulsing dot (Google Maps style)
+            // Highlight the selected location with a large visible red dot (more prominent)
             const highlightIcon = {
                 url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                    <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Outer pulsing ring -->
-                        <circle cx="15" cy="15" r="12" fill="none" stroke="#EA4335" stroke-width="2" opacity="0.4">
-                            <animate attributeName="r" values="12;18;12" dur="2s" repeatCount="indefinite"/>
-                            <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite"/>
+                    <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Large outer pulsing ring -->
+                        <circle cx="25" cy="25" r="20" fill="none" stroke="#EA4335" stroke-width="3" opacity="0.5">
+                            <animate attributeName="r" values="20;30;20" dur="2s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite"/>
                         </circle>
-                        <!-- Selected location dot (red) -->
-                        <circle cx="15" cy="15" r="8" fill="#EA4335"/>
-                        <circle cx="15" cy="15" r="4" fill="white"/>
+                        <!-- Medium pulsing ring -->
+                        <circle cx="25" cy="25" r="15" fill="none" stroke="#EA4335" stroke-width="2" opacity="0.7">
+                            <animate attributeName="r" values="15;22;15" dur="1.5s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="0.7;0.2;0.7" dur="1.5s" repeatCount="indefinite"/>
+                        </circle>
+                        <!-- Large selected location dot (red) -->
+                        <circle cx="25" cy="25" r="12" fill="#EA4335" stroke="white" stroke-width="2"/>
+                        <circle cx="25" cy="25" r="6" fill="white"/>
+                        <circle cx="25" cy="25" r="3" fill="#EA4335"/>
                     </svg>
                 `),
-                scaledSize: new google.maps.Size(30, 30),
-                anchor: new google.maps.Point(15, 15),
+                scaledSize: new google.maps.Size(50, 50),
+                anchor: new google.maps.Point(25, 25),
                 zIndex: 1000
             };
             
