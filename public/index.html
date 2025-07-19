@@ -3003,7 +3003,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 if (uploadedImages.length > 0) {
                     submitBtn.innerHTML = '<span style="display: inline-block; animation: spin 1s linear infinite;">⏳</span> Optimizing images...';
                     
-                    for (let i = 0; i < Math.min(uploadedImages.length, 3); i++) { // Limit to 3 images
+                    for (let i = 0; i < uploadedImages.length; i++) { // Keep all uploaded images
                         const img = uploadedImages[i];
                         try {
                             // Compress image if too large
@@ -3017,9 +3017,16 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                                 name: img.name,
                                 dataUrl: dataUrl
                             });
+                            console.log(`✅ Processed image ${i + 1}/${uploadedImages.length}: ${img.name}`);
                         } catch (error) {
                             console.error('Error optimizing image:', img.name, error);
-                            // Skip problematic images
+                            // Use original image if compression fails
+                            optimizedImages.push({
+                                id: img.id,
+                                name: img.name,
+                                dataUrl: img.dataUrl
+                            });
+                            console.log(`⚠️ Used original image ${i + 1}/${uploadedImages.length}: ${img.name}`);
                         }
                     }
                 }
@@ -3050,6 +3057,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }
                 
                 console.log('Adding new recommendation:', recommendation);
+                console.log(`📸 Total images being sent: ${optimizedImages.length}`);
                 
                 const response = await fetch('/api/recommendations', {
                     method: 'POST',
