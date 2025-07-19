@@ -3321,21 +3321,89 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             // Smart zoom to show hotel-to-place relationship
             zoomToShowHotelAndPlace(marker.getPosition(), selectedPlace);
             
-            // Add a temporary highlight effect to the marker
-            const originalIcon = marker.getIcon();
+            // Clear any previous selection highlighting
+            resetAllMarkerHighlights();
             
-            // Create a highlighted version of the icon
+            // Highlight the selected location with a red pulsing dot (Google Maps style)
             const highlightIcon = {
-                ...originalIcon,
-                url: originalIcon.url.replace('stroke-width="2"', 'stroke-width="4"').replace('stroke="white"', 'stroke="#FFD700"')
+                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                    <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Outer pulsing ring -->
+                        <circle cx="15" cy="15" r="12" fill="none" stroke="#EA4335" stroke-width="2" opacity="0.4">
+                            <animate attributeName="r" values="12;18;12" dur="2s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite"/>
+                        </circle>
+                        <!-- Selected location dot (red) -->
+                        <circle cx="15" cy="15" r="8" fill="#EA4335"/>
+                        <circle cx="15" cy="15" r="4" fill="white"/>
+                    </svg>
+                `),
+                scaledSize: new google.maps.Size(30, 30),
+                anchor: new google.maps.Point(15, 15),
+                zIndex: 1000
             };
             
             marker.setIcon(highlightIcon);
             
-            // Reset the icon after 2 seconds
-            setTimeout(() => {
-                marker.setIcon(originalIcon);
-            }, 2000);
+            // Store the selected marker for later cleanup
+            window.selectedLocationMarker = marker;
+        }
+
+        function resetAllMarkerHighlights() {
+            // Reset all place markers to their original icons
+            placeMarkerMap.forEach((marker, placeId) => {
+                // Find original place data to recreate the correct icon
+                let originalPlace = null;
+                let originalCategory = null;
+                
+                Object.entries(allPlaces).forEach(([category, places]) => {
+                    const place = places.find(p => p.id === placeId);
+                    if (place) {
+                        originalPlace = place;
+                        originalCategory = category;
+                    }
+                });
+                
+                if (originalPlace && originalCategory) {
+                    // Recreate original marker icon using existing logic
+                    const color = CATEGORY_COLORS[originalCategory];
+                    const icon = CATEGORY_ICONS[originalCategory];
+                    
+                    const originalIcon = {
+                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                            <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <filter id="marker-shadow-${originalCategory}" x="-50%" y="-50%" width="200%" height="200%">
+                                        <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+                                        <feOffset dx="0" dy="2" result="offset"/>
+                                        <feFlood flood-color="#000000" flood-opacity="0.3"/>
+                                        <feComposite in2="offset" operator="in"/>
+                                        <feMerge>
+                                            <feMergeNode/>
+                                            <feMergeNode in="SourceGraphic"/>
+                                        </feMerge>
+                                    </filter>
+                                </defs>
+                                <!-- Drop pin shape -->
+                                <path d="M20 5 C12 5, 6 11, 6 19 C6 27, 20 45, 20 45 C20 45, 34 27, 34 19 C34 11, 28 5, 20 5 Z" 
+                                      fill="${color}" 
+                                      stroke="white" 
+                                      stroke-width="3" 
+                                      filter="url(#marker-shadow-${originalCategory})"/>
+                                <!-- Inner circle -->
+                                <circle cx="20" cy="19" r="10" fill="white"/>
+                                <!-- Category icon -->
+                                <text x="20" y="25" text-anchor="middle" fill="${color}" font-size="16" font-weight="bold">${icon}</text>
+                            </svg>
+                        `),
+                        scaledSize: new google.maps.Size(40, 50),
+                        anchor: new google.maps.Point(20, 45)
+                    };
+                    
+                    marker.setIcon(originalIcon);
+                    marker.setZIndex(500); // Normal z-index
+                }
+            });
         }
 
         function highlightPlaceInList(placeId) {
