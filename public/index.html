@@ -3250,8 +3250,20 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             }
         }
 
+        // Debounce mechanism to prevent rapid API calls
+        let lastLoadTime = 0;
+        const LOAD_COOLDOWN = 3000; // 3 seconds between loads
+
         async function loadPlaces() {
             console.log('Auto-loading places! Current activeCategories:', Array.from(activeCategories), 'Size:', activeCategories.size);
+            
+            // Prevent rapid successive calls
+            const now = Date.now();
+            if (now - lastLoadTime < LOAD_COOLDOWN) {
+                console.log('⏳ Load request too frequent, waiting for cooldown...');
+                return;
+            }
+            lastLoadTime = now;
             
             // Auto-select recommend category if no categories are selected
             if (activeCategories.size === 0) {

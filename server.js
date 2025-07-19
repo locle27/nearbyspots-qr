@@ -41,16 +41,49 @@ app.use(limiter);
 
 // Stricter rate limiting for Google Places API endpoints
 const apiLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10, // Only 10 API calls per minute
+  windowMs: 2 * 60 * 1000, // 2 minutes
+  max: 5, // Only 5 API calls per 2 minutes - very conservative
   message: { error: 'Too many API requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
     // Skip rate limiting for health checks
-    return req.path.includes('health') || req.path.includes('/health');
+    const userAgent = req.get('User-Agent') || '';
+    const isHealthCheck = req.path.includes('health') || 
+                         req.path.includes('/health') ||
+                         userAgent.toLowerCase().includes('health') ||
+                         userAgent.toLowerCase().includes('render') ||
+                         userAgent.toLowerCase().includes('check') ||
+                         userAgent.toLowerCase().includes('bot') ||
+                         userAgent.toLowerCase().includes('monitor');
+    return isHealthCheck;
   }
 });
+
+// Cache for API responses to reduce Google API calls
+const apiCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+function getCachedResponse(key) {
+  const cached = apiCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+  return null;
+}
+
+function setCachedResponse(key, data) {
+  apiCache.set(key, {
+    data,
+    timestamp: Date.now()
+  });
+  
+  // Clean old cache entries
+  if (apiCache.size > 100) {
+    const oldestKey = apiCache.keys().next().value;
+    apiCache.delete(oldestKey);
+  }
+}
 
 // CORS configuration
 const corsOptions = {
@@ -1409,6 +1442,14 @@ app.post('/api/search-nearby', apiLimiter, async (req, res) => {
     const { latitude, longitude, radius = DEFAULT_SEARCH_RADIUS } = req.body;
 
     console.log(`🚀 Starting search-nearby request:`, { latitude, longitude, radius });
+    
+    // Check cache first to avoid unnecessary API calls
+    const cacheKey = `search-${latitude}-${longitude}-${radius}`;
+    const cachedResult = getCachedResponse(cacheKey);
+    if (cachedResult) {
+      console.log('📦 Returning cached results to prevent API calls');
+      return res.json(cachedResult);
+    }
 
     if (!latitude || !longitude) {
       console.error('❌ Missing coordinates:', { latitude, longitude });
@@ -2095,6 +2136,10 @@ app.post('/api/search-nearby', apiLimiter, async (req, res) => {
       }
     };
 
+    // Cache successful results to reduce future API calls
+    setCachedResponse(cacheKey, responseData);
+    console.log('💾 Results cached for future requests');
+
     res.json(responseData);
   } catch (error) {
     console.error('❌ Search nearby critical error:', error);
@@ -2279,9 +2324,31 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
+// Health check with HTML page (no JavaScript execution)
+app.get('/health.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'health.html'));
+});
+
 // Root health check
 app.get('/healthcheck', (req, res) => {
   res.status(200).send('Healthy');
+});
+
+// Prevent main page access during health checks
+app.get('/', (req, res, next) => {
+  const userAgent = req.get('User-Agent') || '';
+  const isHealthCheck = userAgent.toLowerCase().includes('health') ||
+                       userAgent.toLowerCase().includes('render') ||
+                       userAgent.toLowerCase().includes('check') ||
+                       userAgent.toLowerCase().includes('bot') ||
+                       userAgent.toLowerCase().includes('monitor');
+  
+  if (isHealthCheck) {
+    console.log('🤖 Health check detected, redirecting to simple health page');
+    return res.redirect('/health.html');
+  }
+  
+  next();
 });
 
 // API configuration test endpoint
