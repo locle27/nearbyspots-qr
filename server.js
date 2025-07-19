@@ -2458,6 +2458,14 @@ async function initializeApp() {
       if (dbRecommendations) {
         manualRecommendations = dbRecommendations;
         console.log(`📋 Loaded ${manualRecommendations.length} recommendations from database`);
+        
+        // Also sync to file storage as backup
+        try {
+          fs.writeFileSync(RECOMMENDATIONS_FILE, JSON.stringify(manualRecommendations, null, 2));
+          console.log('💾 Synced database data to file storage backup');
+        } catch (error) {
+          console.warn('⚠️ Failed to sync to file backup:', error);
+        }
       }
     } else {
       console.log('📁 Using file storage as fallback');
