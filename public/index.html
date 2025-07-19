@@ -3387,22 +3387,22 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             bounds.extend(hotelPosition);
             bounds.extend(placePosition);
 
-            // Add very generous padding for maximum overview and context
-            let paddingOptions = { top: 400, bottom: 400, left: 300, right: 300 };
+            // Add maximum padding for complete area overview showing both locations
+            let paddingOptions = { top: 800, bottom: 800, left: 600, right: 600 };
             
             if (distance) {
                 if (distance < 200) {
-                    // Very close - need major padding to show walking context
-                    paddingOptions = { top: 350, bottom: 350, left: 250, right: 250 };
+                    // Very close - huge padding to show full walking area context
+                    paddingOptions = { top: 700, bottom: 700, left: 500, right: 500 };
                 } else if (distance < 500) {
-                    // Close - substantial padding for street context
-                    paddingOptions = { top: 400, bottom: 400, left: 300, right: 300 };
+                    // Close - massive padding for complete street network view
+                    paddingOptions = { top: 800, bottom: 800, left: 600, right: 600 };
                 } else if (distance < 1000) {
-                    // Medium distance - large padding for neighborhood context
-                    paddingOptions = { top: 500, bottom: 500, left: 400, right: 400 };
+                    // Medium distance - extra large padding for full district view
+                    paddingOptions = { top: 1000, bottom: 1000, left: 800, right: 800 };
                 } else {
-                    // Far - maximum padding for full area overview
-                    paddingOptions = { top: 600, bottom: 600, left: 500, right: 500 };
+                    // Far - maximum possible padding for complete city area overview
+                    paddingOptions = { top: 1200, bottom: 1200, left: 1000, right: 1000 };
                 }
             }
 
