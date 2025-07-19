@@ -3399,32 +3399,20 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             const latDiff = Math.abs(hotelPosition.lat() - placePosition.lat());
             const lngDiff = Math.abs(hotelPosition.lng() - placePosition.lng());
             
-            // Expand bounds significantly beyond the two points
-            let expansionFactor = 3; // Default 3x expansion
-            if (distance) {
-                if (distance < 200) {
-                    expansionFactor = 4; // 4x expansion for very close places
-                } else if (distance < 500) {
-                    expansionFactor = 3.5; // 3.5x expansion
-                } else if (distance < 1000) {
-                    expansionFactor = 3; // 3x expansion
-                } else {
-                    expansionFactor = 2.5; // 2.5x expansion for far places
-                }
-            }
+            // Force a much larger area to ensure both locations are visible with context
+            // Calculate minimum bounds that include both points with significant buffer
+            const minLatDiff = 0.02; // Minimum ~2km coverage in latitude
+            const minLngDiff = 0.02; // Minimum ~2km coverage in longitude
+            
+            // Use much larger expansion to guarantee overview
+            const expandedLatDiff = Math.max(latDiff * 8, minLatDiff); // 8x expansion or 2km minimum
+            const expandedLngDiff = Math.max(lngDiff * 8, minLngDiff); // 8x expansion or 2km minimum
             
             console.log(`📐 Original lat/lng diff: ${latDiff.toFixed(6)}, ${lngDiff.toFixed(6)}`);
-            console.log(`🔢 Using expansion factor: ${expansionFactor}x for ${distance}m distance`);
+            console.log(`📏 FORCED expanded lat/lng diff: ${expandedLatDiff.toFixed(6)}, ${expandedLngDiff.toFixed(6)}`);
+            console.log(`🎯 Map will show area from (${(centerLat - expandedLatDiff).toFixed(6)}, ${(centerLng - expandedLngDiff).toFixed(6)}) to (${(centerLat + expandedLatDiff).toFixed(6)}, ${(centerLng + expandedLngDiff).toFixed(6)})`);
             
-            // Create expanded bounds
-            const expandedLatDiff = Math.max(latDiff * expansionFactor, 0.01); // Minimum 0.01 degree expansion
-            const expandedLngDiff = Math.max(lngDiff * expansionFactor, 0.01); // Minimum 0.01 degree expansion
-            
-            console.log(`📏 Expanded lat/lng diff: ${expandedLatDiff.toFixed(6)}, ${expandedLngDiff.toFixed(6)}`);
-            console.log(`🎯 Bounds will include area from (${(centerLat - expandedLatDiff).toFixed(6)}, ${(centerLng - expandedLngDiff).toFixed(6)}) to (${(centerLat + expandedLatDiff).toFixed(6)}, ${(centerLng + expandedLngDiff).toFixed(6)})`);
-            
-            
-            // Add the expanded boundary points
+            // Create bounds with guaranteed large area
             bounds.extend(new google.maps.LatLng(
                 centerLat - expandedLatDiff,
                 centerLng - expandedLngDiff
@@ -3434,26 +3422,37 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 centerLng + expandedLngDiff
             ));
             
-            // Also include the original points
+            // Also include the original points to ensure they're visible
             bounds.extend(hotelPosition);
             bounds.extend(placePosition);
 
-            // Apply the expanded bounds with minimal padding
-            console.log('🗺️ Applying fitBounds with expanded area...');
-            map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
+            // Apply bounds with large padding for extra context
+            console.log('🗺️ Applying fitBounds with LARGE overview area...');
+            map.fitBounds(bounds, { top: 100, bottom: 100, left: 100, right: 100 });
             
-            // Set maximum zoom level to ensure overview
+            // Force lower zoom level to guarantee overview
             setTimeout(() => {
                 const currentZoom = map.getZoom();
-                const maxZoom = 15; // Maximum zoom level for overview
-                console.log(`🔍 Current zoom after fitBounds: ${currentZoom}, maxZoom: ${maxZoom}`);
+                const maxZoom = 13; // Much lower max zoom for guaranteed overview
+                console.log(`🔍 Current zoom after fitBounds: ${currentZoom}, forcing maxZoom: ${maxZoom}`);
                 if (currentZoom > maxZoom) {
-                    console.log(`⬇️ Reducing zoom from ${currentZoom} to ${maxZoom}`);
+                    console.log(`⬇️ FORCING zoom from ${currentZoom} to ${maxZoom} for overview`);
                     map.setZoom(maxZoom);
                 } else {
-                    console.log(`✅ Zoom level ${currentZoom} is acceptable (≤ ${maxZoom})`);
+                    console.log(`✅ Zoom level ${currentZoom} provides good overview`);
                 }
-            }, 100);
+                
+                // Double-check both markers are visible
+                const mapBounds = map.getBounds();
+                const hotelVisible = mapBounds.contains(hotelPosition);
+                const placeVisible = mapBounds.contains(placePosition);
+                console.log(`👀 Hotel visible: ${hotelVisible}, Place visible: ${placeVisible}`);
+                
+                if (!hotelVisible || !placeVisible) {
+                    console.warn('🚨 One or both markers not visible, forcing wider view...');
+                    map.setZoom(Math.max(currentZoom - 2, 10)); // Force even wider view
+                }
+            }, 200);
 
             // Add visual connection line temporarily
             if (distance && distance > 100) {
