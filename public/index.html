@@ -3312,16 +3312,10 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 if (found) selectedPlace = found;
             });
             
-            // Close any currently open info window
+            // Close any currently open info window - NO POPUPS for overview
             if (currentInfoWindow) {
                 currentInfoWindow.close();
-            }
-            
-            // Open the info window for this marker
-            const infoWindow = marker.infoWindow;
-            if (infoWindow) {
-                infoWindow.open(map, marker);
-                currentInfoWindow = infoWindow;
+                currentInfoWindow = null;
             }
 
             // Smart zoom to show hotel-to-place relationship
@@ -3399,14 +3393,14 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             const latDiff = Math.abs(hotelPosition.lat() - placePosition.lat());
             const lngDiff = Math.abs(hotelPosition.lng() - placePosition.lng());
             
-            // Google Maps style overview - show both locations with reasonable context
-            // Calculate appropriate bounds that show both points clearly
-            const minLatDiff = 0.005; // Minimum ~500m coverage in latitude (Google Maps style)
-            const minLngDiff = 0.005; // Minimum ~500m coverage in longitude
+            // Clean overview showing both locations like Google Maps
+            // Ensure both points are visible with some padding
+            const minLatDiff = 0.003; // Minimum coverage to ensure both dots visible
+            const minLngDiff = 0.003; // Minimum coverage to ensure both dots visible
             
-            // Use moderate expansion for Google Maps style overview
-            const expandedLatDiff = Math.max(latDiff * 2.5, minLatDiff); // 2.5x expansion or 500m minimum
-            const expandedLngDiff = Math.max(lngDiff * 2.5, minLngDiff); // 2.5x expansion or 500m minimum
+            // Simple expansion to show both locations clearly
+            const expandedLatDiff = Math.max(latDiff * 1.8, minLatDiff); // 1.8x expansion 
+            const expandedLngDiff = Math.max(lngDiff * 1.8, minLngDiff); // 1.8x expansion
             
             console.log(`📐 Original lat/lng diff: ${latDiff.toFixed(6)}, ${lngDiff.toFixed(6)}`);
             console.log(`📏 FORCED expanded lat/lng diff: ${expandedLatDiff.toFixed(6)}, ${expandedLngDiff.toFixed(6)}`);
@@ -3426,9 +3420,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             bounds.extend(hotelPosition);
             bounds.extend(placePosition);
 
-            // Apply bounds with large padding for extra context
-            console.log('🗺️ Applying fitBounds with LARGE overview area...');
-            map.fitBounds(bounds, { top: 100, bottom: 100, left: 100, right: 100 });
+            // Apply bounds with minimal padding for clean overview
+            console.log('🗺️ Applying fitBounds for clean two-location overview...');
+            map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
             
             // Google Maps style zoom level management
             setTimeout(() => {
@@ -3466,10 +3460,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }, 100);
             }, 200);
 
-            // Add visual connection line temporarily
-            if (distance && distance > 100) {
-                showDistanceVisualization(hotelPosition, placePosition, distance);
-            }
+            // NO distance visualization - just clean dots like Google Maps
 
             // Log zoom details for user understanding
             setTimeout(() => {
