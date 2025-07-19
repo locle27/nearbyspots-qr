@@ -39,6 +39,19 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Stricter rate limiting for Google Places API endpoints
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 10, // Only 10 API calls per minute
+  message: { error: 'Too many API requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path.includes('health') || req.path.includes('/health');
+  }
+});
+
 // CORS configuration
 const corsOptions = {
   origin: process.env.CORS_ORIGIN || '*',
@@ -1391,7 +1404,7 @@ ${content}`
 });
 
 // Search nearby places endpoint
-app.post('/api/search-nearby', async (req, res) => {
+app.post('/api/search-nearby', apiLimiter, async (req, res) => {
   try {
     const { latitude, longitude, radius = DEFAULT_SEARCH_RADIUS } = req.body;
 
@@ -2097,7 +2110,7 @@ app.post('/api/search-nearby', async (req, res) => {
 });
 
 // Reverse geocode coordinates to address endpoint
-app.post('/api/geocode-coordinates', async (req, res) => {
+app.post('/api/geocode-coordinates', apiLimiter, async (req, res) => {
   try {
     const { latitude, longitude } = req.body;
     
@@ -2131,7 +2144,7 @@ app.post('/api/geocode-coordinates', async (req, res) => {
 });
 
 // Geocode address endpoint
-app.post('/api/geocode-address', async (req, res) => {
+app.post('/api/geocode-address', apiLimiter, async (req, res) => {
   try {
     const { address } = req.body;
     
@@ -2217,7 +2230,7 @@ app.post('/api/resolve-maps-url', async (req, res) => {
 });
 
 // Get place photo
-app.get('/api/place-photo/:photoName', async (req, res) => {
+app.get('/api/place-photo/:photoName', apiLimiter, async (req, res) => {
   try {
     const { photoName } = req.params;
     const { maxHeightPx = 400, maxWidthPx = 400 } = req.query;
@@ -2251,7 +2264,7 @@ app.get('/api/place-photo/:photoName', async (req, res) => {
   }
 });
 
-// Health check endpoint
+// Health check endpoint for deployment platforms
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
@@ -2259,6 +2272,16 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// Simple health check endpoint for Render
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// Root health check
+app.get('/healthcheck', (req, res) => {
+  res.status(200).send('Healthy');
 });
 
 // API configuration test endpoint
