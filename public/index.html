@@ -5396,16 +5396,15 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     previewContainer.innerHTML = previewHTML;
                     previewContainer.style.display = 'block';
                     
-                    googleMapsUrl = await generateGoogleMapsUrl(parsed.address);
-                    if (googleMapsUrl) {
-                        // Get coordinates for form population
-                        coordinates = await getCoordinatesFromAddress(parsed.address);
+                    // Get coordinates and generate maps URL in one call
+                    coordinates = await getCoordinatesFromAddress(parsed.address);
+                    
+                    if (coordinates) {
+                        // Generate Google Maps URL from coordinates (faster)
+                        googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${coordinates.latitude},${coordinates.longitude}`;
                         
-                        if (coordinates) {
-                            previewHTML = previewHTML.replace('🔍 Getting coordinates...', '✅ Coordinates found!');
-                            previewHTML += `<div class="parsed-item"><span class="parsed-label">Coordinates:</span> <span class="parsed-value">${coordinates.latitude}, ${coordinates.longitude}</span></div>`;
-                        }
-                        
+                        previewHTML = previewHTML.replace('🔍 Getting coordinates...', '✅ Coordinates found!');
+                        previewHTML += `<div class="parsed-item"><span class="parsed-label">Coordinates:</span> <span class="parsed-value">${coordinates.latitude}, ${coordinates.longitude}</span></div>`;
                         previewHTML += `<div class="parsed-item"><span class="parsed-label">Maps URL:</span> <span class="parsed-value"><a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a></span></div>`;
                         
                         // Also show in the main URL display
@@ -5416,6 +5415,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                             urlLink.textContent = googleMapsUrl;
                             urlDisplay.style.display = 'block';
                         }
+                    } else {
+                        // Fallback: generate URL from address
+                        googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parsed.address)}`;
+                        previewHTML = previewHTML.replace('🔍 Getting coordinates...', '⚠️ Using address search');
+                        previewHTML += `<div class="parsed-item"><span class="parsed-label">Maps URL:</span> <span class="parsed-value"><a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a></span></div>`;
                     }
                 } catch (error) {
                     console.error('Error processing address:', error);

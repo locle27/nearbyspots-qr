@@ -1110,7 +1110,7 @@ app.post('/api/extract-address', async (req, res) => {
         temperature: 0.1,
         topK: 32,
         topP: 1,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 512,
       }
     };
     
@@ -1120,7 +1120,7 @@ app.post('/api/extract-address', async (req, res) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      timeout: 30000 // 30 seconds timeout
+      timeout: 15000 // 30 seconds timeout
     });
     
     console.log('📥 Received response from Gemini API');
@@ -1130,8 +1130,16 @@ app.post('/api/extract-address', async (req, res) => {
       console.log('📝 Gemini response:', generatedText);
       
       try {
+        // Clean the response by removing markdown code blocks if present
+        let cleanedText = generatedText.trim();
+        if (cleanedText.startsWith('```json')) {
+          cleanedText = cleanedText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+        } else if (cleanedText.startsWith('```')) {
+          cleanedText = cleanedText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+        }
+        
         // Parse the JSON response
-        const extractedData = JSON.parse(generatedText);
+        const extractedData = JSON.parse(cleanedText);
         
         console.log('✅ Extracted data:', extractedData);
         
@@ -1205,7 +1213,8 @@ Rules:
 - If address is incomplete, try to infer or note what's missing
 - Extract price range as text (e.g., "30k-50k VND", "$10-20", "Budget friendly")
 - If no clear place name, use the most prominent business identifier
-- Return only valid JSON, no additional text
+- Return ONLY valid JSON without any markdown formatting, code blocks, or additional text
+- Do NOT wrap the JSON in ```json or ``` blocks
 - If information is not found, use null for that field
 - Be very careful with Vietnamese names and addresses
 
@@ -1218,7 +1227,7 @@ ${content}`
         temperature: 0.1,
         topK: 32,
         topP: 1,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 512,
       }
     };
     
@@ -1228,7 +1237,7 @@ ${content}`
       headers: {
         'Content-Type': 'application/json',
       },
-      timeout: 30000
+      timeout: 15000
     });
     
     console.log('📥 Received content parsing response from Gemini');
@@ -1238,7 +1247,15 @@ ${content}`
       console.log('📝 Gemini parsing response:', generatedText);
       
       try {
-        const parsedData = JSON.parse(generatedText);
+        // Clean the response by removing markdown code blocks if present
+        let cleanedText = generatedText.trim();
+        if (cleanedText.startsWith('```json')) {
+          cleanedText = cleanedText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+        } else if (cleanedText.startsWith('```')) {
+          cleanedText = cleanedText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+        }
+        
+        const parsedData = JSON.parse(cleanedText);
         console.log('✅ Parsed recommendation data:', parsedData);
         
         res.json({
