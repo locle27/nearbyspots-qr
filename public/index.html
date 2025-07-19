@@ -446,12 +446,25 @@
             cursor: pointer;
             transition: all 0.3s ease;
             background: white;
+            min-height: 44px;
+            -webkit-tap-highlight-color: rgba(25, 118, 210, 0.3);
+            tap-highlight-color: rgba(25, 118, 210, 0.3);
+            touch-action: manipulation;
         }
 
-        .place-item:hover {
+        .place-item:hover, .place-item:active {
             border-color: #1976D2;
             box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
             transform: translateY(-2px);
+        }
+
+        /* Mobile touch feedback */
+        @media (hover: none) {
+            .place-item:active {
+                background: #f5f5f5;
+                border-color: #1976D2;
+                transform: scale(0.98);
+            }
         }
 
         .place-item.highlighted {
@@ -1376,24 +1389,54 @@
             padding-right: 50px;
         }
 
+        .image-modal-back {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: rgba(0,0,0,0.7);
+            border: none;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 10px 16px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .image-modal-back:hover, .image-modal-back:active {
+            background: rgba(0,0,0,0.8);
+            transform: scale(1.05);
+        }
+
         .image-modal-close {
             position: absolute;
             top: 16px;
             right: 16px;
-            background: rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.7);
             border: none;
             color: white;
             font-size: 1.5rem;
             cursor: pointer;
             padding: 8px;
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
             backdrop-filter: blur(10px);
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         .image-modal-close:hover {
@@ -1443,13 +1486,26 @@
 
             .image-modal-title {
                 padding-right: 60px;
-                font-size: 1.5rem;
+                padding-left: 100px;
+                font-size: 1.3rem;
+                text-align: center;
+            }
+
+            .image-modal-back {
+                padding: 8px 14px;
+                font-size: 0.9rem;
+                top: 12px;
+                left: 12px;
+                min-height: 40px;
             }
 
             .image-modal-close {
-                width: 44px;
-                height: 44px;
-                font-size: 1.6rem;
+                width: 48px;
+                height: 48px;
+                font-size: 1.8rem;
+                top: 12px;
+                right: 12px;
+                background: rgba(0,0,0,0.8);
             }
         }
 
@@ -2164,6 +2220,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
     <div class="image-modal" id="imageModal">
         <div class="image-modal-content">
             <div class="image-modal-header">
+                <button class="image-modal-back" id="backImageModal">← Back</button>
                 <h3 class="image-modal-title" id="modalPlaceName">Place Details</h3>
                 <button class="image-modal-close" id="closeImageModal">✕</button>
             </div>
@@ -2449,13 +2506,33 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         function setupImageModal() {
             const modal = document.getElementById('imageModal');
             const closeBtn = document.getElementById('closeImageModal');
+            const backBtn = document.getElementById('backImageModal');
             
-            // Close modal when clicking close button
+            // Close modal when clicking/touching close button (improved mobile support)
             closeBtn.addEventListener('click', hideImageModal);
+            closeBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                hideImageModal();
+            });
+            
+            // Back button functionality (same as close)
+            backBtn.addEventListener('click', hideImageModal);
+            backBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                hideImageModal();
+            });
             
             // Close modal when clicking outside the content
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
+                    hideImageModal();
+                }
+            });
+            
+            // Close modal when touching outside the content (mobile)
+            modal.addEventListener('touchend', (e) => {
+                if (e.target === modal) {
+                    e.preventDefault();
                     hideImageModal();
                 }
             });
@@ -2719,10 +2796,20 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }
             }, 100);
             
-            // Add click handler to open detailed view
-            item.addEventListener('click', () => {
+            // Add click/touch handler to open detailed view (improved mobile support)
+            const handlePlaceSelect = (e) => {
+                // Prevent event if clicking on delete button
+                if (e.target.closest('.delete-recommendation-btn')) {
+                    return;
+                }
                 showPlaceDetails(place);
                 highlightPlaceOnMap(place.id);
+            };
+            
+            item.addEventListener('click', handlePlaceSelect);
+            item.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                handlePlaceSelect(e);
             });
             
             return item;
