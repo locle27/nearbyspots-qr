@@ -1881,6 +1881,37 @@
             margin-left: 5px;
         }
 
+        /* View Details Button */
+        .view-details-btn {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #1976D2 0%, #42a5f5 100%);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+            min-height: 44px;
+            min-width: 44px;
+            z-index: 10;
+        }
+
+        .view-details-btn:hover {
+            transform: translateY(-50%) translateY(-2px);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+        }
+
+        .view-details-btn:active {
+            transform: translateY(-50%) translateY(0px);
+            box-shadow: 0 2px 6px rgba(25, 118, 210, 0.3);
+        }
+
         /* Mobile responsiveness */
         @media (max-width: 768px) {
             .split-container {
@@ -1960,6 +1991,14 @@
             .place-item {
                 padding: 10px;
                 gap: 10px;
+            }
+            
+            .view-details-btn {
+                right: 10px;
+                padding: 10px;
+                font-size: 0.75rem;
+                min-height: 44px;
+                min-width: 60px;
             }
         }
     </style>
@@ -2780,6 +2819,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         </span>
                     </div>
                 </div>
+                <button class="view-details-btn" onclick="event.stopPropagation(); showPlaceDetails(${JSON.stringify(place).replace(/"/g, '&quot;')})" title="View detailed information">
+                    👁️ Details
+                </button>
                 ${deleteButtonHtml}
             `;
             
@@ -2796,13 +2838,13 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }
             }, 100);
             
-            // Add click/touch handler to open detailed view (improved mobile support)
+            // Add click/touch handler for smart zoom (no details modal)
             const handlePlaceSelect = (e) => {
-                // Prevent event if clicking on delete button
-                if (e.target.closest('.delete-recommendation-btn')) {
+                // Prevent event if clicking on delete button or view details button
+                if (e.target.closest('.delete-recommendation-btn') || e.target.closest('.view-details-btn')) {
                     return;
                 }
-                showPlaceDetails(place);
+                // Only trigger smart zoom, not details modal
                 highlightPlaceOnMap(place.id);
             };
             
