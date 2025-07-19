@@ -252,9 +252,9 @@
             <div class="alert alert-success">
                 <strong>✅ Security Features Active:</strong><br>
                 • JWT Token Authentication<br>
-                • Usage Limits & Tracking<br>
+                • Unlimited Usage (Permanent)<br>
                 • IP Address Monitoring<br>
-                • Automatic Expiration<br>
+                • Manual Control Only<br>
                 • Tamper-Proof URLs
             </div>
         </div>
@@ -319,9 +319,9 @@
             
             // Fill security info
             document.getElementById('qrId').textContent = data.qrId;
-            document.getElementById('maxUses').textContent = data.securityInfo.maxUses;
-            document.getElementById('validFor').textContent = data.securityInfo.validFor;
-            document.getElementById('expiresAt').textContent = new Date(data.expiresAt).toLocaleString();
+            document.getElementById('maxUses').textContent = 'UNLIMITED';
+            document.getElementById('validFor').textContent = 'PERMANENT';
+            document.getElementById('expiresAt').textContent = 'NEVER (Manual Control Only)';
             
             // Show result
             qrResult.style.display = 'block';

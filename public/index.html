@@ -1328,12 +1328,14 @@
         .image-modal-content {
             position: relative;
             width: 100%;
-            max-height: 95vh;
+            height: 95vh;
             background: white;
             border-radius: 20px 20px 0 0;
             overflow: hidden;
             box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
             animation: slideUp 0.3s ease-out;
+            display: flex;
+            flex-direction: column;
         }
 
         @keyframes slideUp {
@@ -1401,9 +1403,11 @@
 
         .image-modal-body {
             padding: 0;
-            max-height: calc(95vh - 80px);
+            flex: 1;
             overflow-y: auto;
             scroll-behavior: smooth;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Desktop styles for larger screens */
@@ -1451,16 +1455,17 @@
 
         /* Professional Mobile Content Layout */
         .place-details-full {
-            padding: 24px 20px 0 20px;
+            padding: 16px 20px;
+            flex-shrink: 0;
         }
 
         .place-hero-section {
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
 
         .place-main-image {
             width: 100%;
-            height: 240px;
+            height: 200px;
             border-radius: 12px;
             object-fit: cover;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
@@ -1498,7 +1503,7 @@
         .place-stats-full {
             display: flex;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
         }
 
@@ -1535,19 +1540,19 @@
 
         .place-description-full {
             color: #4b5563;
-            line-height: 1.6;
-            margin-bottom: 24px;
-            font-size: 1rem;
-            padding: 16px;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            font-size: 0.95rem;
+            padding: 12px;
             background: #f9fafb;
-            border-radius: 12px;
+            border-radius: 8px;
             border-left: 4px solid #1976D2;
         }
 
         .place-actions {
             display: flex;
             gap: 12px;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
             padding: 0 20px;
         }
 
@@ -1609,19 +1614,28 @@
         /* Professional Photo Gallery */
         .photo-gallery {
             background: #f8fafc;
-            margin: 0 -20px;
-            padding: 24px 20px;
+            margin: 16px -20px 0 -20px;
+            padding: 20px 20px 24px 20px;
             border-top: 1px solid #e2e8f0;
+            flex: 1;
+            overflow: hidden;
         }
 
         .gallery-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: #1a1a1a;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 8px;
+        }
+        
+        .gallery-scroll-hint {
+            font-size: 0.8rem;
+            color: #6b7280;
+            font-weight: 500;
         }
 
         .gallery-title::before {
@@ -1630,9 +1644,30 @@
         }
 
         .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 16px;
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .photo-grid::-webkit-scrollbar {
+            height: 4px;
+        }
+        
+        .photo-grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+        
+        .photo-grid::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+        }
+        
+        .photo-grid::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
 
         /* Desktop gallery adjustments */
@@ -1645,18 +1680,26 @@
             }
 
             .photo-grid {
+                display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
                 gap: 18px;
+                overflow-x: visible;
+                padding-bottom: 0;
+            }
+            
+            .gallery-image-container {
+                width: 100%;
             }
         }
 
         .gallery-image-container {
             position: relative;
-            width: 100%;
+            width: 140px;
             height: 120px;
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            flex-shrink: 0;
         }
 
         .gallery-image {
@@ -4032,7 +4075,10 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 const totalImages = (place.images ? place.images.length - 1 : 0) + (place.photos ? place.photos.length - (place.images && place.images.length > 0 ? 0 : 1) : 0);
                 galleryHtml = `
                     <div class="photo-gallery">
-                        <div class="gallery-title">📸 More Photos (${totalImages})</div>
+                        <div class="gallery-title">
+                            <span>📸 More Photos (${totalImages})</span>
+                            <span class="gallery-scroll-hint">👆 Swipe to see all →</span>
+                        </div>
                         <div class="photo-grid">
                             ${galleryImagesHtml}
                         </div>

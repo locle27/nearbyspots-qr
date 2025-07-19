@@ -4,8 +4,8 @@ const crypto = require('crypto');
 // Security configuration
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
 const QR_SECRET = process.env.QR_SECRET || crypto.randomBytes(32).toString('hex');
-const TOKEN_EXPIRY = '24h'; // QR codes expire after 24 hours
-const MAX_USES_PER_TOKEN = 100; // Maximum uses per QR code
+const TOKEN_EXPIRY = '10y'; // Permanent QR codes (10 years = effectively permanent)
+const MAX_USES_PER_TOKEN = 999999; // Unlimited uses (very high number)
 
 // In-memory store for token usage tracking (in production, use Redis or database)
 const tokenUsage = new Map();
@@ -48,8 +48,8 @@ function generateSecureQRToken(metadata = {}) {
       userAgents: new Set()
     });
 
-    console.log(`🔐 Generated secure QR token: ${payload.qrId}`);
-    return { token, qrId: payload.qrId, expiresAt };
+    console.log(`🔐 Generated PERMANENT secure QR token: ${payload.qrId}`);
+    return { token, qrId: payload.qrId, expiresAt, permanent: true };
   } catch (error) {
     console.error('❌ Error generating QR token:', error);
     throw error;
