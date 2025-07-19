@@ -3399,14 +3399,14 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             const latDiff = Math.abs(hotelPosition.lat() - placePosition.lat());
             const lngDiff = Math.abs(hotelPosition.lng() - placePosition.lng());
             
-            // Force a much larger area to ensure both locations are visible with context
-            // Calculate minimum bounds that include both points with significant buffer
-            const minLatDiff = 0.02; // Minimum ~2km coverage in latitude
-            const minLngDiff = 0.02; // Minimum ~2km coverage in longitude
+            // Google Maps style overview - show both locations with reasonable context
+            // Calculate appropriate bounds that show both points clearly
+            const minLatDiff = 0.005; // Minimum ~500m coverage in latitude (Google Maps style)
+            const minLngDiff = 0.005; // Minimum ~500m coverage in longitude
             
-            // Use much larger expansion to guarantee overview
-            const expandedLatDiff = Math.max(latDiff * 8, minLatDiff); // 8x expansion or 2km minimum
-            const expandedLngDiff = Math.max(lngDiff * 8, minLngDiff); // 8x expansion or 2km minimum
+            // Use moderate expansion for Google Maps style overview
+            const expandedLatDiff = Math.max(latDiff * 2.5, minLatDiff); // 2.5x expansion or 500m minimum
+            const expandedLngDiff = Math.max(lngDiff * 2.5, minLngDiff); // 2.5x expansion or 500m minimum
             
             console.log(`📐 Original lat/lng diff: ${latDiff.toFixed(6)}, ${lngDiff.toFixed(6)}`);
             console.log(`📏 FORCED expanded lat/lng diff: ${expandedLatDiff.toFixed(6)}, ${expandedLngDiff.toFixed(6)}`);
@@ -3430,28 +3430,40 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             console.log('🗺️ Applying fitBounds with LARGE overview area...');
             map.fitBounds(bounds, { top: 100, bottom: 100, left: 100, right: 100 });
             
-            // Force lower zoom level to guarantee overview
+            // Google Maps style zoom level management
             setTimeout(() => {
                 const currentZoom = map.getZoom();
-                const maxZoom = 13; // Much lower max zoom for guaranteed overview
-                console.log(`🔍 Current zoom after fitBounds: ${currentZoom}, forcing maxZoom: ${maxZoom}`);
-                if (currentZoom > maxZoom) {
-                    console.log(`⬇️ FORCING zoom from ${currentZoom} to ${maxZoom} for overview`);
-                    map.setZoom(maxZoom);
+                let targetZoom = currentZoom;
+                
+                // Adjust zoom based on distance for Google Maps style overview
+                if (distance) {
+                    if (distance < 300) {
+                        targetZoom = Math.min(currentZoom, 16); // Close - detailed street view
+                    } else if (distance < 1000) {
+                        targetZoom = Math.min(currentZoom, 15); // Medium - neighborhood view
+                    } else if (distance < 2000) {
+                        targetZoom = Math.min(currentZoom, 14); // Far - district view
+                    } else {
+                        targetZoom = Math.min(currentZoom, 13); // Very far - city view
+                    }
                 } else {
-                    console.log(`✅ Zoom level ${currentZoom} provides good overview`);
+                    targetZoom = Math.min(currentZoom, 15); // Default overview
                 }
                 
-                // Double-check both markers are visible
-                const mapBounds = map.getBounds();
-                const hotelVisible = mapBounds.contains(hotelPosition);
-                const placeVisible = mapBounds.contains(placePosition);
-                console.log(`👀 Hotel visible: ${hotelVisible}, Place visible: ${placeVisible}`);
+                console.log(`🔍 Distance: ${distance}m, Current zoom: ${currentZoom}, Target zoom: ${targetZoom}`);
                 
-                if (!hotelVisible || !placeVisible) {
-                    console.warn('🚨 One or both markers not visible, forcing wider view...');
-                    map.setZoom(Math.max(currentZoom - 2, 10)); // Force even wider view
+                if (currentZoom !== targetZoom) {
+                    console.log(`🎯 Adjusting zoom from ${currentZoom} to ${targetZoom} for optimal overview`);
+                    map.setZoom(targetZoom);
                 }
+                
+                // Verify both markers are visible
+                setTimeout(() => {
+                    const mapBounds = map.getBounds();
+                    const hotelVisible = mapBounds.contains(hotelPosition);
+                    const placeVisible = mapBounds.contains(placePosition);
+                    console.log(`👀 Final check - Hotel visible: ${hotelVisible}, Place visible: ${placeVisible}`);
+                }, 100);
             }, 200);
 
             // Add visual connection line temporarily
