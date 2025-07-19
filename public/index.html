@@ -3273,7 +3273,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         function highlightPlaceOnMap(placeId) {
-            console.log(`Highlighting place on map: ${placeId}`);
+            console.log(`🎯 Smart zoom to place: ${placeId}`);
             
             // Find the marker for this place
             const marker = placeMarkerMap.get(placeId);
@@ -3281,6 +3281,13 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 console.warn(`Marker not found for place ID: ${placeId}`);
                 return;
             }
+
+            // Find the place data for distance info
+            let selectedPlace = null;
+            Object.values(allPlaces).forEach(categoryPlaces => {
+                const found = categoryPlaces.find(place => place.id === placeId);
+                if (found) selectedPlace = found;
+            });
             
             // Close any currently open info window
             if (currentInfoWindow) {
@@ -3293,12 +3300,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 infoWindow.open(map, marker);
                 currentInfoWindow = infoWindow;
             }
-            
-            // Center the map on this marker
-            map.setCenter(marker.getPosition());
-            if (map.getZoom() < 16) {
-                map.setZoom(16);
-            }
+
+            // Smart zoom to show hotel-to-place relationship
+            zoomToShowHotelAndPlace(marker.getPosition(), selectedPlace);
             
             // Add a temporary highlight effect to the marker
             const originalIcon = marker.getIcon();
@@ -3342,6 +3346,133 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }, 3000);
             } else {
                 console.warn(`Place item not found for ID: ${placeId}`);
+            }
+        }
+
+        // Professional smart zoom function to show hotel-to-place relationship
+        function zoomToShowHotelAndPlace(placePosition, selectedPlace) {
+            console.log('🔍 Calculating optimal zoom for hotel and place visualization');
+            
+            if (!map || !hotelMarker) {
+                console.warn('Map or hotel marker not available');
+                return;
+            }
+
+            const hotelPosition = hotelMarker.getPosition();
+            const distance = selectedPlace ? selectedPlace.distance : null;
+
+            // Create bounds that include both hotel and place
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend(hotelPosition);
+            bounds.extend(placePosition);
+
+            // Add padding based on distance for optimal viewing
+            let paddingOptions = { top: 100, bottom: 100, left: 50, right: 50 };
+            
+            if (distance) {
+                if (distance < 200) {
+                    // Very close - use high zoom with minimal padding
+                    paddingOptions = { top: 80, bottom: 80, left: 40, right: 40 };
+                } else if (distance < 500) {
+                    // Close - moderate padding
+                    paddingOptions = { top: 100, bottom: 100, left: 50, right: 50 };
+                } else if (distance < 1000) {
+                    // Medium distance - more padding
+                    paddingOptions = { top: 120, bottom: 120, left: 60, right: 60 };
+                } else {
+                    // Far - maximum padding for context
+                    paddingOptions = { top: 150, bottom: 150, left: 80, right: 80 };
+                }
+            }
+
+            // Smooth animated zoom to bounds
+            map.fitBounds(bounds, paddingOptions);
+
+            // Add visual connection line temporarily
+            if (distance && distance > 100) {
+                showDistanceVisualization(hotelPosition, placePosition, distance);
+            }
+
+            // Log zoom details for user understanding
+            setTimeout(() => {
+                const zoom = map.getZoom();
+                const center = map.getCenter();
+                console.log(`📍 Zoom complete: Level ${zoom.toFixed(1)} | Distance: ${distance}m | Center: ${center.lat().toFixed(6)}, ${center.lng().toFixed(6)}`);
+                
+                if (selectedPlace) {
+                    console.log(`🚶 Walking distance: ~${Math.ceil(distance / 80)} minutes | 🗺️ ${(distance * 0.000621371).toFixed(2)} miles`);
+                }
+            }, 1000);
+        }
+
+        // Visual distance indicator between hotel and place
+        function showDistanceVisualization(hotelPos, placePos, distance) {
+            // Remove existing line if any
+            if (window.distanceLine) {
+                window.distanceLine.setMap(null);
+            }
+
+            // Create a subtle dashed line showing the connection
+            window.distanceLine = new google.maps.Polyline({
+                path: [hotelPos, placePos],
+                geodesic: true,
+                strokeColor: '#2196F3',
+                strokeOpacity: 0.6,
+                strokeWeight: 3,
+                icons: [{
+                    icon: {
+                        path: 'M 0,-1 0,1',
+                        strokeOpacity: 1,
+                        scale: 2
+                    },
+                    offset: '0',
+                    repeat: '12px'
+                }],
+                map: map
+            });
+
+            // Remove the line after 8 seconds
+            setTimeout(() => {
+                if (window.distanceLine) {
+                    window.distanceLine.setMap(null);
+                    window.distanceLine = null;
+                }
+            }, 8000);
+
+            // Add distance label at midpoint
+            if (distance > 200) {
+                // Calculate midpoint (with fallback if geometry library not loaded)
+                let midpoint;
+                try {
+                    midpoint = google.maps.geometry.spherical.interpolate(hotelPos, placePos, 0.5);
+                } catch (error) {
+                    // Fallback: simple average of coordinates
+                    midpoint = new google.maps.LatLng(
+                        (hotelPos.lat() + placePos.lat()) / 2,
+                        (hotelPos.lng() + placePos.lng()) / 2
+                    );
+                }
+                
+                const walkingTime = Math.ceil(distance / 80); // ~80m per minute walking
+                const distanceText = distance < 1000 ? `${distance}m` : `${(distance/1000).toFixed(1)}km`;
+                
+                const distanceLabel = new google.maps.InfoWindow({
+                    content: `
+                        <div style="text-align: center; padding: 8px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+                            <div style="font-weight: bold; color: #2196F3; font-size: 14px;">🚶 ${distanceText}</div>
+                            <div style="font-size: 12px; color: #666; margin-top: 2px;">~${walkingTime} min walk</div>
+                        </div>
+                    `,
+                    position: midpoint,
+                    disableAutoPan: true
+                });
+
+                distanceLabel.open(map);
+                
+                // Remove label after 6 seconds
+                setTimeout(() => {
+                    distanceLabel.close();
+                }, 6000);
             }
         }
 
@@ -6498,9 +6629,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         });
     </script>
 
-    <!-- Load Google Maps API -->
+    <!-- Load Google Maps API with Geometry Library -->
     <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAVdAZdO0tjOSoNImELNfi5HtZVzitN3Y4&callback=initMap">
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAVdAZdO0tjOSoNImELNfi5HtZVzitN3Y4&libraries=geometry&callback=initMap">
     </script>
 </body>
 </html>
