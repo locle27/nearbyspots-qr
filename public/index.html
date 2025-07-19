@@ -3795,12 +3795,36 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 return;
             }
 
-            // Find the place data for distance info
+            // Find the place data for distance info (check both search results and normal places)
             let selectedPlace = null;
-            Object.values(allPlaces).forEach(categoryPlaces => {
-                const found = categoryPlaces.find(place => place.id === placeId);
-                if (found) selectedPlace = found;
-            });
+            
+            // First check if we're in search mode
+            if (currentSearchFilter && currentSearchFilter.filteredPlaces) {
+                console.log('🔍 Searching in filtered places for ID:', placeId);
+                Object.values(currentSearchFilter.filteredPlaces).forEach(categoryPlaces => {
+                    if (categoryPlaces && Array.isArray(categoryPlaces)) {
+                        const found = categoryPlaces.find(place => place.id === placeId);
+                        if (found) {
+                            selectedPlace = found;
+                            console.log('✅ Found place in search results:', selectedPlace.name);
+                        }
+                    }
+                });
+            }
+            
+            // If not found in search results, check normal places
+            if (!selectedPlace) {
+                console.log('🔍 Searching in normal places for ID:', placeId);
+                Object.values(allPlaces).forEach(categoryPlaces => {
+                    if (categoryPlaces && Array.isArray(categoryPlaces)) {
+                        const found = categoryPlaces.find(place => place.id === placeId);
+                        if (found) {
+                            selectedPlace = found;
+                            console.log('✅ Found place in normal places:', selectedPlace.name);
+                        }
+                    }
+                });
+            }
             
             // Close any currently open info window - NO POPUPS for overview
             if (currentInfoWindow) {
@@ -7401,6 +7425,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             console.log('🧹 Clearing search filter');
             console.log('📊 Before clear - currentSearchFilter:', currentSearchFilter);
             console.log('📊 Before clear - allPlaces count:', Object.keys(allPlaces));
+            console.log('📊 Before clear - activeCategories:', Array.from(activeCategories));
             
             // Reset search filter
             currentSearchFilter = null;
@@ -7414,8 +7439,24 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             if (searchStatus) searchStatus.style.display = 'none';
             if (clearBtn) clearBtn.style.display = 'none';
 
+            // Ensure at least recommend category is active if no categories are selected
+            if (activeCategories.size === 0) {
+                console.log('⚠️ No active categories after search clear, activating recommend');
+                activeCategories.add('recommend');
+                
+                // Update the UI to show recommend as selected
+                const recommendTab = document.querySelector('[data-category="recommend"]');
+                if (recommendTab) {
+                    recommendTab.classList.add('active');
+                    console.log('✅ Activated recommend category in UI');
+                }
+            }
+
             // Restore original places display
             console.log('🔄 Restoring original places display...');
+            console.log('📊 After clear - activeCategories:', Array.from(activeCategories));
+            console.log('📊 After clear - allPlaces content check:', Object.entries(allPlaces).map(([key, places]) => `${key}: ${places?.length || 0} places`));
+            
             try {
                 updateMapMarkers();
                 updateStats();
@@ -7423,8 +7464,29 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 console.log('✅ Search cleared successfully, showing all places');
             } catch (error) {
                 console.error('❌ Error during clear search:', error);
-                // Force reload as fallback
-                location.reload();
+                console.log('🔧 Attempting individual function calls...');
+                
+                // Try each function individually to isolate the issue
+                try {
+                    console.log('🔧 Trying updateMapMarkers...');
+                    updateMapMarkers();
+                } catch (e) { console.error('❌ updateMapMarkers failed:', e); }
+                
+                try {
+                    console.log('🔧 Trying updateStats...');
+                    updateStats();
+                } catch (e) { console.error('❌ updateStats failed:', e); }
+                
+                try {
+                    console.log('🔧 Trying updatePlacesList...');
+                    updatePlacesList();
+                } catch (e) { console.error('❌ updatePlacesList failed:', e); }
+                
+                // If all else fails, force reload
+                if (activeCategories.size === 0) {
+                    console.log('🔄 Force reloading page as last resort...');
+                    location.reload();
+                }
             }
         }
 
@@ -7541,6 +7603,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         // Enhanced updatePlacesList to handle search results
         function updatePlacesListWithSearch() {
             console.log('🔄 Updating places list, search active:', !!currentSearchFilter);
+            console.log('📊 Current activeCategories:', Array.from(activeCategories));
+            console.log('📊 AllPlaces keys:', Object.keys(allPlaces));
+            console.log('📊 AllPlaces content:', Object.entries(allPlaces).map(([key, places]) => `${key}: ${places?.length || 0} places`));
             
             const placesList = document.getElementById('placesList');
             
@@ -7644,18 +7709,46 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         function showEditPlaceModal(placeId) {
             console.log('🔧 Opening edit modal for place ID:', placeId);
             
-            // Find the place in allPlaces
+            // Find the place in search results or allPlaces
             let place = null;
-            for (const category in allPlaces) {
-                const found = allPlaces[category].find(p => p.id === placeId);
-                if (found) {
-                    place = found;
-                    break;
+            
+            // First check if we're in search mode
+            if (currentSearchFilter && currentSearchFilter.filteredPlaces) {
+                console.log('🔍 Looking for place in search results for editing');
+                for (const category in currentSearchFilter.filteredPlaces) {
+                    if (currentSearchFilter.filteredPlaces[category]) {
+                        const found = currentSearchFilter.filteredPlaces[category].find(p => p.id === placeId);
+                        if (found) {
+                            place = found;
+                            console.log('✅ Found place in search results for editing:', place.name);
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // If not found in search results, check normal places
+            if (!place) {
+                console.log('🔍 Looking for place in normal places for editing');
+                for (const category in allPlaces) {
+                    if (allPlaces[category]) {
+                        const found = allPlaces[category].find(p => p.id === placeId);
+                        if (found) {
+                            place = found;
+                            console.log('✅ Found place in normal places for editing:', place.name);
+                            break;
+                        }
+                    }
                 }
             }
             
             if (!place) {
                 console.error('❌ Place not found for editing:', placeId);
+                console.log('📊 Debug - Available places:', {
+                    searchMode: !!currentSearchFilter,
+                    searchPlaces: currentSearchFilter?.filteredPlaces,
+                    normalPlaces: Object.keys(allPlaces)
+                });
                 return;
             }
             
@@ -7783,9 +7876,26 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     if (placeIndex !== -1) {
                         const oldName = allPlaces[category][placeIndex].name;
                         allPlaces[category][placeIndex].name = newName;
-                        console.log(`✅ Updated place name: "${oldName}" → "${newName}"`);
+                        console.log(`✅ Updated place name in allPlaces: "${oldName}" → "${newName}"`);
                         updated = true;
                         break;
+                    }
+                }
+                
+                // Also update in search results if we're in search mode
+                if (currentSearchFilter && currentSearchFilter.filteredPlaces) {
+                    console.log('🔍 Also updating place name in search results...');
+                    for (const category in currentSearchFilter.filteredPlaces) {
+                        if (currentSearchFilter.filteredPlaces[category]) {
+                            const placeIndex = currentSearchFilter.filteredPlaces[category].findIndex(p => p.id === currentEditPlaceId);
+                            if (placeIndex !== -1) {
+                                const oldName = currentSearchFilter.filteredPlaces[category][placeIndex].name;
+                                currentSearchFilter.filteredPlaces[category][placeIndex].name = newName;
+                                console.log(`✅ Updated place name in search results: "${oldName}" → "${newName}"`);
+                                updated = true;
+                                break;
+                            }
+                        }
                     }
                 }
                 
@@ -7797,9 +7907,15 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     // Close modal
                     closeEditModal();
                     
-                    console.log('🔄 Place name updated successfully');
+                    console.log('🔄 Place name updated successfully in all locations');
                 } else {
                     console.error('❌ Failed to find place for updating');
+                    console.log('📊 Debug - Current edit place ID:', currentEditPlaceId);
+                    console.log('📊 Debug - Available places:', {
+                        searchMode: !!currentSearchFilter,
+                        allPlaces: Object.keys(allPlaces),
+                        searchPlaces: currentSearchFilter?.filteredPlaces ? Object.keys(currentSearchFilter.filteredPlaces) : null
+                    });
                     alert('Failed to update place name');
                 }
                 
