@@ -2823,6 +2823,8 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 if (e.target.closest('.delete-recommendation-btn') || e.target.closest('.view-details-btn')) {
                     return;
                 }
+                console.log(`🔍 Place clicked: ${place.name} (ID: ${place.id})`);
+                console.log(`🎯 Triggering zoom for place at distance: ${place.distance}m`);
                 // Only trigger smart zoom, not details modal
                 highlightPlaceOnMap(place.id);
             };
@@ -3372,10 +3374,14 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
 
         // Professional smart zoom function to show hotel-to-place relationship
         function zoomToShowHotelAndPlace(placePosition, selectedPlace) {
-            console.log('🔍 Calculating optimal zoom for hotel and place visualization');
+            console.log('🔍 zoomToShowHotelAndPlace CALLED!');
+            console.log('📍 Place position:', placePosition.lat(), placePosition.lng());
+            console.log('🏨 Hotel marker exists:', !!hotelMarker);
+            console.log('🗺️ Map exists:', !!map);
+            console.log('📏 Distance:', selectedPlace?.distance);
             
             if (!map || !hotelMarker) {
-                console.warn('Map or hotel marker not available');
+                console.warn('❌ Map or hotel marker not available - ABORTING ZOOM');
                 return;
             }
 
@@ -3407,9 +3413,16 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }
             }
             
+            console.log(`📐 Original lat/lng diff: ${latDiff.toFixed(6)}, ${lngDiff.toFixed(6)}`);
+            console.log(`🔢 Using expansion factor: ${expansionFactor}x for ${distance}m distance`);
+            
             // Create expanded bounds
             const expandedLatDiff = Math.max(latDiff * expansionFactor, 0.01); // Minimum 0.01 degree expansion
             const expandedLngDiff = Math.max(lngDiff * expansionFactor, 0.01); // Minimum 0.01 degree expansion
+            
+            console.log(`📏 Expanded lat/lng diff: ${expandedLatDiff.toFixed(6)}, ${expandedLngDiff.toFixed(6)}`);
+            console.log(`🎯 Bounds will include area from (${(centerLat - expandedLatDiff).toFixed(6)}, ${(centerLng - expandedLngDiff).toFixed(6)}) to (${(centerLat + expandedLatDiff).toFixed(6)}, ${(centerLng + expandedLngDiff).toFixed(6)})`);
+            
             
             // Add the expanded boundary points
             bounds.extend(new google.maps.LatLng(
@@ -3426,14 +3439,19 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             bounds.extend(placePosition);
 
             // Apply the expanded bounds with minimal padding
+            console.log('🗺️ Applying fitBounds with expanded area...');
             map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
             
             // Set maximum zoom level to ensure overview
             setTimeout(() => {
                 const currentZoom = map.getZoom();
                 const maxZoom = 15; // Maximum zoom level for overview
+                console.log(`🔍 Current zoom after fitBounds: ${currentZoom}, maxZoom: ${maxZoom}`);
                 if (currentZoom > maxZoom) {
+                    console.log(`⬇️ Reducing zoom from ${currentZoom} to ${maxZoom}`);
                     map.setZoom(maxZoom);
+                } else {
+                    console.log(`✅ Zoom level ${currentZoom} is acceptable (≤ ${maxZoom})`);
                 }
             }, 100);
 
