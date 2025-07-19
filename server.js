@@ -1214,7 +1214,7 @@ Rules:
 - Extract price range as text (e.g., "30k-50k VND", "$10-20", "Budget friendly")
 - If no clear place name, use the most prominent business identifier
 - Return ONLY valid JSON without any markdown formatting, code blocks, or additional text
-- Do NOT wrap the JSON in ```json or ``` blocks
+- Do NOT wrap the JSON in code blocks (triple backticks)
 - If information is not found, use null for that field
 - Be very careful with Vietnamese names and addresses
 
