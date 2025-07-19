@@ -4247,56 +4247,231 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             }, 100);
         }
         
-        // Global variables for adaptive loading
-        let currentLoadingDelay = 300; // Start with 300ms delay
-        let recentFailures = 0;
-        
-        function loadGalleryImages(place) {
-            console.log('Loading gallery images for:', place.name);
-            
-            // Get all gallery images
-            const galleryImages = document.querySelectorAll('.gallery-image');
-            
-            if (galleryImages.length === 0) return;
-            
-            // Reset adaptive delay for new gallery
-            currentLoadingDelay = 300;
-            recentFailures = 0;
-            
-            // Load first 2 images in parallel for faster initial display
-            if (galleryImages.length >= 2) {
-                console.log('🚀 Loading first 2 images in parallel for faster display');
+        // Professional gallery loading system
+        class GalleryLoader {
+            constructor() {
+                this.loadingQueue = [];
+                this.isLoading = false;
+                this.loadedImages = new Set();
+                this.failedImages = new Set();
+                this.loadDelay = 200; // Optimized delay
+            }
+
+            async loadGalleryImages(place) {
+                console.log('🖼️ Professional gallery loading for:', place.name);
                 
-                const img1 = galleryImages[0];
-                const img2 = galleryImages[1];
-                
-                if (img1.getAttribute('data-real-src')) {
-                    loadImageWithRetry(img1, img1.getAttribute('data-real-src'), 
-                        document.getElementById(img1.getAttribute('data-loading-id')),
-                        document.getElementById(img1.getAttribute('data-error-id')), 1, 0, (success) => {
-                            if (!success) recentFailures++;
-                        });
+                const galleryImages = document.querySelectorAll('.gallery-image[data-real-src]');
+                if (galleryImages.length === 0) {
+                    console.log('No gallery images to load');
+                    return;
                 }
-                
-                setTimeout(() => {
-                    if (img2.getAttribute('data-real-src')) {
-                        loadImageWithRetry(img2, img2.getAttribute('data-real-src'),
-                            document.getElementById(img2.getAttribute('data-loading-id')),
-                            document.getElementById(img2.getAttribute('data-error-id')), 2, 0, (success) => {
-                                if (!success) recentFailures++;
-                            });
+
+                // Reset state for new gallery
+                this.loadedImages.clear();
+                this.failedImages.clear();
+                this.loadingQueue = Array.from(galleryImages);
+
+                console.log(`📸 Loading ${galleryImages.length} gallery images`);
+
+                // Start loading with optimized parallel loading
+                await this.loadImagesInBatches();
+            }
+
+            async loadImagesInBatches() {
+                // Load first 3 images immediately in parallel for quick preview
+                const immediateLoad = this.loadingQueue.slice(0, 3);
+                const remainingImages = this.loadingQueue.slice(3);
+
+                // Load first batch in parallel
+                if (immediateLoad.length > 0) {
+                    console.log(`🚀 Loading first ${immediateLoad.length} images in parallel`);
+                    await Promise.allSettled(immediateLoad.map((img, index) => 
+                        this.loadSingleImage(img, index + 1, 0)
+                    ));
+                }
+
+                // Load remaining images with controlled delays
+                for (let i = 0; i < remainingImages.length; i++) {
+                    await new Promise(resolve => {
+                        setTimeout(async () => {
+                            await this.loadSingleImage(remainingImages[i], i + 4, this.loadDelay * i);
+                            resolve();
+                        }, this.loadDelay * (i + 1));
+                    });
+                }
+
+                console.log(`✅ Gallery loading complete. Loaded: ${this.loadedImages.size}, Failed: ${this.failedImages.size}`);
+            }
+
+            async loadSingleImage(img, imageNumber, delay = 0) {
+                const realSrc = img.getAttribute('data-real-src');
+                const loadingEl = document.getElementById(img.getAttribute('data-loading-id'));
+                const errorEl = document.getElementById(img.getAttribute('data-error-id'));
+
+                if (!realSrc) return;
+
+                try {
+                    const success = await this.loadImageWithFallback(img, realSrc, loadingEl, errorEl, imageNumber);
+                    if (success) {
+                        this.loadedImages.add(imageNumber);
+                    } else {
+                        this.failedImages.add(imageNumber);
                     }
-                }, 150); // Small delay for second image
+                } catch (error) {
+                    console.error(`Error loading image ${imageNumber}:`, error);
+                    this.failedImages.add(imageNumber);
+                    this.showError(img, loadingEl, errorEl);
+                }
+            }
+
+            loadImageWithFallback(img, realSrc, loadingEl, errorEl, imageNumber) {
+                return new Promise((resolve) => {
+                    const testImg = new Image();
+                    testImg.crossOrigin = 'anonymous';
+                    
+                    const timeout = setTimeout(() => {
+                        console.log(`⏰ Image ${imageNumber} timed out`);
+                        this.showError(img, loadingEl, errorEl);
+                        resolve(false);
+                    }, 15000); // 15 second timeout
+
+                    testImg.onload = () => {
+                        clearTimeout(timeout);
+                        console.log(`✅ Image ${imageNumber} loaded successfully`);
+                        this.showImage(img, realSrc, loadingEl);
+                        resolve(true);
+                    };
+
+                    testImg.onerror = () => {
+                        clearTimeout(timeout);
+                        console.log(`❌ Image ${imageNumber} failed to load`);
+                        this.showError(img, loadingEl, errorEl);
+                        resolve(false);
+                    };
+
+                    testImg.src = realSrc;
+                });
+            }
+
+            showImage(img, src, loadingEl) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                img.src = src;
+                img.style.display = 'block';
+                img.style.opacity = '0';
+                img.style.transition = 'opacity 0.3s ease';
                 
-                // Continue with remaining images sequentially
+                // Smooth fade-in effect
                 setTimeout(() => {
-                    loadImageSequentially(galleryImages, 2);
-                }, currentLoadingDelay);
-            } else {
-                // Single image or fallback to sequential
-                loadImageSequentially(galleryImages, 0);
+                    img.style.opacity = '1';
+                }, 50);
+            }
+
+            showError(img, loadingEl, errorEl) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (errorEl) {
+                    errorEl.style.display = 'flex';
+                    // Add retry functionality to error state
+                    errorEl.style.cursor = 'pointer';
+                    errorEl.onclick = () => {
+                        errorEl.style.display = 'none';
+                        if (loadingEl) loadingEl.style.display = 'flex';
+                        const realSrc = img.getAttribute('data-real-src');
+                        if (realSrc) {
+                            setTimeout(() => {
+                                this.loadSingleImage(img, Date.now(), 0);
+                            }, 500);
+                        }
+                    };
+                }
+                // Show fallback image
+                img.style.display = 'block';
             }
         }
+
+        // Initialize the professional gallery loader
+        const galleryLoader = new GalleryLoader();
+
+        function loadGalleryImages(place) {
+            galleryLoader.loadGalleryImages(place);
+        }
+
+        // Enhanced error display styles for better UX
+        function enhanceGalleryErrorDisplay() {
+            const style = document.createElement('style');
+            style.textContent = `
+                .gallery-error {
+                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+                    border: 2px dashed #dee2e6 !important;
+                    transition: all 0.3s ease !important;
+                    cursor: pointer !important;
+                }
+                
+                .gallery-error:hover {
+                    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
+                    border-color: #2196f3 !important;
+                    transform: scale(1.02) !important;
+                }
+                
+                .gallery-error .error-icon {
+                    font-size: 20px !important;
+                    margin-bottom: 6px !important;
+                }
+                
+                .gallery-error .error-text {
+                    font-size: 10px !important;
+                    color: #666 !important;
+                    text-align: center !important;
+                    font-weight: 500 !important;
+                    line-height: 1.2 !important;
+                }
+                
+                .gallery-error::after {
+                    content: "👆 Tap to retry" !important;
+                    display: block !important;
+                    font-size: 9px !important;
+                    color: #2196f3 !important;
+                    margin-top: 4px !important;
+                    font-weight: 600 !important;
+                }
+                
+                .gallery-loading .loading-text {
+                    font-size: 11px !important;
+                    color: #666 !important;
+                    font-weight: 500 !important;
+                }
+                
+                .gallery-image {
+                    transition: opacity 0.3s ease, transform 0.2s ease !important;
+                }
+                
+                .gallery-image:hover {
+                    transform: scale(1.05) !important;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+                }
+                
+                .photo-gallery {
+                    background: #f8fafc !important;
+                }
+                
+                .gallery-title {
+                    font-weight: 700 !important;
+                    color: #1a1a1a !important;
+                }
+                
+                .gallery-scroll-hint {
+                    animation: pulse 2s infinite !important;
+                }
+                
+                @keyframes pulse {
+                    0%, 100% { opacity: 0.6; }
+                    50% { opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Initialize enhanced gallery display
+        enhanceGalleryErrorDisplay();
         
         function loadImageSequentially(galleryImages, currentIndex) {
             if (currentIndex >= galleryImages.length) {
