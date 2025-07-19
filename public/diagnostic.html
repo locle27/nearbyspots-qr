@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 System Diagnostic - Render Data Recovery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .diagnostic-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .diagnostic-section {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .diagnostic-section h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-info {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .status-label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .status-value {
+            font-family: monospace;
+            background: #edf2f7;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .action-button {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin: 5px;
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .action-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .recovery-button {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+
+        .sync-button {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+
+        .result-area {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            color: #48bb78;
+        }
+
+        .error {
+            color: #f56565;
+        }
+
+        .warning {
+            color: #ed8936;
+        }
+
+        .restaurant-list {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .restaurant-item {
+            background: #f7fafc;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-left: 3px solid #3498db;
+        }
+
+        .restaurant-item h4 {
+            color: #2d3748;
+            margin-bottom: 4px;
+            font-size: 1rem;
+        }
+
+        .restaurant-item p {
+            color: #718096;
+            font-size: 0.85rem;
+            margin: 2px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagnostic-container">
+        <div class="header">
+            <h1>🔧 System Diagnostic</h1>
+            <p>Render Data Recovery & System Status</p>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>📊 Current System Status</h3>
+            <div class="status-info">
+                <span class="status-label">Environment:</span>
+                <span class="status-value" id="environment">Loading...</span>
+            </div>
+            <div class="status-info">
+                <span class="status-label">Current Restaurants:</span>
+                <span class="status-value" id="currentCount">Loading...</span>
+            </div>
+            <div class="status-info">
+                <span class="status-label">Storage Type:</span>
+                <span class="status-value" id="storageType">Loading...</span>
+            </div>
+            <div class="status-info">
+                <span class="status-label">Database Status:</span>
+                <span class="status-value" id="databaseStatus">Loading...</span>
+            </div>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>🔄 Recovery Actions</h3>
+            <button class="action-button recovery-button" onclick="recoverData()">
+                🔄 Attempt Data Recovery
+            </button>
+            <button class="action-button sync-button" onclick="syncData()">
+                💾 Force Data Sync
+            </button>
+            <button class="action-button" onclick="checkConfig()">
+                🔍 Check API Config
+            </button>
+            <button class="action-button" onclick="loadCurrentData()">
+                📋 Refresh Current Data
+            </button>
+            
+            <div class="result-area" id="resultArea">Ready for diagnostic operations...</div>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>🍽️ Current Restaurants</h3>
+            <div class="restaurant-list" id="restaurantList">
+                Loading restaurant data...
+            </div>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>💡 Render-Specific Tips</h3>
+            <p><strong>Data Loss on Render:</strong> Render's free tier uses ephemeral storage, meaning files reset when the service restarts. Your data should be saved to the database, not just files.</p>
+            <p><strong>Recovery Options:</strong> Use the recovery button to attempt data restoration from memory, database, or backup sources.</p>
+            <p><strong>Prevention:</strong> Always use the "Force Data Sync" after adding restaurants to ensure data is properly persisted.</p>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const resultArea = document.getElementById('resultArea');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            resultArea.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            resultArea.scrollTop = resultArea.scrollHeight;
+        }
+
+        async function recoverData() {
+            try {
+                log('🔄 Attempting data recovery...', 'info');
+                
+                const response = await fetch('/api/recover-data');
+                const result = await response.json();
+                
+                if (result.success) {
+                    log(`✅ Recovery successful! Found ${result.recovered} restaurants using ${result.method}`, 'success');
+                    loadCurrentData();
+                } else {
+                    log(`⚠️ No recovery data found. Current count: ${result.currentCount}`, 'warning');
+                }
+            } catch (error) {
+                log(`❌ Recovery failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function syncData() {
+            try {
+                log('💾 Forcing data sync...', 'info');
+                
+                const response = await fetch('/api/sync-data', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    log(`✅ Sync successful! ${result.count} restaurants synced to ${result.storage}`, 'success');
+                    loadCurrentData();
+                } else {
+                    log(`❌ Sync failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Sync failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkConfig() {
+            try {
+                log('🔍 Checking API configuration...', 'info');
+                
+                const response = await fetch('/api/test-config');
+                const result = await response.json();
+                
+                log(`API Key: ${result.apiKeyPresent ? 'Present' : 'Missing'}`, result.apiKeyPresent ? 'success' : 'error');
+                log(`Places API: ${result.placesApiEnabled ? 'Working' : 'Failed'}`, result.placesApiEnabled ? 'success' : 'error');
+                log(`Geocoding API: ${result.geocodingApiEnabled ? 'Working' : 'Failed'}`, result.geocodingApiEnabled ? 'success' : 'error');
+                
+                if (result.debug) {
+                    log(`Debug Info: ${JSON.stringify(result.debug, null, 2)}`, 'info');
+                }
+            } catch (error) {
+                log(`❌ Config check failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadCurrentData() {
+            try {
+                log('📋 Loading current restaurant data...', 'info');
+                
+                const response = await fetch('/api/recommendations');
+                const result = await response.json();
+                
+                if (result.success && result.recommendations) {
+                    const restaurants = result.recommendations;
+                    const currentCount = document.getElementById('currentCount');
+                    const restaurantList = document.getElementById('restaurantList');
+                    
+                    currentCount.textContent = restaurants.length;
+                    
+                    if (restaurants.length === 0) {
+                        restaurantList.innerHTML = '<p style="color: #718096; text-align: center;">No restaurants found</p>';
+                        log('⚠️ No restaurants found in current data', 'warning');
+                    } else {
+                        restaurantList.innerHTML = restaurants.map(restaurant => `
+                            <div class="restaurant-item">
+                                <h4>${restaurant.name}</h4>
+                                <p>📍 ${restaurant.address}</p>
+                                <p>🗺️ ${restaurant.location.latitude}, ${restaurant.location.longitude}</p>
+                                <p>📅 Added: ${new Date(restaurant.addedDate).toLocaleString()}</p>
+                                ${restaurant.description ? `<p>📝 ${restaurant.description}</p>` : ''}
+                            </div>
+                        `).join('');
+                        
+                        log(`✅ Loaded ${restaurants.length} restaurants successfully`, 'success');
+                    }
+                } else {
+                    log(`❌ Failed to load restaurants: ${result.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Failed to load current data: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadSystemStatus() {
+            try {
+                // Load environment info
+                document.getElementById('environment').textContent = window.location.hostname.includes('render') ? 'Render Production' : 'Local Development';
+                
+                // Load current data
+                await loadCurrentData();
+                
+                // Check if we're on Render
+                if (window.location.hostname.includes('render')) {
+                    document.getElementById('storageType').textContent = 'Database (PostgreSQL)';
+                    document.getElementById('databaseStatus').textContent = 'Connected';
+                    log('🌐 Running on Render - using database storage', 'info');
+                } else {
+                    document.getElementById('storageType').textContent = 'File System';
+                    document.getElementById('databaseStatus').textContent = 'Local File';
+                    log('💻 Running locally - using file storage', 'info');
+                }
+                
+            } catch (error) {
+                log(`❌ Failed to load system status: ${error.message}`, 'error');
+            }
+        }
+
+        // Load system status on page load
+        loadSystemStatus();
+    </script>
+</body>
+</html>

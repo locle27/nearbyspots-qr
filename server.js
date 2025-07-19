@@ -163,13 +163,47 @@ if (!fs.existsSync(DATA_DIR)) {
 // Load existing recommendations on startup
 function loadRecommendations() {
   try {
+    // First try to load from file
     if (fs.existsSync(RECOMMENDATIONS_FILE)) {
       const data = fs.readFileSync(RECOMMENDATIONS_FILE, 'utf8');
       manualRecommendations = JSON.parse(data);
-      console.log(`📋 Loaded ${manualRecommendations.length} manual recommendations`);
+      console.log(`📋 Loaded ${manualRecommendations.length} manual recommendations from file`);
+    } 
+    // For Render, try to recover from memory backup if file doesn't exist
+    else if (process.env.NODE_ENV === 'production' && global.BACKUP_DATA) {
+      try {
+        manualRecommendations = JSON.parse(global.BACKUP_DATA);
+        console.log(`🔄 Recovered ${manualRecommendations.length} recommendations from memory backup`);
+        // Save recovered data back to file
+        saveRecommendations();
+      } catch (recoveryError) {
+        console.warn('⚠️ Failed to recover from memory backup:', recoveryError);
+        loadDefaultRecommendations();
+      }
     } else {
-      // Create default recommendations for demo
-      manualRecommendations = [
+      loadDefaultRecommendations();
+    }
+  } catch (error) {
+    console.error('Error loading recommendations:', error);
+    
+    // Try to recover from memory backup as last resort
+    if (process.env.NODE_ENV === 'production' && global.BACKUP_DATA) {
+      try {
+        manualRecommendations = JSON.parse(global.BACKUP_DATA);
+        console.log(`🚀 Emergency recovery: Loaded ${manualRecommendations.length} recommendations from memory`);
+      } catch (emergencyError) {
+        console.error('❌ Emergency recovery failed:', emergencyError);
+        manualRecommendations = [];
+      }
+    } else {
+      manualRecommendations = [];
+    }
+  }
+}
+
+// Load default recommendations for demo
+function loadDefaultRecommendations() {
+  manualRecommendations = [
         {
           id: 'rec_001',
           name: 'Hanoi Old Quarter Walking Tour',
@@ -208,18 +242,19 @@ function loadRecommendations() {
           addedDate: new Date().toISOString(),
           featured: true
         }
-      ];
-      saveRecommendations();
-    }
-  } catch (error) {
-    console.error('Error loading recommendations:', error);
-    manualRecommendations = [];
-  }
+  ];
+  saveRecommendations();
+  console.log(`📋 Created ${manualRecommendations.length} default recommendations`);
 }
 
 // Save recommendations to file with backup
 function saveRecommendations() {
   try {
+    // Ensure data directory exists
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+
     // Create backup directory if it doesn't exist
     const backupDir = path.join(__dirname, 'data', 'backups');
     if (!fs.existsSync(backupDir)) {
@@ -237,14 +272,36 @@ function saveRecommendations() {
     }
     
     // Save main file
-    fs.writeFileSync(RECOMMENDATIONS_FILE, JSON.stringify(manualRecommendations, null, 2));
+    const dataToSave = JSON.stringify(manualRecommendations, null, 2);
+    fs.writeFileSync(RECOMMENDATIONS_FILE, dataToSave);
     console.log(`💾 Saved ${manualRecommendations.length} recommendations`);
+    
+    // For Render's ephemeral file system, also save to memory and try external persistence
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        global.BACKUP_DATA = dataToSave;
+        console.log('💾 Saved backup data to memory for Render persistence');
+        
+        // Try to save to a persistent external service or logs
+        console.log('📊 PERSISTENT_BACKUP:', Buffer.from(dataToSave).toString('base64'));
+      } catch (memError) {
+        console.warn('⚠️ Failed to save to memory backup:', memError);
+      }
+    }
     
     // Keep only last 10 backups to prevent storage overflow
     cleanupOldBackups(backupDir);
     
   } catch (error) {
     console.error('Error saving recommendations:', error);
+    
+    // Try to save to memory as fallback for Render
+    try {
+      global.BACKUP_DATA = JSON.stringify(manualRecommendations);
+      console.log('💾 Fallback: Saved to memory backup for Render');
+    } catch (fallbackError) {
+      console.error('❌ Complete save failure:', fallbackError);
+    }
   }
 }
 
@@ -2349,6 +2406,95 @@ app.get('/', (req, res, next) => {
   }
   
   next();
+});
+
+// Data recovery endpoint for Render
+app.get('/api/recover-data', async (req, res) => {
+  try {
+    let recoveredData = null;
+    let recoveryMethod = 'none';
+    
+    // Try to recover from memory backup
+    if (global.BACKUP_DATA) {
+      try {
+        recoveredData = JSON.parse(global.BACKUP_DATA);
+        recoveryMethod = 'memory';
+      } catch (error) {
+        console.warn('Failed to parse memory backup:', error);
+      }
+    }
+    
+    // Try to recover from database
+    if (!recoveredData && useDatabase) {
+      try {
+        const dbRecommendations = await db.getAllRecommendations();
+        if (dbRecommendations && dbRecommendations.length > 0) {
+          recoveredData = dbRecommendations;
+          recoveryMethod = 'database';
+        }
+      } catch (error) {
+        console.warn('Failed to recover from database:', error);
+      }
+    }
+    
+    // Try to recover from file
+    if (!recoveredData && fs.existsSync(RECOMMENDATIONS_FILE)) {
+      try {
+        const data = fs.readFileSync(RECOMMENDATIONS_FILE, 'utf8');
+        recoveredData = JSON.parse(data);
+        recoveryMethod = 'file';
+      } catch (error) {
+        console.warn('Failed to recover from file:', error);
+      }
+    }
+    
+    if (recoveredData) {
+      manualRecommendations = recoveredData;
+      saveRecommendations();
+      
+      res.json({
+        success: true,
+        recovered: recoveredData.length,
+        method: recoveryMethod,
+        data: recoveredData
+      });
+    } else {
+      res.json({
+        success: false,
+        message: 'No recovery data found',
+        currentCount: manualRecommendations.length
+      });
+    }
+  } catch (error) {
+    console.error('Recovery error:', error);
+    res.status(500).json({ error: 'Recovery failed', message: error.message });
+  }
+});
+
+// Force data sync endpoint
+app.post('/api/sync-data', async (req, res) => {
+  try {
+    if (useDatabase) {
+      // Sync current data to database
+      for (const rec of manualRecommendations) {
+        await db.addRecommendation(rec);
+      }
+      console.log(`🔄 Synced ${manualRecommendations.length} recommendations to database`);
+    }
+    
+    // Also save to file
+    saveRecommendations();
+    
+    res.json({
+      success: true,
+      message: 'Data synced successfully',
+      count: manualRecommendations.length,
+      storage: useDatabase ? 'database + file' : 'file only'
+    });
+  } catch (error) {
+    console.error('Sync error:', error);
+    res.status(500).json({ error: 'Sync failed', message: error.message });
+  }
 });
 
 // API configuration test endpoint
