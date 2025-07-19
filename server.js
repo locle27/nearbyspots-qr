@@ -39,11 +39,14 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Stricter rate limiting for Google Places API endpoints
+// Balanced rate limiting for Google Places API endpoints
 const apiLimiter = rateLimit({
-  windowMs: 2 * 60 * 1000, // 2 minutes
-  max: 5, // Only 5 API calls per 2 minutes - very conservative
-  message: { error: 'Too many API requests, please try again later.' },
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 15, // 15 API calls per minute - more reasonable for normal usage
+  message: { 
+    error: 'API quota exceeded. Please try again later.',
+    suggestion: 'Rate limited to prevent quota exhaustion. Try again in 1 minute.'
+  },
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
@@ -62,7 +65,7 @@ const apiLimiter = rateLimit({
 
 // Cache for API responses to reduce Google API calls
 const apiCache = new Map();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes - longer cache to reduce API calls
 
 function getCachedResponse(key) {
   const cached = apiCache.get(key);
@@ -2200,12 +2203,33 @@ app.post('/api/search-nearby', apiLimiter, async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error('❌ Search nearby critical error:', error);
-    res.status(500).json({ 
-      error: 'Failed to search nearby places',
+    
+    // Check if this is a quota/rate limit error
+    let errorMessage = 'Failed to search nearby places';
+    let statusCode = 500;
+    
+    if (error.response && error.response.status === 429) {
+      errorMessage = 'API quota exceeded. Please try again later.';
+      statusCode = 429;
+      console.error('🚫 Google API quota exceeded');
+    } else if (error.message && error.message.toLowerCase().includes('quota')) {
+      errorMessage = 'API quota exceeded. Please try again later.';
+      statusCode = 429;
+      console.error('🚫 API quota error detected in message');
+    } else if (error.response && error.response.status === 403) {
+      errorMessage = 'API access denied. Please check your API key and quotas.';
+      statusCode = 403;
+      console.error('🚫 API access denied - check API key and billing');
+    }
+    
+    res.status(statusCode).json({ 
+      error: errorMessage,
       message: error.message,
+      suggestion: statusCode === 429 ? 'Wait a few minutes and try again, or contact support if this persists.' : 'Check your Google Cloud Console for API key and quota settings.',
       debug: {
         apiKeyPresent: !!GOOGLE_MAPS_API_KEY,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        errorType: statusCode === 429 ? 'quota_exceeded' : statusCode === 403 ? 'access_denied' : 'unknown_error'
       }
     });
   }
@@ -2468,6 +2492,42 @@ app.get('/api/recover-data', async (req, res) => {
   } catch (error) {
     console.error('Recovery error:', error);
     res.status(500).json({ error: 'Recovery failed', message: error.message });
+  }
+});
+
+// Cache management endpoints
+app.get('/api/cache-status', (req, res) => {
+  try {
+    const cacheEntries = Array.from(apiCache.entries()).map(([key, value]) => ({
+      key,
+      timestamp: value.timestamp,
+      age: Date.now() - value.timestamp,
+      expired: Date.now() - value.timestamp > CACHE_DURATION
+    }));
+    
+    res.json({
+      success: true,
+      cacheSize: apiCache.size,
+      cacheDuration: CACHE_DURATION,
+      entries: cacheEntries
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get cache status' });
+  }
+});
+
+app.post('/api/clear-cache', (req, res) => {
+  try {
+    const sizeBefore = apiCache.size;
+    apiCache.clear();
+    
+    res.json({
+      success: true,
+      message: 'Cache cleared successfully',
+      clearedEntries: sizeBefore
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to clear cache' });
   }
 });
 

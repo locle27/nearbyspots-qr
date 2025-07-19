@@ -203,6 +203,12 @@
             <button class="action-button" onclick="loadCurrentData()">
                 📋 Refresh Current Data
             </button>
+            <button class="action-button" onclick="clearCache()">
+                🗑️ Clear API Cache
+            </button>
+            <button class="action-button" onclick="checkCacheStatus()">
+                📊 Check Cache Status
+            </button>
             
             <div class="result-area" id="resultArea">Ready for diagnostic operations...</div>
         </div>
@@ -321,6 +327,57 @@
                 }
             } catch (error) {
                 log(`❌ Failed to load current data: ${error.message}`, 'error');
+            }
+        }
+
+        async function clearCache() {
+            try {
+                log('🗑️ Clearing API cache...', 'info');
+                
+                const response = await fetch('/api/clear-cache', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    log(`✅ Cache cleared! Removed ${result.clearedEntries} entries`, 'success');
+                } else {
+                    log(`❌ Failed to clear cache`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Cache clear failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkCacheStatus() {
+            try {
+                log('📊 Checking cache status...', 'info');
+                
+                const response = await fetch('/api/cache-status');
+                const result = await response.json();
+                
+                if (result.success) {
+                    log(`📊 Cache Status:`, 'info');
+                    log(`  • Size: ${result.cacheSize} entries`, 'info');
+                    log(`  • Duration: ${result.cacheDuration / 1000 / 60} minutes`, 'info');
+                    
+                    const activeEntries = result.entries.filter(e => !e.expired);
+                    const expiredEntries = result.entries.filter(e => e.expired);
+                    
+                    log(`  • Active: ${activeEntries.length} entries`, 'success');
+                    log(`  • Expired: ${expiredEntries.length} entries`, 'warning');
+                    
+                    if (result.entries.length > 0) {
+                        log(`Cache Entries:`, 'info');
+                        result.entries.forEach(entry => {
+                            const ageMinutes = Math.floor(entry.age / 1000 / 60);
+                            const status = entry.expired ? '❌ Expired' : '✅ Active';
+                            log(`  • ${entry.key}: ${ageMinutes}m old ${status}`, entry.expired ? 'warning' : 'success');
+                        });
+                    }
+                } else {
+                    log(`❌ Failed to get cache status`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Cache status check failed: ${error.message}`, 'error');
             }
         }
 
