@@ -1965,10 +1965,10 @@
             <label>Select Category to Load:</label>
             <p style="font-size: 0.8rem; color: #666; margin: 5px 0;">Click to select one category (single selection for easier viewing)</p>
             <div class="category-filters">
-                <div class="category-filter" data-category="recommend">
+                <div class="category-filter active" data-category="recommend">
                     ⭐ Recommended
                 </div>
-                <div class="category-filter active" data-category="restaurants">
+                <div class="category-filter" data-category="restaurants">
                     🍽️ Restaurants
                 </div>
                 <div class="category-filter" data-category="landmarks">
@@ -2225,7 +2225,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         let hotelMarker;
         let placeMarkers = [];
         let allPlaces = {};
-        let activeCategories = new Set(['restaurants']); // Start with restaurants selected by default (single selection)
+        let activeCategories = new Set(['recommend']); // Start with recommend category selected by default to show user's stored restaurants
         let currentInfoWindow = null; // Track currently open info window
         let currentRadius = 2000; // Track current search radius (default to 2km for better coverage)
         let placeMarkerMap = new Map(); // Map place IDs to markers for cross-tab interaction
@@ -2766,6 +2766,14 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     console.log(`✅ Added ${newRecommendations.length} new manual recommendations`);
                     console.log(`📊 Total recommendations: ${beforeCount} → ${allPlaces.recommend.length}`);
                     console.log('📍 All recommendations:', allPlaces.recommend.map(r => ({ id: r.id, name: r.name, distance: r.distance })));
+                    console.log(`🎯 Current radius: ${currentRadius}m`);
+                    
+                    // Check if any recommendations are beyond current radius
+                    const beyondRadius = allPlaces.recommend.filter(r => r.distance > currentRadius);
+                    if (beyondRadius.length > 0) {
+                        console.log(`⚠️ ${beyondRadius.length} recommendations are beyond current radius (${currentRadius}m):`, 
+                                   beyondRadius.map(r => ({ name: r.name, distance: r.distance })));
+                    }
                 } else {
                     console.warn('⚠️ No recommendations received from API');
                 }
@@ -3301,9 +3309,18 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 if (radius < previousRadius && Object.keys(allPlaces).length > 0) {
                     console.log('Smaller radius: filtering existing places without API call');
                     // For smaller radius, just filter existing places (no API call needed)
+                    // BUT preserve manual recommendations regardless of distance
                     Object.keys(allPlaces).forEach(category => {
                         if (allPlaces[category]) {
-                            allPlaces[category] = allPlaces[category].filter(place => place.distance <= radius);
+                            if (category === 'recommend') {
+                                // Keep all manual recommendations regardless of distance
+                                console.log(`Preserving all ${allPlaces[category].length} manual recommendations (no distance filtering)`);
+                            } else {
+                                // Apply distance filtering to other categories
+                                const beforeFilter = allPlaces[category].length;
+                                allPlaces[category] = allPlaces[category].filter(place => place.distance <= radius);
+                                console.log(`${category}: ${beforeFilter} → ${allPlaces[category].length} places (distance filtered)`);
+                            }
                         }
                     });
                     

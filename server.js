@@ -29,13 +29,27 @@ app.use(helmet({
   }
 }));
 
-// Rate limiting
+// Rate limiting with health check exclusions
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   message: { error: 'Too many requests, please try again later.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    const userAgent = req.get('User-Agent') || '';
+    const isHealthCheck = req.path.includes('health') || 
+                         req.path.includes('/health') ||
+                         req.path === '/healthcheck' ||
+                         req.path === '/api/health' ||
+                         userAgent.toLowerCase().includes('health') ||
+                         userAgent.toLowerCase().includes('render') ||
+                         userAgent.toLowerCase().includes('check') ||
+                         userAgent.toLowerCase().includes('bot') ||
+                         userAgent.toLowerCase().includes('monitor');
+    return isHealthCheck;
+  }
 });
 app.use(limiter);
 
@@ -2394,6 +2408,11 @@ app.get('/api/place-photo/:photoName', async (req, res) => {
 });
 
 // Health check endpoint for deployment platforms
+// Ultra-minimal health check for Render (no JSON, no processing)
+app.get('/health', (req, res) => {
+  res.status(200).end('OK');
+});
+
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
@@ -2401,11 +2420,6 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development'
   });
-});
-
-// Simple health check endpoint for Render
-app.get('/health', (req, res) => {
-  res.status(200).send('OK');
 });
 
 // Health check with HTML page (no JavaScript execution)
