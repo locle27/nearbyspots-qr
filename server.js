@@ -1162,6 +1162,112 @@ app.post('/api/extract-address', async (req, res) => {
   }
 });
 
+// Gemini AI content parsing endpoint for recommendation extraction
+app.post('/api/parse-content', async (req, res) => {
+  try {
+    const { content } = req.body;
+    
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+    
+    console.log('🤖 Starting Gemini content parsing...');
+    
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    if (!geminiApiKey) {
+      return res.status(500).json({ error: 'Gemini API key not configured' });
+    }
+    
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+    
+    const requestBody = {
+      contents: [{
+        parts: [
+          {
+            text: `Analyze this content and extract information for a restaurant/place recommendation. Extract the following information in JSON format:
+
+{
+  "placeName": "extracted place/business name",
+  "address": "extracted full address",
+  "description": "extracted description or summary",
+  "priceRange": "extracted price information",
+  "hours": "extracted opening hours if any",
+  "menuItems": "extracted food items or menu if any",
+  "rating": "extracted rating if any (0-5 scale)",
+  "phone": "extracted phone number if any",
+  "website": "extracted website if any",
+  "category": "restaurant, cafe, bar, or other category",
+  "keywords": ["extracted", "relevant", "keywords"]
+}
+
+Rules:
+- Focus on place/business name and address as the most important fields
+- If address is incomplete, try to infer or note what's missing
+- Extract price range as text (e.g., "30k-50k VND", "$10-20", "Budget friendly")
+- If no clear place name, use the most prominent business identifier
+- Return only valid JSON, no additional text
+- If information is not found, use null for that field
+- Be very careful with Vietnamese names and addresses
+
+Content to analyze:
+${content}`
+          }
+        ]
+      }],
+      generationConfig: {
+        temperature: 0.1,
+        topK: 32,
+        topP: 1,
+        maxOutputTokens: 1024,
+      }
+    };
+    
+    console.log('📤 Sending content parsing request to Gemini...');
+    
+    const response = await axios.post(geminiUrl, requestBody, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: 30000
+    });
+    
+    console.log('📥 Received content parsing response from Gemini');
+    
+    if (response.data && response.data.candidates && response.data.candidates[0]) {
+      const generatedText = response.data.candidates[0].content.parts[0].text;
+      console.log('📝 Gemini parsing response:', generatedText);
+      
+      try {
+        const parsedData = JSON.parse(generatedText);
+        console.log('✅ Parsed recommendation data:', parsedData);
+        
+        res.json({
+          success: true,
+          data: parsedData,
+          rawResponse: generatedText
+        });
+        
+      } catch (parseError) {
+        console.error('❌ Error parsing Gemini response:', parseError);
+        res.status(500).json({ 
+          error: 'Failed to parse Gemini response',
+          rawResponse: generatedText
+        });
+      }
+    } else {
+      console.error('❌ Invalid Gemini API response structure');
+      res.status(500).json({ error: 'Invalid response from Gemini API' });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error in Gemini content parsing:', error);
+    res.status(500).json({ 
+      error: 'Failed to parse content using Gemini',
+      details: error.message
+    });
+  }
+});
+
 // Search nearby places endpoint
 app.post('/api/search-nearby', async (req, res) => {
   try {

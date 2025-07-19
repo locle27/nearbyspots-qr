@@ -1999,15 +1999,15 @@
             <div class="structured-content-section">
                 <div class="form-group">
                     <label for="structuredContent">📝 Structured Content (Auto-Parse)</label>
-                    <textarea id="structuredContent" rows="8" placeholder="Paste content like:
-File: Restaurant_name_1752583415.mp3
-Prices: 30k, 33k, 38k
-Addresses: 74 Lac Trung Hai Ba Trung
-Places: Lac Trung Hai Ba Trung, Be bakery
-Hours: 8am to 9pm
-Food Items: cheese panini, egg panini, chicken burger
-Sentiment: positive
-Summary: Description of the place..."></textarea>
+                    <textarea id="structuredContent" rows="8" placeholder="🤖 Paste ANY FORMAT - Gemini AI will extract restaurant info!
+
+Examples:
+• Simple text: 'Pho 24 restaurant on Hang Bac street, opens 7am-10pm, famous pho bo'
+• Review: 'Just ate at Banh Mi Queen, 45 Ma May Street. Amazing sandwiches for 25k VND each!'
+• Structured: 'Name: Café Giang, Address: 39 Nguyen Huu Huan, Hours: 6AM-11PM, Specialty: Egg coffee'
+• Messy notes: 'went to some noodle place near the lake... think it was called bun cha huong lien??? good food cheap prices maybe 50k for meal'
+
+The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Items, etc."></textarea>
                 </div>
                 <div class="structured-content-actions">
                     <button type="button" id="parseContentBtn" class="btn-parse">Parse Content</button>
@@ -5350,25 +5350,40 @@ Summary: Description of the place..."></textarea>
             const previewContainer = document.getElementById('parsedContentPreview');
             const quickAddBtn = document.getElementById('quickAddBtn');
             
-            let previewHTML = '<h4>📋 Parsed Content:</h4>';
+            let previewHTML = '<h4>🤖 AI Parsed Content:</h4>';
             
             if (parsed.businessName) {
-                previewHTML += `<div class="parsed-item"><span class="parsed-label">Name:</span> <span class="parsed-value">${parsed.businessName}</span></div>`;
-            }
-            if (parsed.prices) {
-                previewHTML += `<div class="parsed-item"><span class="parsed-label">Prices:</span> <span class="parsed-value">${parsed.prices}</span></div>`;
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Place Name:</span> <span class="parsed-value">${parsed.businessName}</span></div>`;
             }
             if (parsed.address) {
                 previewHTML += `<div class="parsed-item"><span class="parsed-label">Address:</span> <span class="parsed-value">${parsed.address}</span></div>`;
             }
+            if (parsed.category) {
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Category:</span> <span class="parsed-value">${parsed.category}</span></div>`;
+            }
+            if (parsed.priceRange || parsed.prices) {
+                const price = parsed.priceRange || parsed.prices;
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Price Range:</span> <span class="parsed-value">${price}</span></div>`;
+            }
             if (parsed.hours) {
                 previewHTML += `<div class="parsed-item"><span class="parsed-label">Hours:</span> <span class="parsed-value">${parsed.hours}</span></div>`;
             }
-            if (parsed.foodItems) {
-                previewHTML += `<div class="parsed-item"><span class="parsed-label">Menu:</span> <span class="parsed-value">${parsed.foodItems}</span></div>`;
+            if (parsed.menuItems || parsed.foodItems) {
+                const menu = parsed.menuItems || parsed.foodItems;
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Menu:</span> <span class="parsed-value">${menu}</span></div>`;
             }
-            if (parsed.summary) {
-                previewHTML += `<div class="parsed-item"><span class="parsed-label">Summary:</span> <span class="parsed-value">${parsed.summary}</span></div>`;
+            if (parsed.rating) {
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Rating:</span> <span class="parsed-value">${parsed.rating}/5</span></div>`;
+            }
+            if (parsed.phone) {
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Phone:</span> <span class="parsed-value">${parsed.phone}</span></div>`;
+            }
+            if (parsed.website) {
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Website:</span> <span class="parsed-value">${parsed.website}</span></div>`;
+            }
+            if (parsed.description || parsed.summary) {
+                const desc = parsed.description || parsed.summary;
+                previewHTML += `<div class="parsed-item"><span class="parsed-label">Description:</span> <span class="parsed-value">${desc}</span></div>`;
             }
             
             // Generate and display Google Maps URL
@@ -5376,19 +5391,35 @@ Summary: Description of the place..."></textarea>
             let coordinates = null;
             
             if (parsed.address) {
-                googleMapsUrl = await generateGoogleMapsUrl(parsed.address);
-                if (googleMapsUrl) {
-                    // Get coordinates for form population
-                    coordinates = await getCoordinatesFromAddress(parsed.address);
+                try {
+                    previewHTML += `<div class="parsed-item"><span class="parsed-label">Status:</span> <span class="parsed-value">🔍 Getting coordinates...</span></div>`;
+                    previewContainer.innerHTML = previewHTML;
+                    previewContainer.style.display = 'block';
                     
-                    previewHTML += `<div class="parsed-item"><span class="parsed-label">Maps URL:</span> <span class="parsed-value"><a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a></span></div>`;
-                    
-                    // Also show in the main URL display
-                    const urlDisplay = document.getElementById('generatedUrlDisplay');
-                    const urlLink = document.getElementById('generatedUrlLink');
-                    urlLink.href = googleMapsUrl;
-                    urlLink.textContent = googleMapsUrl;
-                    urlDisplay.style.display = 'block';
+                    googleMapsUrl = await generateGoogleMapsUrl(parsed.address);
+                    if (googleMapsUrl) {
+                        // Get coordinates for form population
+                        coordinates = await getCoordinatesFromAddress(parsed.address);
+                        
+                        if (coordinates) {
+                            previewHTML = previewHTML.replace('🔍 Getting coordinates...', '✅ Coordinates found!');
+                            previewHTML += `<div class="parsed-item"><span class="parsed-label">Coordinates:</span> <span class="parsed-value">${coordinates.latitude}, ${coordinates.longitude}</span></div>`;
+                        }
+                        
+                        previewHTML += `<div class="parsed-item"><span class="parsed-label">Maps URL:</span> <span class="parsed-value"><a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a></span></div>`;
+                        
+                        // Also show in the main URL display
+                        const urlDisplay = document.getElementById('generatedUrlDisplay');
+                        const urlLink = document.getElementById('generatedUrlLink');
+                        if (urlDisplay && urlLink) {
+                            urlLink.href = googleMapsUrl;
+                            urlLink.textContent = googleMapsUrl;
+                            urlDisplay.style.display = 'block';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error processing address:', error);
+                    previewHTML = previewHTML.replace('🔍 Getting coordinates...', '❌ Could not get coordinates');
                 }
             }
             
@@ -5440,9 +5471,18 @@ Summary: Description of the place..."></textarea>
                 document.getElementById('recLongitude').value = coordinates.longitude;
             }
             
-            // Create comprehensive description
+            // Set rating if provided by Gemini
+            if (parsed.rating) {
+                document.getElementById('recRating').value = parsed.rating;
+            } else {
+                document.getElementById('recRating').value = '4.0';
+            }
+            
+            // Create comprehensive description from Gemini data
             let description = '';
-            if (parsed.summary) {
+            if (parsed.description) {
+                description = parsed.description;
+            } else if (parsed.summary) {
                 description = parsed.summary;
             } else {
                 description = `${parsed.businessName || 'Restaurant'}`;
@@ -5450,9 +5490,20 @@ Summary: Description of the place..."></textarea>
             
             // Add additional details to description
             const details = [];
+            if (parsed.category && parsed.category !== 'restaurant') {
+                details.push(`Category: ${parsed.category}`);
+            }
             if (parsed.hours) details.push(`Hours: ${parsed.hours}`);
-            if (parsed.prices) details.push(`Prices: ${parsed.prices}`);
-            if (parsed.foodItems) details.push(`Menu: ${parsed.foodItems}`);
+            if (parsed.priceRange || parsed.prices) {
+                const price = parsed.priceRange || parsed.prices;
+                details.push(`Price Range: ${price}`);
+            }
+            if (parsed.menuItems || parsed.foodItems) {
+                const menu = parsed.menuItems || parsed.foodItems;
+                details.push(`Menu: ${menu}`);
+            }
+            if (parsed.phone) details.push(`Phone: ${parsed.phone}`);
+            if (parsed.website) details.push(`Website: ${parsed.website}`);
             
             if (details.length > 0) {
                 description += (description ? '\n\n' : '') + details.join('\n');
@@ -5464,9 +5515,6 @@ Summary: Description of the place..."></textarea>
             if (googleMapsUrl) {
                 document.getElementById('googleMapsUrl').value = googleMapsUrl;
             }
-            
-            // Set a default rating if not provided
-            document.getElementById('recRating').value = '4.0';
         }
 
         async function generateGoogleMapsUrl(address) {
@@ -5934,17 +5982,55 @@ Summary: Description of the place..."></textarea>
             document.getElementById('parseContentBtn').addEventListener('click', async function() {
                 const content = document.getElementById('structuredContent').value.trim();
                 if (!content) {
-                    alert('Please paste some structured content first');
+                    alert('Please paste some content first');
                     return;
                 }
                 
                 const parseBtn = this;
                 parseBtn.disabled = true;
-                parseBtn.textContent = 'Parsing...';
+                parseBtn.textContent = '🤖 AI Parsing...';
                 
                 try {
-                    parsedData = parseStructuredContent(content);
+                    // Use Gemini AI to parse any format of content
+                    const response = await fetch('/api/parse-content', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            content: content
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to parse content');
+                    }
+                    
+                    const result = await response.json();
+                    console.log('📝 Gemini parsing result:', result);
+                    
+                    if (!result.success || !result.data) {
+                        throw new Error('No data extracted from content');
+                    }
+                    
+                    // Convert Gemini response to our parsedData format
+                    parsedData = {
+                        businessName: result.data.placeName,
+                        address: result.data.address,
+                        description: result.data.description,
+                        priceRange: result.data.priceRange,
+                        hours: result.data.hours,
+                        menuItems: result.data.menuItems,
+                        rating: result.data.rating,
+                        phone: result.data.phone,
+                        website: result.data.website,
+                        category: result.data.category,
+                        keywords: result.data.keywords
+                    };
+                    
                     await displayParsedContent(parsedData);
+                    
                 } catch (error) {
                     console.error('Error parsing content:', error);
                     alert('Error parsing content: ' + error.message);
