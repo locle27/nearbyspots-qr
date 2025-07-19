@@ -3387,22 +3387,22 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             bounds.extend(hotelPosition);
             bounds.extend(placePosition);
 
-            // Add generous padding for better distance visualization
-            let paddingOptions = { top: 200, bottom: 200, left: 150, right: 150 };
+            // Add very generous padding for maximum overview and context
+            let paddingOptions = { top: 400, bottom: 400, left: 300, right: 300 };
             
             if (distance) {
                 if (distance < 200) {
-                    // Very close - still need significant padding to show context
-                    paddingOptions = { top: 180, bottom: 180, left: 120, right: 120 };
+                    // Very close - need major padding to show walking context
+                    paddingOptions = { top: 350, bottom: 350, left: 250, right: 250 };
                 } else if (distance < 500) {
-                    // Close - moderate padding
-                    paddingOptions = { top: 200, bottom: 200, left: 150, right: 150 };
+                    // Close - substantial padding for street context
+                    paddingOptions = { top: 400, bottom: 400, left: 300, right: 300 };
                 } else if (distance < 1000) {
-                    // Medium distance - more padding
-                    paddingOptions = { top: 250, bottom: 250, left: 180, right: 180 };
+                    // Medium distance - large padding for neighborhood context
+                    paddingOptions = { top: 500, bottom: 500, left: 400, right: 400 };
                 } else {
-                    // Far - maximum padding for full context
-                    paddingOptions = { top: 300, bottom: 300, left: 220, right: 220 };
+                    // Far - maximum padding for full area overview
+                    paddingOptions = { top: 600, bottom: 600, left: 500, right: 500 };
                 }
             }
 
