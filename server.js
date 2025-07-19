@@ -2373,12 +2373,20 @@ Instructions:
    - Address/location relevance
    - Description content
    - Type tags
-3. For food searches (like "banh canh", "pho", "coffee"), be smart about:
-   - Vietnamese food terms
-   - Restaurant names that might serve those dishes
-   - Categories that would have those items
-4. Return ONLY places that are relevant to the search
-5. Maintain the original data structure for each place
+3. Be smart about different types of searches:
+   - Vietnamese food: "banh canh", "pho", "bun bo hue" → Vietnamese restaurants
+   - General food: "bread", "pizza", "coffee", "sandwich" → restaurants, cafes, bakeries
+   - Drinks: "coffee", "tea", "beer", "cocktails" → cafes, bars, restaurants
+   - Cultural: "museum", "temple", "art" → cultural sites, landmarks
+   - Activity: "shopping", "market", "nightlife" → relevant venues
+   - Western food: "burger", "pasta", "steak" → international restaurants
+4. Include places that LIKELY serve or have what the user wants, even if not explicitly mentioned
+5. For food items like "bread":
+   - Include bakeries, cafes, restaurants that serve breakfast
+   - Include places with "bakery", "cafe", "breakfast" in name/description
+   - Include recommendations that might have bread/baked goods
+6. Return ONLY places that are relevant to the search
+7. Maintain the original data structure for each place
 
 Return your response as a JSON object with this exact structure:
 {
@@ -2393,7 +2401,7 @@ Return your response as a JSON object with this exact structure:
   "matchCount": number
 }
 
-Be generous with matches but ensure they're actually relevant. If searching for "banh canh", include Vietnamese restaurants that likely serve it, but don't include random coffee shops.`;
+Be generous with matches but ensure they're actually relevant. Cast a wide net for food searches - if someone searches "bread", include cafes, bakeries, breakfast places, and restaurants that likely serve bread.`;
 
     // Call Gemini API
     const geminiResponse = await axios.post(

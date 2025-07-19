@@ -2498,7 +2498,7 @@
     <div class="gemini-search-section">
         <div class="search-input-header">
             <h3>🔮 AI-Powered Search</h3>
-            <p>Find specific food or places using Gemini AI (e.g., "banh canh", "pho", "coffee")</p>
+            <p>Find specific food or places using Gemini AI (e.g., "bread", "banh canh", "coffee", "bakery")</p>
         </div>
         <div class="search-input-container">
             <input type="text" 
@@ -2516,12 +2516,13 @@
             <span style="font-size: 0.9rem; color: #666; margin-right: 10px;">Popular:</span>
             <div class="search-suggestion" onclick="quickSearch('banh canh')">🍲 Banh Canh</div>
             <div class="search-suggestion" onclick="quickSearch('pho')">🍜 Pho</div>
-            <div class="search-suggestion" onclick="quickSearch('bun bo hue')">🍲 Bun Bo Hue</div>
             <div class="search-suggestion" onclick="quickSearch('coffee')">☕ Coffee</div>
+            <div class="search-suggestion" onclick="quickSearch('bread')">🍞 Bread</div>
             <div class="search-suggestion" onclick="quickSearch('banh mi')">🥖 Banh Mi</div>
+            <div class="search-suggestion" onclick="quickSearch('bakery')">🧁 Bakery</div>
             <div class="search-suggestion" onclick="quickSearch('bubble tea')">🧋 Bubble Tea</div>
             <div class="search-suggestion" onclick="quickSearch('street food')">🍢 Street Food</div>
-            <button class="clear-search" onclick="clearSearch()" style="display: none;">✖️ Clear Search</button>
+            <button class="clear-search" id="clearSearchBtn" onclick="clearSearch()" style="display: none;">✖️ Clear Search</button>
         </div>
         
         <!-- Search Status -->
@@ -7315,6 +7316,28 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 console.log('🔮 Gemini search result:', result);
 
                 if (result.success) {
+                    const totalResults = Object.values(result.filteredPlaces).flat().length;
+                    
+                    // If Gemini found very few or no results, try fallback search
+                    if (totalResults === 0) {
+                        console.log('⚠️ Gemini found no results, trying fallback search...');
+                        const fallbackResults = performFallbackSearch(query);
+                        
+                        if (Object.values(fallbackResults).flat().length > 0) {
+                            console.log('✅ Fallback search found results');
+                            currentSearchFilter = {
+                                query: query,
+                                filteredPlaces: fallbackResults,
+                                categories: Object.keys(fallbackResults).filter(key => fallbackResults[key].length > 0)
+                            };
+                            applySearchFilter(fallbackResults, query);
+                            searchStatus.className = 'search-status success';
+                            searchStatus.innerHTML = `✅ Found ${Object.values(fallbackResults).flat().length} places matching "${query}" (local search)`;
+                            clearBtn.style.display = 'inline-block';
+                            return;
+                        }
+                    }
+                    
                     // Store current search filter
                     currentSearchFilter = {
                         query: query,
@@ -7327,17 +7350,41 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
 
                     // Update UI
                     searchStatus.className = 'search-status success';
-                    searchStatus.innerHTML = `✅ Found ${Object.values(result.filteredPlaces).flat().length} places matching "${query}"`;
+                    searchStatus.innerHTML = `✅ Found ${totalResults} places matching "${query}"`;
                     clearBtn.style.display = 'inline-block';
 
-                    console.log(`✅ Search complete: ${Object.values(result.filteredPlaces).flat().length} places found`);
+                    console.log(`✅ Search complete: ${totalResults} places found`);
                 } else {
                     throw new Error(result.error || 'Search failed');
                 }
             } catch (error) {
                 console.error('❌ Gemini search error:', error);
+                
+                // Try fallback search when Gemini fails
+                console.log('⚠️ Gemini search failed, trying fallback search...');
+                try {
+                    const fallbackResults = performFallbackSearch(query);
+                    const totalFallback = Object.values(fallbackResults).flat().length;
+                    
+                    if (totalFallback > 0) {
+                        console.log('✅ Fallback search found results after Gemini failure');
+                        currentSearchFilter = {
+                            query: query,
+                            filteredPlaces: fallbackResults,
+                            categories: Object.keys(fallbackResults).filter(key => fallbackResults[key].length > 0)
+                        };
+                        applySearchFilter(fallbackResults, query);
+                        searchStatus.className = 'search-status success';
+                        searchStatus.innerHTML = `✅ Found ${totalFallback} places matching "${query}" (offline search)`;
+                        clearBtn.style.display = 'inline-block';
+                        return;
+                    }
+                } catch (fallbackError) {
+                    console.error('❌ Fallback search also failed:', fallbackError);
+                }
+                
                 searchStatus.className = 'search-status error';
-                searchStatus.innerHTML = `❌ Search failed: ${error.message}`;
+                searchStatus.innerHTML = `❌ Search failed: ${error.message}. Try different keywords.`;
             } finally {
                 // Reset button
                 searchBtn.disabled = false;
@@ -7352,21 +7399,111 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
 
         function clearSearch() {
             console.log('🧹 Clearing search filter');
+            console.log('📊 Before clear - currentSearchFilter:', currentSearchFilter);
+            console.log('📊 Before clear - allPlaces count:', Object.keys(allPlaces));
             
             // Reset search filter
             currentSearchFilter = null;
             
             // Clear input and status
-            document.getElementById('geminiSearchInput').value = '';
-            document.getElementById('searchStatus').style.display = 'none';
-            document.querySelector('.clear-search').style.display = 'none';
+            const searchInput = document.getElementById('geminiSearchInput');
+            const searchStatus = document.getElementById('searchStatus');
+            const clearBtn = document.getElementById('clearSearchBtn');
+            
+            if (searchInput) searchInput.value = '';
+            if (searchStatus) searchStatus.style.display = 'none';
+            if (clearBtn) clearBtn.style.display = 'none';
 
             // Restore original places display
-            updateMapMarkers();
-            updateStats();
-            updatePlacesList();
+            console.log('🔄 Restoring original places display...');
+            try {
+                updateMapMarkers();
+                updateStats();
+                updatePlacesList();
+                console.log('✅ Search cleared successfully, showing all places');
+            } catch (error) {
+                console.error('❌ Error during clear search:', error);
+                // Force reload as fallback
+                location.reload();
+            }
+        }
 
-            console.log('✅ Search cleared, showing all places');
+        // Local fallback search function
+        function performFallbackSearch(query) {
+            console.log('🔍 Performing local fallback search for:', query);
+            const searchTerm = query.toLowerCase().trim();
+            const fallbackResults = {
+                restaurants: [],
+                landmarks: [],
+                coffee: [],
+                culture: [],
+                recommend: []
+            };
+
+            // Define keyword mappings for better matching
+            const keywordMappings = {
+                'bread': ['bread', 'bakery', 'bake', 'pastry', 'breakfast', 'sandwich'],
+                'coffee': ['coffee', 'cafe', 'espresso', 'latte', 'cappuccino'],
+                'bakery': ['bakery', 'bread', 'cake', 'pastry', 'bake'],
+                'tea': ['tea', 'bubble tea', 'milk tea', 'cafe'],
+                'beer': ['beer', 'bar', 'pub', 'brewery', 'drink'],
+                'pizza': ['pizza', 'italian', 'restaurant'],
+                'burger': ['burger', 'american', 'fast food', 'grill'],
+                'soup': ['soup', 'pho', 'broth', 'noodle'],
+                'noodle': ['noodle', 'pho', 'bun', 'mien'],
+                'rice': ['rice', 'com', 'fried rice', 'restaurant'],
+                'chicken': ['chicken', 'ga', 'grill', 'fried'],
+                'seafood': ['seafood', 'fish', 'shrimp', 'crab', 'ocean']
+            };
+
+            // Get search keywords
+            let searchKeywords = [searchTerm];
+            if (keywordMappings[searchTerm]) {
+                searchKeywords = [...searchKeywords, ...keywordMappings[searchTerm]];
+            }
+
+            console.log('🎯 Search keywords:', searchKeywords);
+
+            // Search through all categories
+            Object.entries(allPlaces).forEach(([category, places]) => {
+                if (!places || !Array.isArray(places)) return;
+
+                places.forEach(place => {
+                    let isMatch = false;
+                    const placeText = `${place.name} ${place.address} ${place.description || ''}`.toLowerCase();
+
+                    // Check if any search keyword matches
+                    for (const keyword of searchKeywords) {
+                        if (placeText.includes(keyword)) {
+                            isMatch = true;
+                            break;
+                        }
+                    }
+
+                    // Also check place types
+                    if (!isMatch && place.types && Array.isArray(place.types)) {
+                        for (const type of place.types) {
+                            for (const keyword of searchKeywords) {
+                                if (type.toLowerCase().includes(keyword)) {
+                                    isMatch = true;
+                                    break;
+                                }
+                            }
+                            if (isMatch) break;
+                        }
+                    }
+
+                    if (isMatch) {
+                        fallbackResults[category].push(place);
+                        console.log(`✅ Local match found: ${place.name} in ${category}`);
+                    }
+                });
+            });
+
+            const totalFound = Object.values(fallbackResults).flat().length;
+            console.log(`🔍 Local search complete: ${totalFound} places found`);
+
+            return fallbackResults;
         }
 
         function applySearchFilter(filteredPlaces, query) {
