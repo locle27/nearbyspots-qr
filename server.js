@@ -37,7 +37,7 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for health checks
+    // Skip rate limiting for health checks and photo loading
     const userAgent = req.get('User-Agent') || '';
     const isHealthCheck = req.path.includes('health') || 
                          req.path.includes('/health') ||
@@ -48,7 +48,11 @@ const limiter = rateLimit({
                          userAgent.toLowerCase().includes('check') ||
                          userAgent.toLowerCase().includes('bot') ||
                          userAgent.toLowerCase().includes('monitor');
-    return isHealthCheck;
+    
+    // Skip rate limiting for photo endpoints to prevent gallery loading issues
+    const isPhotoRequest = req.path.includes('/api/place-photo/');
+    
+    return isHealthCheck || isPhotoRequest;
   }
 });
 app.use(limiter);
@@ -65,7 +69,7 @@ const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for health checks and diagnostic endpoints
+    // Skip rate limiting for health checks, diagnostic endpoints, and photo loading
     const userAgent = req.get('User-Agent') || '';
     const isHealthCheck = req.path.includes('health') || 
                          req.path.includes('/health') ||
@@ -76,7 +80,11 @@ const apiLimiter = rateLimit({
                          userAgent.toLowerCase().includes('check') ||
                          userAgent.toLowerCase().includes('bot') ||
                          userAgent.toLowerCase().includes('monitor');
-    return isHealthCheck;
+    
+    // Skip rate limiting for photo endpoints to prevent gallery loading issues
+    const isPhotoRequest = req.path.includes('/api/place-photo/');
+    
+    return isHealthCheck || isPhotoRequest;
   }
 });
 
