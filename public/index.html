@@ -2933,6 +2933,41 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
 
         let isSubmitting = false; // Global flag to prevent duplicate submissions
         
+        // Image compression utility for faster uploads
+        function compressImage(dataUrl, quality = 0.7) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    // Calculate new dimensions (max 800px width/height)
+                    let { width, height } = this;
+                    const maxSize = 800;
+                    
+                    if (width > maxSize || height > maxSize) {
+                        if (width > height) {
+                            height = (height * maxSize) / width;
+                            width = maxSize;
+                        } else {
+                            width = (width * maxSize) / height;
+                            height = maxSize;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Draw and compress
+                    ctx.drawImage(this, 0, 0, width, height);
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                    resolve(compressedDataUrl);
+                };
+                
+                img.src = dataUrl;
+            });
+        }
+        
         async function addNewRecommendation() {
             // Prevent duplicate submissions
             if (isSubmitting) {
@@ -2963,6 +2998,34 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             }
             
             try {
+                // Optimize images for faster upload
+                const optimizedImages = [];
+                if (uploadedImages.length > 0) {
+                    submitBtn.innerHTML = '<span style="display: inline-block; animation: spin 1s linear infinite;">⏳</span> Optimizing images...';
+                    
+                    for (let i = 0; i < Math.min(uploadedImages.length, 3); i++) { // Limit to 3 images
+                        const img = uploadedImages[i];
+                        try {
+                            // Compress image if too large
+                            let dataUrl = img.dataUrl;
+                            if (dataUrl.length > 500000) { // 500KB limit
+                                console.log(`Compressing large image: ${img.name}`);
+                                dataUrl = await compressImage(dataUrl, 0.7); // 70% quality
+                            }
+                            optimizedImages.push({
+                                id: img.id,
+                                name: img.name,
+                                dataUrl: dataUrl
+                            });
+                        } catch (error) {
+                            console.error('Error optimizing image:', img.name, error);
+                            // Skip problematic images
+                        }
+                    }
+                }
+                
+                submitBtn.innerHTML = '<span style="display: inline-block; animation: spin 1s linear infinite;">⏳</span> Creating recommendation...';
+                
                 const recommendation = {
                     name: document.getElementById('recName').value.trim(),
                     address: document.getElementById('recAddress').value.trim(),
@@ -2972,11 +3035,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     description: document.getElementById('recDescription').value.trim(),
                     websiteUri: document.getElementById('recWebsite').value.trim(),
                     featured: document.getElementById('recFeatured').checked,
-                    images: uploadedImages.map(img => ({
-                        id: img.id,
-                        name: img.name,
-                        dataUrl: img.dataUrl
-                    }))
+                    images: optimizedImages
                 };
                 
                 // Validation
