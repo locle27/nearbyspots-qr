@@ -1848,30 +1848,9 @@
             border: 2px dashed #ddd;
         }
 
-        /* Enhanced place items with better click indication */
+        /* Enhanced place items */
         .place-item {
             position: relative;
-        }
-
-        .place-item::after {
-            content: '👁️ View Details';
-            position: absolute;
-            top: 50%;
-            right: 15px;
-            transform: translateY(-50%);
-            background: linear-gradient(135deg, #1976D2 0%, #42a5f5 100%);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-        }
-
-        .place-item:hover::after {
-            opacity: 1;
         }
 
         /* Distance conversion display */
@@ -3408,22 +3387,22 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             bounds.extend(hotelPosition);
             bounds.extend(placePosition);
 
-            // Add padding based on distance for optimal viewing
-            let paddingOptions = { top: 100, bottom: 100, left: 50, right: 50 };
+            // Add generous padding for better distance visualization
+            let paddingOptions = { top: 200, bottom: 200, left: 150, right: 150 };
             
             if (distance) {
                 if (distance < 200) {
-                    // Very close - use high zoom with minimal padding
-                    paddingOptions = { top: 80, bottom: 80, left: 40, right: 40 };
+                    // Very close - still need significant padding to show context
+                    paddingOptions = { top: 180, bottom: 180, left: 120, right: 120 };
                 } else if (distance < 500) {
                     // Close - moderate padding
-                    paddingOptions = { top: 100, bottom: 100, left: 50, right: 50 };
+                    paddingOptions = { top: 200, bottom: 200, left: 150, right: 150 };
                 } else if (distance < 1000) {
                     // Medium distance - more padding
-                    paddingOptions = { top: 120, bottom: 120, left: 60, right: 60 };
+                    paddingOptions = { top: 250, bottom: 250, left: 180, right: 180 };
                 } else {
-                    // Far - maximum padding for context
-                    paddingOptions = { top: 150, bottom: 150, left: 80, right: 80 };
+                    // Far - maximum padding for full context
+                    paddingOptions = { top: 300, bottom: 300, left: 220, right: 220 };
                 }
             }
 
