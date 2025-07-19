@@ -850,7 +850,7 @@ app.get('/api/recommendations', (req, res) => {
 });
 
 // Add new recommendation endpoint
-app.post('/api/recommendations', (req, res) => {
+app.post('/api/recommendations', async (req, res) => {
   try {
     const {
       name,
