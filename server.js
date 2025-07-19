@@ -495,7 +495,7 @@ async function searchNearbyPlaces(latitude, longitude, radius, types) {
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id,places.currentOpeningHours,places.regularOpeningHours'
         },
         timeout: 10000
       }
@@ -1634,7 +1634,7 @@ app.post('/api/search-nearby', async (req, res) => {
                 headers: {
                   'Content-Type': 'application/json',
                   'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id,places.currentOpeningHours,places.regularOpeningHours'
                 },
                 timeout: 10000
               }
@@ -1664,6 +1664,9 @@ app.post('/api/search-nearby', async (req, res) => {
                   userRatingCount: place.userRatingCount || 0,
                   photos: (place.photos && place.photos.length > 0) ? place.photos : [],
                   websiteUri: place.websiteUri || '',
+                  currentOpeningHours: place.currentOpeningHours || null,
+                  regularOpeningHours: place.regularOpeningHours || null,
+                  openingHours: place.currentOpeningHours || place.regularOpeningHours || null,
                   distance: calculateDistance(
                     latitude,
                     longitude,
@@ -1699,7 +1702,7 @@ app.post('/api/search-nearby', async (req, res) => {
                 headers: {
                   'Content-Type': 'application/json',
                   'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id,places.currentOpeningHours,places.regularOpeningHours'
                 },
                 timeout: 10000
               }
@@ -1729,6 +1732,9 @@ app.post('/api/search-nearby', async (req, res) => {
                   userRatingCount: place.userRatingCount || 0,
                   photos: (place.photos && place.photos.length > 0) ? place.photos : [],
                   websiteUri: place.websiteUri || '',
+                  currentOpeningHours: place.currentOpeningHours || null,
+                  regularOpeningHours: place.regularOpeningHours || null,
+                  openingHours: place.currentOpeningHours || place.regularOpeningHours || null,
                   distance: calculateDistance(
                     latitude,
                     longitude,
@@ -1772,7 +1778,7 @@ app.post('/api/search-nearby', async (req, res) => {
                 headers: {
                   'Content-Type': 'application/json',
                   'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id,places.currentOpeningHours,places.regularOpeningHours'
                 },
                 timeout: 10000
               }
@@ -1803,6 +1809,9 @@ app.post('/api/search-nearby', async (req, res) => {
                   userRatingCount: place.userRatingCount || 0,
                   photos: (place.photos && place.photos.length > 0) ? place.photos : [],
                   websiteUri: place.websiteUri || '',
+                  currentOpeningHours: place.currentOpeningHours || null,
+                  regularOpeningHours: place.regularOpeningHours || null,
+                  openingHours: place.currentOpeningHours || place.regularOpeningHours || null,
                   distance: calculateDistance(
                     latitude,
                     longitude,
@@ -1838,7 +1847,7 @@ app.post('/api/search-nearby', async (req, res) => {
                 headers: {
                   'Content-Type': 'application/json',
                   'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id,places.currentOpeningHours,places.regularOpeningHours'
                 },
                 timeout: 10000
               }
@@ -1868,6 +1877,9 @@ app.post('/api/search-nearby', async (req, res) => {
                   userRatingCount: place.userRatingCount || 0,
                   photos: (place.photos && place.photos.length > 0) ? place.photos : [],
                   websiteUri: place.websiteUri || '',
+                  currentOpeningHours: place.currentOpeningHours || null,
+                  regularOpeningHours: place.regularOpeningHours || null,
+                  openingHours: place.currentOpeningHours || place.regularOpeningHours || null,
                   distance: calculateDistance(
                     latitude,
                     longitude,
@@ -1911,7 +1923,7 @@ app.post('/api/search-nearby', async (req, res) => {
                 headers: {
                   'Content-Type': 'application/json',
                   'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id,places.currentOpeningHours,places.regularOpeningHours'
                 },
                 timeout: 10000
               }
@@ -1941,6 +1953,9 @@ app.post('/api/search-nearby', async (req, res) => {
                   userRatingCount: place.userRatingCount || 0,
                   photos: (place.photos && place.photos.length > 0) ? place.photos : [],
                   websiteUri: place.websiteUri || '',
+                  currentOpeningHours: place.currentOpeningHours || null,
+                  regularOpeningHours: place.regularOpeningHours || null,
+                  openingHours: place.currentOpeningHours || place.regularOpeningHours || null,
                   distance: calculateDistance(
                     latitude,
                     longitude,
@@ -1976,7 +1991,7 @@ app.post('/api/search-nearby', async (req, res) => {
                 headers: {
                   'Content-Type': 'application/json',
                   'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id,places.currentOpeningHours,places.regularOpeningHours'
                 },
                 timeout: 10000
               }
@@ -2006,6 +2021,9 @@ app.post('/api/search-nearby', async (req, res) => {
                   userRatingCount: place.userRatingCount || 0,
                   photos: (place.photos && place.photos.length > 0) ? place.photos : [],
                   websiteUri: place.websiteUri || '',
+                  currentOpeningHours: place.currentOpeningHours || null,
+                  regularOpeningHours: place.regularOpeningHours || null,
+                  openingHours: place.currentOpeningHours || place.regularOpeningHours || null,
                   distance: calculateDistance(
                     latitude,
                     longitude,
@@ -2049,7 +2067,7 @@ app.post('/api/search-nearby', async (req, res) => {
                 headers: {
                   'Content-Type': 'application/json',
                   'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id'
+                  'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.photos,places.websiteUri,places.id,places.currentOpeningHours,places.regularOpeningHours'
                 },
                 timeout: 10000
               }
@@ -2079,6 +2097,9 @@ app.post('/api/search-nearby', async (req, res) => {
                   userRatingCount: place.userRatingCount || 0,
                   photos: (place.photos && place.photos.length > 0) ? place.photos : [],
                   websiteUri: place.websiteUri || '',
+                  currentOpeningHours: place.currentOpeningHours || null,
+                  regularOpeningHours: place.regularOpeningHours || null,
+                  openingHours: place.currentOpeningHours || place.regularOpeningHours || null,
                   distance: calculateDistance(
                     latitude,
                     longitude,
@@ -2175,7 +2196,10 @@ app.post('/api/search-nearby', async (req, res) => {
             })) || [],
             websiteUri: place.websiteUri || '',
             mapsUrl: generateMapsUrl(place.location.latitude, place.location.longitude, placeName),
-            types: place.types || []
+            types: place.types || [],
+            currentOpeningHours: place.currentOpeningHours || null,
+            regularOpeningHours: place.regularOpeningHours || null,
+            openingHours: place.currentOpeningHours || place.regularOpeningHours || null
           };
         }).filter(place => place.name !== 'Unknown Place'); // Filter out places with no valid names
         
@@ -2286,6 +2310,319 @@ app.post('/api/search-nearby', async (req, res) => {
     });
   }
 });
+
+// Gemini AI Search endpoint for intelligent place filtering
+app.post('/api/gemini-search', async (req, res) => {
+  try {
+    const { query, places, location } = req.body;
+    
+    console.log('🔮 Gemini search request:', { query, location, placesCount: Object.keys(places).length });
+
+    if (!query || !places) {
+      return res.status(400).json({ error: 'Query and places are required' });
+    }
+
+    // Check if Gemini API key is available
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    if (!GEMINI_API_KEY) {
+      console.warn('⚠️ Gemini API key not configured, using fallback search');
+      // Fallback to simple text matching if no Gemini API
+      const filteredPlaces = performSimpleTextSearch(query, places);
+      return res.json({
+        success: true,
+        filteredPlaces,
+        method: 'fallback_text_search',
+        message: 'Using local text search (Gemini API not configured)'
+      });
+    }
+
+    // Prepare places data for Gemini
+    const placesArray = [];
+    Object.entries(places).forEach(([category, categoryPlaces]) => {
+      if (categoryPlaces && Array.isArray(categoryPlaces)) {
+        categoryPlaces.forEach(place => {
+          placesArray.push({
+            id: place.id,
+            name: place.name,
+            address: place.address,
+            category: place.category || category,
+            rating: place.rating || 0,
+            distance: place.distance || 0,
+            description: place.description || '',
+            types: place.types || []
+          });
+        });
+      }
+    });
+
+    console.log(`📊 Sending ${placesArray.length} places to Gemini for analysis`);
+
+    // Create prompt for Gemini
+    const prompt = `You are an intelligent place filtering assistant. I will give you a user search query and a list of places. Your job is to filter and return only the places that match the user's search intent.
+
+User's search query: "${query}"
+
+Places to filter (JSON format):
+${JSON.stringify(placesArray, null, 2)}
+
+Instructions:
+1. Analyze the user's search query to understand what they're looking for
+2. Filter the places based on:
+   - Name matching (partial matches allowed)
+   - Category relevance
+   - Address/location relevance
+   - Description content
+   - Type tags
+3. For food searches (like "banh canh", "pho", "coffee"), be smart about:
+   - Vietnamese food terms
+   - Restaurant names that might serve those dishes
+   - Categories that would have those items
+4. Return ONLY places that are relevant to the search
+5. Maintain the original data structure for each place
+
+Return your response as a JSON object with this exact structure:
+{
+  "filteredPlaces": {
+    "restaurants": [...],
+    "landmarks": [...],
+    "coffee": [...],
+    "culture": [...],
+    "recommend": [...]
+  },
+  "reasoning": "Brief explanation of your filtering logic",
+  "matchCount": number
+}
+
+Be generous with matches but ensure they're actually relevant. If searching for "banh canh", include Vietnamese restaurants that likely serve it, but don't include random coffee shops.`;
+
+    // Call Gemini API
+    const geminiResponse = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          topK: 1,
+          maxOutputTokens: 8192
+        }
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 15000
+      }
+    );
+
+    console.log('🤖 Gemini API response received');
+
+    if (geminiResponse.data && geminiResponse.data.candidates && geminiResponse.data.candidates[0]) {
+      const geminiText = geminiResponse.data.candidates[0].content.parts[0].text;
+      console.log('📝 Raw Gemini response:', geminiText.substring(0, 200) + '...');
+      
+      try {
+        // Extract JSON from Gemini response (it might be wrapped in markdown)
+        let jsonText = geminiText;
+        const jsonMatch = geminiText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonText = jsonMatch[0];
+        }
+        
+        const geminiResult = JSON.parse(jsonText);
+        console.log('✅ Gemini filtering successful:', {
+          matchCount: geminiResult.matchCount,
+          reasoning: geminiResult.reasoning
+        });
+
+        res.json({
+          success: true,
+          filteredPlaces: geminiResult.filteredPlaces || {},
+          reasoning: geminiResult.reasoning,
+          matchCount: geminiResult.matchCount || 0,
+          method: 'gemini_ai',
+          query: query
+        });
+      } catch (parseError) {
+        console.error('❌ Failed to parse Gemini response:', parseError);
+        console.log('Raw response:', geminiText);
+        
+        // Fallback to simple search
+        const filteredPlaces = performSimpleTextSearch(query, places);
+        res.json({
+          success: true,
+          filteredPlaces,
+          method: 'fallback_after_gemini_error',
+          error: 'Gemini response parsing failed, used fallback'
+        });
+      }
+    } else {
+      throw new Error('Invalid Gemini API response structure');
+    }
+
+  } catch (error) {
+    console.error('❌ Gemini search error:', error.message);
+    
+    // Fallback to simple text search
+    try {
+      const filteredPlaces = performSimpleTextSearch(req.body.query, req.body.places);
+      res.json({
+        success: true,
+        filteredPlaces,
+        method: 'fallback_after_error',
+        error: `Gemini API failed: ${error.message}`
+      });
+    } catch (fallbackError) {
+      res.status(500).json({
+        success: false,
+        error: 'Both Gemini AI and fallback search failed',
+        details: error.message
+      });
+    }
+  }
+});
+
+// Simple text search fallback function
+function performSimpleTextSearch(query, places) {
+  const searchTerms = query.toLowerCase().split(' ');
+  const filteredPlaces = {};
+
+  Object.entries(places).forEach(([category, categoryPlaces]) => {
+    if (categoryPlaces && Array.isArray(categoryPlaces)) {
+      const filtered = categoryPlaces.filter(place => {
+        const searchableText = `${place.name} ${place.address} ${place.description || ''} ${place.category || category}`.toLowerCase();
+        return searchTerms.some(term => searchableText.includes(term));
+      });
+      
+      if (filtered.length > 0) {
+        filteredPlaces[category] = filtered;
+      }
+    }
+  });
+
+  console.log('📄 Simple text search completed:', Object.keys(filteredPlaces));
+  return filteredPlaces;
+}
+
+// Gemini AI Dish Name Extraction endpoint
+app.post('/api/gemini-parse-dish', async (req, res) => {
+  try {
+    const { placeName } = req.body;
+    
+    console.log('🍽️ Gemini dish parsing request:', placeName);
+
+    if (!placeName) {
+      return res.status(400).json({ error: 'Place name is required' });
+    }
+
+    // Check if Gemini API key is available
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    if (!GEMINI_API_KEY) {
+      console.log('⚠️ Gemini API key not available, using fallback extraction');
+      return res.json({
+        success: false,
+        error: 'Gemini API not configured',
+        fallbackSuggestion: extractDishNameFallback(placeName)
+      });
+    }
+
+    // Create the prompt for dish name extraction
+    const prompt = `You are a Vietnamese food expert. Extract the main dish name from this restaurant/place name: "${placeName}"
+
+Your task is to identify the specific Vietnamese dish being served or the main specialty. 
+
+Examples:
+- "Quán Bún Bò Huế Cô Ba" → "Bún Bò Huế"
+- "Phở Gà Lan Ông" → "Phở Gà Lan Ông" 
+- "Nhà hàng Cơm Tấm Sài Gòn" → "Cơm Tấm"
+- "Bánh Canh Chả Cá Nha Trang" → "Bánh Canh Chả Cá"
+- "Quán Gà Luộc Ớt Nam Định" → "Gà Luộc Ớt"
+
+Rules:
+1. Keep the full dish name if it includes specific variations (like "Phở Gà Lan Ông")
+2. Remove business words like "quán", "nhà hàng", "cửa hàng"
+3. Keep regional indicators if they're part of the dish name
+4. If no clear dish is identified, return the most relevant food-related part
+5. Preserve Vietnamese diacritics and proper capitalization
+
+Respond with ONLY the extracted dish name, nothing else.`;
+
+    // Call Gemini API
+    const geminiResponse = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          topK: 1,
+          maxOutputTokens: 100
+        }
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      }
+    );
+
+    console.log('🤖 Gemini dish parsing response received');
+
+    if (geminiResponse.data && geminiResponse.data.candidates && geminiResponse.data.candidates[0]) {
+      const dishName = geminiResponse.data.candidates[0].content.parts[0].text.trim();
+      console.log('🍜 Extracted dish name:', dishName);
+      
+      res.json({
+        success: true,
+        dishName: dishName,
+        originalName: placeName
+      });
+    } else {
+      console.warn('⚠️ No valid response from Gemini');
+      res.json({
+        success: false,
+        error: 'No valid response from Gemini',
+        fallbackSuggestion: extractDishNameFallback(placeName)
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Gemini dish parsing error:', error.message);
+    res.json({
+      success: false,
+      error: 'Gemini API error',
+      fallbackSuggestion: extractDishNameFallback(placeName)
+    });
+  }
+});
+
+// Fallback dish name extraction function
+function extractDishNameFallback(placeName) {
+  // Simple fallback extraction logic for Vietnamese dishes
+  const dishPatterns = [
+    /(?:quán|nhà hàng|cửa hàng)\s*([^,\-\(\[\{]+)/i,
+    /([^,\-\(\[\{]*(?:phở|bún|bánh|cơm|gỏi|chả|nem|xôi|chè)[^,\-\)\]\}]*)/i,
+    /([^,\-\(\[\{]*(?:gà|bò|heo|tôm|cá|thịt)[^,\-\)\]\}]*)/i
+  ];
+  
+  for (const pattern of dishPatterns) {
+    const match = placeName.match(pattern);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+  }
+  
+  // If no patterns match, return the first part before common separators
+  const parts = placeName.split(/[,\-\(\[\{]/);
+  return parts[0].trim();
+}
 
 // Reverse geocode coordinates to address endpoint
 app.post('/api/geocode-coordinates', async (req, res) => {

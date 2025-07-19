@@ -1509,6 +1509,203 @@
             }
         }
 
+        /* Edit Place Modal Styles */
+        .edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.75);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .edit-modal.show {
+            display: flex;
+        }
+
+        .edit-modal-content {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: scaleIn 0.3s ease-out;
+        }
+
+        .edit-modal-header {
+            background: linear-gradient(135deg, #9C27B0 0%, #BA68C8 100%);
+            color: white;
+            padding: 20px;
+            position: relative;
+        }
+
+        .edit-modal-title {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 700;
+            padding-right: 50px;
+        }
+
+        .edit-modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.7);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .edit-modal-close:hover {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.1);
+        }
+
+        .edit-modal-body {
+            padding: 24px;
+        }
+
+        .edit-form-section {
+            margin-bottom: 20px;
+        }
+
+        .edit-form-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .current-name-display {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #9C27B0;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .edit-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .edit-input:focus {
+            outline: none;
+            border-color: #9C27B0;
+            box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.1);
+        }
+
+        .auto-parse-btn {
+            background: linear-gradient(135deg, #FF9800 0%, #FFC107 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+        }
+
+        .auto-parse-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+        }
+
+        .dish-examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .dish-example {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #495057;
+        }
+
+        .dish-example:hover {
+            background: #9C27B0;
+            color: white;
+            border-color: #9C27B0;
+            transform: translateY(-1px);
+        }
+
+        .edit-modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .cancel-edit-btn, .save-edit-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cancel-edit-btn {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .cancel-edit-btn:hover {
+            background: #eeeeee;
+            transform: translateY(-1px);
+        }
+
+        .save-edit-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .save-edit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        .save-edit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
         /* Professional Mobile Content Layout */
         .place-details-full {
             padding: 16px 20px;
@@ -1695,6 +1892,155 @@
         .opening-hours-unavailable small {
             color: #7f1d1d;
             font-size: 0.8rem;
+        }
+
+        /* Gemini Search Section Styles */
+        .gemini-search-section {
+            background: white;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 0;
+        }
+
+        .search-input-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .search-input-header h3 {
+            margin: 0 0 5px 0;
+            color: #9C27B0;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .search-input-header p {
+            margin: 0;
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .search-input-container {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #9C27B0;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.1);
+        }
+
+        .btn-gemini-search {
+            background: linear-gradient(135deg, #9C27B0 0%, #673AB7 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3);
+            min-height: 44px;
+        }
+
+        .btn-gemini-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.4);
+        }
+
+        .btn-gemini-search:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .search-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .search-suggestion {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            color: #4a148c;
+            border: 1px solid #ce93d8;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .search-suggestion:hover {
+            background: linear-gradient(135deg, #9C27B0 0%, #673AB7 100%);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3);
+        }
+
+        .search-status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .search-status.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #bbdefb;
+        }
+
+        .search-status.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+
+        .search-status.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+
+        .clear-search {
+            background: #ff5722;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .clear-search:hover {
+            background: #e64a19;
+            transform: translateY(-1px);
         }
 
         .place-actions {
@@ -1952,12 +2298,19 @@
             margin-left: 5px;
         }
 
-        /* View Details Button */
-        .view-details-btn {
+        /* Action Buttons Container */
+        .place-actions {
             position: absolute;
             top: 50%;
             right: 15px;
             transform: translateY(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        /* View Details Button */
+        .view-details-btn {
             background: linear-gradient(135deg, #1976D2 0%, #42a5f5 100%);
             color: white;
             border: none;
@@ -1970,17 +2323,42 @@
             box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
             min-height: 44px;
             min-width: 44px;
-            z-index: 10;
         }
 
         .view-details-btn:hover {
-            transform: translateY(-50%) translateY(-2px);
+            transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
         }
 
         .view-details-btn:active {
-            transform: translateY(-50%) translateY(0px);
+            transform: translateY(0px);
             box-shadow: 0 2px 6px rgba(25, 118, 210, 0.3);
+        }
+
+        /* Edit Place Button */
+        .edit-place-btn {
+            background: linear-gradient(135deg, #9C27B0 0%, #BA68C8 100%);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3);
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        .edit-place-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.4);
+        }
+
+        .edit-place-btn:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 6px rgba(156, 39, 176, 0.3);
         }
 
         /* Mobile responsiveness */
@@ -2114,6 +2492,40 @@
         <div class="current-location-display">
             <span id="currentLocationText">📍 Current: 118 Hang Bac, Hanoi Old Quarter</span>
         </div>
+    </div>
+
+    <!-- Gemini AI Search Section -->
+    <div class="gemini-search-section">
+        <div class="search-input-header">
+            <h3>🔮 AI-Powered Search</h3>
+            <p>Find specific food or places using Gemini AI (e.g., "banh canh", "pho", "coffee")</p>
+        </div>
+        <div class="search-input-container">
+            <input type="text" 
+                   id="geminiSearchInput" 
+                   class="search-input" 
+                   placeholder="Search for specific food, restaurants, or places..."
+                   onkeypress="if(event.key==='Enter') geminiSearch()">
+            <button type="button" id="geminiSearchBtn" class="btn-gemini-search" onclick="geminiSearch()">
+                🤖 Search with AI
+            </button>
+        </div>
+        
+        <!-- Popular Search Suggestions -->
+        <div class="search-suggestions">
+            <span style="font-size: 0.9rem; color: #666; margin-right: 10px;">Popular:</span>
+            <div class="search-suggestion" onclick="quickSearch('banh canh')">🍲 Banh Canh</div>
+            <div class="search-suggestion" onclick="quickSearch('pho')">🍜 Pho</div>
+            <div class="search-suggestion" onclick="quickSearch('bun bo hue')">🍲 Bun Bo Hue</div>
+            <div class="search-suggestion" onclick="quickSearch('coffee')">☕ Coffee</div>
+            <div class="search-suggestion" onclick="quickSearch('banh mi')">🥖 Banh Mi</div>
+            <div class="search-suggestion" onclick="quickSearch('bubble tea')">🧋 Bubble Tea</div>
+            <div class="search-suggestion" onclick="quickSearch('street food')">🍢 Street Food</div>
+            <button class="clear-search" onclick="clearSearch()" style="display: none;">✖️ Clear Search</button>
+        </div>
+        
+        <!-- Search Status -->
+        <div id="searchStatus" class="search-status"></div>
     </div>
 
     <div class="controls">
@@ -2336,6 +2748,46 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             </div>
             <div class="image-modal-body" id="modalPlaceDetails">
                 <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Place Modal -->
+    <div class="edit-modal" id="editPlaceModal">
+        <div class="edit-modal-content">
+            <div class="edit-modal-header">
+                <h3 class="edit-modal-title">✏️ Edit Place Name</h3>
+                <button class="edit-modal-close" id="closeEditModal">✕</button>
+            </div>
+            <div class="edit-modal-body">
+                <div class="edit-form-section">
+                    <label for="currentPlaceName">Current Name:</label>
+                    <div class="current-name-display" id="currentPlaceName"></div>
+                </div>
+                
+                <div class="edit-form-section">
+                    <label for="editPlaceName">New Name:</label>
+                    <input type="text" id="editPlaceName" class="edit-input" placeholder="Enter new place name...">
+                    <button class="auto-parse-btn" id="autoParseBtn" title="Extract dish name using AI">
+                        🤖 Auto-Parse with Gemini
+                    </button>
+                </div>
+                
+                <div class="edit-form-section">
+                    <label>Examples of Vietnamese dishes:</label>
+                    <div class="dish-examples">
+                        <span class="dish-example" onclick="document.getElementById('editPlaceName').value = this.textContent">Bún Bò Huế</span>
+                        <span class="dish-example" onclick="document.getElementById('editPlaceName').value = this.textContent">Phở Gà</span>
+                        <span class="dish-example" onclick="document.getElementById('editPlaceName').value = this.textContent">Bánh Canh</span>
+                        <span class="dish-example" onclick="document.getElementById('editPlaceName').value = this.textContent">Cơm Tấm</span>
+                        <span class="dish-example" onclick="document.getElementById('editPlaceName').value = this.textContent">Gà Luộc Ớt</span>
+                    </div>
+                </div>
+                
+                <div class="edit-modal-actions">
+                    <button class="cancel-edit-btn" id="cancelEditBtn">Cancel</button>
+                    <button class="save-edit-btn" id="saveEditBtn">Save Changes</button>
+                </div>
             </div>
         </div>
     </div>
@@ -2890,9 +3342,14 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         </span>
                     </div>
                 </div>
-                <button class="view-details-btn" onclick="event.stopPropagation(); showPlaceDetails(${JSON.stringify(place).replace(/"/g, '&quot;')})" title="View detailed information">
-                    👁️ Details
-                </button>
+                <div class="place-actions">
+                    <button class="edit-place-btn" onclick="event.stopPropagation(); showEditPlaceModal('${place.id}')" title="Edit place name">
+                        ✏️ Edit
+                    </button>
+                    <button class="view-details-btn" onclick="event.stopPropagation(); showPlaceDetails(${JSON.stringify(place).replace(/"/g, '&quot;')})" title="View detailed information">
+                        👁️ Details
+                    </button>
+                </div>
                 ${deleteButtonHtml}
             `;
             
@@ -2911,8 +3368,8 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             
             // Add click/touch handler for smart zoom (no details modal)
             const handlePlaceSelect = (e) => {
-                // Prevent event if clicking on delete button or view details button
-                if (e.target.closest('.delete-recommendation-btn') || e.target.closest('.view-details-btn')) {
+                // Prevent event if clicking on delete button, view details button, or edit button
+                if (e.target.closest('.delete-recommendation-btn') || e.target.closest('.view-details-btn') || e.target.closest('.edit-place-btn')) {
                     return;
                 }
                 console.log(`🔍 Place clicked: ${place.name} (ID: ${place.id})`);
@@ -6856,6 +7313,356 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             } else {
                 console.log('🤖 Health check or bot detected, skipping auto-load to prevent rate limits');
             }
+        });
+
+        // Global variable to track current search
+        let currentSearchFilter = null;
+
+        // Gemini AI Search Functions
+        async function geminiSearch() {
+            const searchInput = document.getElementById('geminiSearchInput');
+            const searchBtn = document.getElementById('geminiSearchBtn');
+            const searchStatus = document.getElementById('searchStatus');
+            const clearBtn = document.querySelector('.clear-search');
+            
+            const query = searchInput.value.trim();
+            if (!query) {
+                alert('Please enter something to search for!');
+                return;
+            }
+
+            console.log('🔮 Starting Gemini search for:', query);
+
+            // Update UI to show loading
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = '🔄 Searching...';
+            searchStatus.className = 'search-status loading';
+            searchStatus.style.display = 'block';
+            searchStatus.innerHTML = '🤖 AI is analyzing your search and filtering places...';
+
+            try {
+                const response = await fetch('/api/gemini-search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        places: allPlaces,
+                        location: HOTEL_LOCATION
+                    })
+                });
+
+                const result = await response.json();
+                console.log('🔮 Gemini search result:', result);
+
+                if (result.success) {
+                    // Store current search filter
+                    currentSearchFilter = {
+                        query: query,
+                        filteredPlaces: result.filteredPlaces,
+                        categories: result.categories || []
+                    };
+
+                    // Apply the filter to display
+                    applySearchFilter(result.filteredPlaces, query);
+
+                    // Update UI
+                    searchStatus.className = 'search-status success';
+                    searchStatus.innerHTML = `✅ Found ${Object.values(result.filteredPlaces).flat().length} places matching "${query}"`;
+                    clearBtn.style.display = 'inline-block';
+
+                    console.log(`✅ Search complete: ${Object.values(result.filteredPlaces).flat().length} places found`);
+                } else {
+                    throw new Error(result.error || 'Search failed');
+                }
+            } catch (error) {
+                console.error('❌ Gemini search error:', error);
+                searchStatus.className = 'search-status error';
+                searchStatus.innerHTML = `❌ Search failed: ${error.message}`;
+            } finally {
+                // Reset button
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = '🤖 Search with AI';
+            }
+        }
+
+        function quickSearch(term) {
+            document.getElementById('geminiSearchInput').value = term;
+            geminiSearch();
+        }
+
+        function clearSearch() {
+            console.log('🧹 Clearing search filter');
+            
+            // Reset search filter
+            currentSearchFilter = null;
+            
+            // Clear input and status
+            document.getElementById('geminiSearchInput').value = '';
+            document.getElementById('searchStatus').style.display = 'none';
+            document.querySelector('.clear-search').style.display = 'none';
+
+            // Restore original places display
+            updateMapMarkers();
+            updateStats();
+            updatePlacesList();
+
+            console.log('✅ Search cleared, showing all places');
+        }
+
+        function applySearchFilter(filteredPlaces, query) {
+            console.log('🎯 Applying search filter for:', query);
+            console.log('📊 Filtered places:', filteredPlaces);
+
+            // Temporarily replace allPlaces with filtered results
+            const originalPlaces = { ...allPlaces };
+            
+            // Clear all current places
+            Object.keys(allPlaces).forEach(category => {
+                allPlaces[category] = [];
+            });
+
+            // Add filtered places back
+            Object.entries(filteredPlaces).forEach(([category, places]) => {
+                if (places && places.length > 0) {
+                    allPlaces[category] = places;
+                }
+            });
+
+            // Update display
+            updateMapMarkers();
+            updateStats();
+            updatePlacesList();
+
+            console.log('🎯 Search filter applied successfully');
+        }
+
+        // Check if we should show search results instead of regular loading
+        function isSearchActive() {
+            return currentSearchFilter !== null;
+        }
+
+        // Modified updatePlacesList to handle search results
+        const originalUpdatePlacesList = updatePlacesList;
+        function updatePlacesList() {
+            if (currentSearchFilter) {
+                // Show search results
+                originalUpdatePlacesList();
+                
+                // Add search info to the places list
+                const placesList = document.querySelector('.places-list');
+                if (placesList && placesList.firstChild) {
+                    const searchInfo = document.createElement('div');
+                    searchInfo.style.cssText = 'background: #e8f5e8; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #a5d6a7; text-align: center; font-size: 0.9rem; color: #2e7d32;';
+                    searchInfo.innerHTML = `🔮 Showing AI-filtered results for "${currentSearchFilter.query}"`;
+                    placesList.insertBefore(searchInfo, placesList.firstChild);
+                }
+            } else {
+                // Show normal results
+                originalUpdatePlacesList();
+            }
+        }
+
+        // Edit Place Modal Functions
+        let currentEditPlaceId = null;
+
+        function showEditPlaceModal(placeId) {
+            console.log('🔧 Opening edit modal for place ID:', placeId);
+            
+            // Find the place in allPlaces
+            let place = null;
+            for (const category in allPlaces) {
+                const found = allPlaces[category].find(p => p.id === placeId);
+                if (found) {
+                    place = found;
+                    break;
+                }
+            }
+            
+            if (!place) {
+                console.error('❌ Place not found for editing:', placeId);
+                return;
+            }
+            
+            currentEditPlaceId = placeId;
+            
+            // Populate modal fields
+            document.getElementById('currentPlaceName').textContent = place.name;
+            document.getElementById('editPlaceName').value = '';
+            
+            // Show modal
+            const modal = document.getElementById('editPlaceModal');
+            modal.classList.add('show');
+            
+            // Focus input
+            setTimeout(() => {
+                document.getElementById('editPlaceName').focus();
+            }, 300);
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('editPlaceModal');
+            modal.classList.remove('show');
+            currentEditPlaceId = null;
+        }
+
+        async function autoParseWithGemini() {
+            const currentNameElement = document.getElementById('currentPlaceName');
+            const newNameInput = document.getElementById('editPlaceName');
+            const parseBtn = document.getElementById('autoParseBtn');
+            
+            const currentName = currentNameElement.textContent;
+            
+            if (!currentName) {
+                alert('No place name found to parse');
+                return;
+            }
+            
+            // Show loading state
+            parseBtn.disabled = true;
+            parseBtn.textContent = '🤖 Parsing...';
+            
+            try {
+                console.log('🔮 Sending auto-parse request for:', currentName);
+                
+                const response = await fetch('/api/gemini-parse-dish', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        placeName: currentName
+                    })
+                });
+                
+                const result = await response.json();
+                console.log('📋 Gemini parse result:', result);
+                
+                if (result.success && result.dishName) {
+                    newNameInput.value = result.dishName;
+                    newNameInput.focus();
+                    console.log('✅ Auto-parsed dish name:', result.dishName);
+                } else {
+                    console.warn('⚠️ No dish name extracted, using fallback');
+                    // Try simple extraction as fallback
+                    const simpleParsed = extractDishNameFallback(currentName);
+                    newNameInput.value = simpleParsed;
+                    newNameInput.focus();
+                }
+                
+            } catch (error) {
+                console.error('❌ Auto-parse failed:', error);
+                // Fallback to simple extraction
+                const simpleParsed = extractDishNameFallback(currentName);
+                newNameInput.value = simpleParsed;
+                newNameInput.focus();
+            } finally {
+                parseBtn.disabled = false;
+                parseBtn.textContent = '🤖 Auto-Parse with Gemini';
+            }
+        }
+
+        function extractDishNameFallback(placeName) {
+            // Simple fallback extraction logic for Vietnamese dishes
+            const dishPatterns = [
+                /(?:quán|nhà hàng|cửa hàng)\s*([^,\-\(\[\{]+)/i,
+                /([^,\-\(\[\{]*(?:phở|bún|bánh|cơm|gỏi|chả|nem|xôi|chè)[^,\-\)\]\}]*)/i,
+                /([^,\-\(\[\{]*(?:gà|bò|heo|tôm|cá|thịt)[^,\-\)\]\}]*)/i
+            ];
+            
+            for (const pattern of dishPatterns) {
+                const match = placeName.match(pattern);
+                if (match && match[1]) {
+                    return match[1].trim();
+                }
+            }
+            
+            // If no patterns match, return the first part before common separators
+            const parts = placeName.split(/[,\-\(\[\{]/);
+            return parts[0].trim();
+        }
+
+        async function saveEditedPlace() {
+            const newName = document.getElementById('editPlaceName').value.trim();
+            const saveBtn = document.getElementById('saveEditBtn');
+            
+            if (!newName) {
+                alert('Please enter a new place name');
+                return;
+            }
+            
+            if (!currentEditPlaceId) {
+                console.error('❌ No place ID for editing');
+                return;
+            }
+            
+            // Show loading state
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+            
+            try {
+                // Find and update the place in allPlaces
+                let updated = false;
+                for (const category in allPlaces) {
+                    const placeIndex = allPlaces[category].findIndex(p => p.id === currentEditPlaceId);
+                    if (placeIndex !== -1) {
+                        const oldName = allPlaces[category][placeIndex].name;
+                        allPlaces[category][placeIndex].name = newName;
+                        console.log(`✅ Updated place name: "${oldName}" → "${newName}"`);
+                        updated = true;
+                        break;
+                    }
+                }
+                
+                if (updated) {
+                    // Refresh the display
+                    updatePlacesList();
+                    updateMapMarkers();
+                    
+                    // Close modal
+                    closeEditModal();
+                    
+                    console.log('🔄 Place name updated successfully');
+                } else {
+                    console.error('❌ Failed to find place for updating');
+                    alert('Failed to update place name');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error saving edited place:', error);
+                alert('Error saving place name');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Changes';
+            }
+        }
+
+        // Event listeners for edit modal
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close modal events
+            document.getElementById('closeEditModal').addEventListener('click', closeEditModal);
+            document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+            
+            // Auto-parse button
+            document.getElementById('autoParseBtn').addEventListener('click', autoParseWithGemini);
+            
+            // Save button
+            document.getElementById('saveEditBtn').addEventListener('click', saveEditedPlace);
+            
+            // Close modal on outside click
+            document.getElementById('editPlaceModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeEditModal();
+                }
+            });
+            
+            // Enter key to save
+            document.getElementById('editPlaceName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    saveEditedPlace();
+                }
+            });
         });
     </script>
 
