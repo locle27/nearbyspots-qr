@@ -39,21 +39,24 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Balanced rate limiting for Google Places API endpoints
+// Generous rate limiting for Google Places API endpoints (user-friendly)
 const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 15, // 15 API calls per minute - more reasonable for normal usage
+  max: 50, // 50 API calls per minute - very generous for normal usage
   message: { 
-    error: 'API quota exceeded. Please try again later.',
-    suggestion: 'Rate limited to prevent quota exhaustion. Try again in 1 minute.'
+    error: 'Too many requests. Please wait a moment and try again.',
+    suggestion: 'Rate limited to prevent excessive API usage. Try again in 1 minute.',
+    rateLimit: 'Internal rate limiting (not Google API quota)'
   },
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for health checks
+    // Skip rate limiting for health checks and diagnostic endpoints
     const userAgent = req.get('User-Agent') || '';
     const isHealthCheck = req.path.includes('health') || 
                          req.path.includes('/health') ||
+                         req.path.includes('diagnostic') ||
+                         req.path.includes('cache') ||
                          userAgent.toLowerCase().includes('health') ||
                          userAgent.toLowerCase().includes('render') ||
                          userAgent.toLowerCase().includes('check') ||
@@ -1497,7 +1500,7 @@ ${content}`
 });
 
 // Search nearby places endpoint
-app.post('/api/search-nearby', apiLimiter, async (req, res) => {
+app.post('/api/search-nearby', async (req, res) => {
   try {
     const { latitude, longitude, radius = DEFAULT_SEARCH_RADIUS } = req.body;
 
@@ -2236,7 +2239,7 @@ app.post('/api/search-nearby', apiLimiter, async (req, res) => {
 });
 
 // Reverse geocode coordinates to address endpoint
-app.post('/api/geocode-coordinates', apiLimiter, async (req, res) => {
+app.post('/api/geocode-coordinates', async (req, res) => {
   try {
     const { latitude, longitude } = req.body;
     
@@ -2270,7 +2273,7 @@ app.post('/api/geocode-coordinates', apiLimiter, async (req, res) => {
 });
 
 // Geocode address endpoint
-app.post('/api/geocode-address', apiLimiter, async (req, res) => {
+app.post('/api/geocode-address', async (req, res) => {
   try {
     const { address } = req.body;
     
@@ -2356,7 +2359,7 @@ app.post('/api/resolve-maps-url', async (req, res) => {
 });
 
 // Get place photo
-app.get('/api/place-photo/:photoName', apiLimiter, async (req, res) => {
+app.get('/api/place-photo/:photoName', async (req, res) => {
   try {
     const { photoName } = req.params;
     const { maxHeightPx = 400, maxWidthPx = 400 } = req.query;
@@ -2528,6 +2531,22 @@ app.post('/api/clear-cache', (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to clear cache' });
+  }
+});
+
+// Rate limiter reset endpoint for testing/debugging
+app.post('/api/reset-rate-limit', (req, res) => {
+  try {
+    // Note: express-rate-limit doesn't have a built-in reset, 
+    // but we can provide info about current state
+    res.json({
+      success: true,
+      message: 'Rate limiter info provided',
+      info: 'Rate limits reset automatically every minute. Current limit: 50 calls/minute.',
+      suggestion: 'Wait 1 minute for automatic reset, or increase limit if needed.'
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to provide rate limit info' });
   }
 });
 
