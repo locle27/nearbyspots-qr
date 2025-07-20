@@ -9088,9 +9088,52 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             
             // Show loading state
             saveBtn.disabled = true;
-            saveBtn.textContent = 'Saving All Changes...';
+            saveBtn.textContent = 'Saving & Updating Map...';
             
             try {
+                // Find the current place to check if address changed
+                let currentPlace = null;
+                for (const category in allPlaces) {
+                    const place = allPlaces[category].find(p => p.id === currentEditPlaceId);
+                    if (place) {
+                        currentPlace = place;
+                        break;
+                    }
+                }
+                
+                let newCoordinates = null;
+                let addressChanged = false;
+                
+                // Check if address changed and geocode if needed
+                if (currentPlace && newAddress && newAddress !== currentPlace.address) {
+                    addressChanged = true;
+                    console.log('📍 Address changed, geocoding new address:', newAddress);
+                    saveBtn.textContent = 'Geocoding new address...';
+                    
+                    try {
+                        const geocodeResponse = await fetch('/api/geocode-address', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ address: newAddress })
+                        });
+                        
+                        if (geocodeResponse.ok) {
+                            const geocodeData = await geocodeResponse.json();
+                            newCoordinates = {
+                                latitude: geocodeData.location.lat,
+                                longitude: geocodeData.location.lng
+                            };
+                            console.log('✅ Geocoded new coordinates:', newCoordinates);
+                        } else {
+                            console.warn('⚠️ Geocoding failed, keeping original coordinates');
+                        }
+                    } catch (geocodeError) {
+                        console.warn('⚠️ Geocoding error:', geocodeError);
+                    }
+                }
+                
+                saveBtn.textContent = 'Updating place data...';
+                
                 // Find and update the place in allPlaces
                 let updated = false;
                 for (const category in allPlaces) {
@@ -9099,10 +9142,31 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         const place = allPlaces[category][placeIndex];
                         const oldName = place.name;
                         const oldAddress = place.address;
+                        const oldCoords = place.location;
                         
                         // Update all fields
                         place.name = newName;
                         place.address = newAddress;
+                        
+                        // Update coordinates if address changed and geocoding succeeded
+                        if (addressChanged && newCoordinates) {
+                            place.location = newCoordinates;
+                            
+                            // Update websiteUri with new Google Maps link
+                            const encodedAddress = encodeURIComponent(newAddress);
+                            place.websiteUri = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                            
+                            // Recalculate distance from hotel
+                            const distance = calculateDistance(
+                                HOTEL_LOCATION.lat, HOTEL_LOCATION.lng,
+                                newCoordinates.latitude, newCoordinates.longitude
+                            );
+                            place.distance = Math.round(distance);
+                            
+                            console.log(`📍 Updated coordinates and distance:
+                                Coords: ${oldCoords.latitude},${oldCoords.longitude} → ${newCoordinates.latitude},${newCoordinates.longitude}
+                                Distance: ${place.distance}m from hotel`);
+                        }
                         
                         // Update opening hours in a structured format
                         if (newHours) {
@@ -9120,7 +9184,8 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         console.log(`✅ Updated place in allPlaces:
                             Name: "${oldName}" → "${newName}"
                             Address: "${oldAddress}" → "${newAddress}"
-                            Hours: ${newHours ? 'Updated' : 'Cleared'}`);
+                            Hours: ${newHours ? 'Updated' : 'Cleared'}
+                            Coordinates: ${addressChanged && newCoordinates ? 'Updated' : 'Unchanged'}`);
                         updated = true;
                         break;
                     }
@@ -9139,6 +9204,22 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                                 // Update all fields in search results too
                                 place.name = newName;
                                 place.address = newAddress;
+                                
+                                // Update coordinates and Google Maps link if address changed
+                                if (addressChanged && newCoordinates) {
+                                    place.location = newCoordinates;
+                                    
+                                    // Update websiteUri with new Google Maps link
+                                    const encodedAddress = encodeURIComponent(newAddress);
+                                    place.websiteUri = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                                    
+                                    // Recalculate distance from hotel
+                                    const distance = calculateDistance(
+                                        HOTEL_LOCATION.lat, HOTEL_LOCATION.lng,
+                                        newCoordinates.latitude, newCoordinates.longitude
+                                    );
+                                    place.distance = Math.round(distance);
+                                }
                                 
                                 if (newHours) {
                                     place.openingHours = {
@@ -9168,7 +9249,22 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     // Close modal
                     closeEditModal();
                     
+                    // Show success message with details
+                    const successMessage = addressChanged && newCoordinates 
+                        ? '✅ Place updated successfully! Address geocoded and map location updated.'
+                        : '✅ Place information updated successfully!';
+                    
+                    // Use a toast notification if available, otherwise alert
+                    if (typeof showToast === 'function') {
+                        showToast(successMessage, 'success');
+                    } else {
+                        alert(successMessage);
+                    }
+                    
                     console.log('🔄 Place information updated successfully in all locations');
+                    if (addressChanged && newCoordinates) {
+                        console.log('📍 Map markers and coordinates have been updated for the new address');
+                    }
                 } else {
                     console.error('❌ Failed to find place for updating');
                     console.log('📊 Debug - Current edit place ID:', currentEditPlaceId);
