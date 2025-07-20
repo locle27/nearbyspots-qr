@@ -1463,6 +1463,7 @@
             scroll-behavior: smooth;
             display: flex;
             flex-direction: column;
+            padding-bottom: 100px; /* Reserve space for action buttons */
         }
 
         /* Desktop styles for larger screens */
@@ -1983,6 +1984,117 @@
             font-size: 0.8rem;
         }
 
+        /* Enhanced Place Information Sections */
+        .place-types-section,
+        .place-contact-section,
+        .place-business-section,
+        .place-metadata-section {
+            margin-bottom: 16px;
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .place-types-title,
+        .place-contact-title,
+        .place-business-title,
+        .place-metadata-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .place-types-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .place-type-tag {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            color: #4b5563;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid #d1d5db;
+            text-transform: capitalize;
+        }
+
+        .place-phone,
+        .place-website,
+        .place-price,
+        .place-status,
+        .place-added-by,
+        .place-added-date,
+        .place-featured {
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            color: #4b5563;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .place-phone a,
+        .place-website a {
+            color: #1976D2;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .place-phone a:hover,
+        .place-website a:hover {
+            text-decoration: underline;
+        }
+
+        .place-featured {
+            background: linear-gradient(135deg, #fef7cd 0%, #fde047 100%);
+            color: #a16207;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #fde047;
+            font-weight: 600;
+        }
+
+        .place-stat.reviews {
+            background: linear-gradient(135deg, #ecfdf5 0%, #86efac 100%);
+            color: #166534;
+            border-color: #86efac;
+        }
+
+        /* Enhanced edit modal fields */
+        .edit-form-section.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .edit-info-display {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .edit-info-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        .edit-info-item {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
         /* Gemini Search Section Styles */
         .gemini-search-section {
             background: white;
@@ -2088,6 +2200,411 @@
             box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3);
         }
 
+        /* Search Results Table Section Styles */
+        .search-results-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.15);
+            margin-bottom: 20px;
+            border: 2px solid #9C27B0;
+            overflow: hidden;
+        }
+
+        .search-results-header {
+            background: linear-gradient(135deg, #9C27B0 0%, #673AB7 100%);
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .search-results-header h4 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .search-results-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .btn-view-toggle {
+            background: rgba(255, 255, 255, 0.9);
+            color: #9C27B0;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view-toggle:hover {
+            background: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .search-results-content {
+            padding: 0;
+        }
+
+        .search-query-info {
+            background: #f8f0ff;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e1bee7;
+            font-size: 1rem;
+            color: #4a148c;
+            font-weight: 600;
+        }
+
+        .search-query-text {
+            color: #9C27B0;
+            font-weight: 700;
+            background: rgba(156, 39, 176, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .search-results-table {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .search-table-row {
+            display: grid;
+            grid-template-columns: 80px 1fr auto auto;
+            gap: 16px;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .search-table-row:hover {
+            background: #f8f0ff;
+            border-left: 4px solid #9C27B0;
+        }
+
+        .search-table-row:last-child {
+            border-bottom: none;
+        }
+
+        .search-table-image {
+            width: 70px;
+            height: 70px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+
+        .search-table-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .search-table-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+            line-height: 1.2;
+        }
+
+        .search-table-address {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.3;
+        }
+
+        .search-table-hours {
+            font-size: 0.8rem;
+            color: #4caf50;
+            background: rgba(76, 175, 80, 0.1);
+            padding: 2px 6px;
+            border-radius: 12px;
+            display: inline-block;
+            font-weight: 500;
+        }
+
+        .search-table-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .search-table-rating {
+            background: linear-gradient(135deg, #fef7cd 0%, #fde047 100%);
+            color: #a16207;
+            border: 1px solid #fde047;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .search-table-distance {
+            background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .search-table-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .search-table-btn {
+            background: #9C27B0;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .search-table-btn:hover {
+            background: #7B1FA2;
+            transform: translateY(-1px);
+        }
+
+        .search-table-btn.secondary {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .search-table-btn.secondary:hover {
+            background: #d0d0d0;
+        }
+
+        /* Mobile responsiveness for search table */
+        @media (max-width: 768px) {
+            .search-results-header {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+                gap: 8px;
+            }
+
+            .search-table-row {
+                grid-template-columns: 60px 1fr;
+                grid-template-rows: auto auto;
+                gap: 12px;
+                padding: 16px;
+                min-height: 88px; /* Ensure touch-friendly minimum height */
+            }
+
+            .search-table-image {
+                width: 60px;
+                height: 60px;
+                grid-row: 1 / 3;
+            }
+
+            .search-table-info {
+                grid-column: 2;
+                grid-row: 1;
+            }
+
+            .search-table-stats,
+            .search-table-actions {
+                grid-column: 1 / 3;
+                grid-row: 2;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px solid #f0f0f0;
+            }
+
+            .search-table-btn {
+                min-width: 80px;
+                min-height: 44px; /* Touch-friendly minimum height */
+                padding: 8px 12px;
+                font-size: 0.8rem;
+                font-weight: 600;
+            }
+        }
+
+        /* Enhanced mobile-first design optimizations */
+        @media (max-width: 768px) {
+            /* Touch-friendly button sizing */
+            .btn-action,
+            .btn-gemini-search,
+            .btn-view-toggle,
+            .search-table-btn,
+            .hours-quick-btn {
+                min-height: 44px;
+                min-width: 44px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+            }
+
+            /* Better spacing for mobile */
+            .place-stats-full {
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+
+            .place-stat {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+                min-height: 32px;
+            }
+
+            /* Enhanced typography for mobile readability */
+            .place-name-full {
+                font-size: 1.3rem;
+                line-height: 1.3;
+                margin-bottom: 12px;
+            }
+
+            .place-address-full {
+                font-size: 0.95rem;
+                line-height: 1.4;
+                margin-bottom: 20px;
+            }
+
+            /* Better information section spacing */
+            .place-types-section,
+            .place-contact-section,
+            .place-business-section,
+            .place-metadata-section {
+                margin-bottom: 20px;
+                padding: 16px;
+            }
+
+            .place-types-title,
+            .place-contact-title,
+            .place-business-title,
+            .place-metadata-title {
+                font-size: 1rem;
+                margin-bottom: 16px;
+            }
+
+            /* Enhanced search input for mobile */
+            .search-input {
+                padding: 16px 20px;
+                font-size: 1.1rem;
+                border-radius: 12px;
+            }
+
+            .btn-gemini-search {
+                padding: 16px 20px;
+                font-size: 1rem;
+                border-radius: 12px;
+            }
+
+            /* Better place list items for mobile */
+            .place-item {
+                padding: 16px;
+                margin-bottom: 16px;
+                border-radius: 12px;
+                min-height: 100px;
+            }
+
+            .place-image,
+            .place-image-placeholder {
+                width: 80px;
+                height: 80px;
+                border-radius: 8px;
+            }
+
+            .place-name {
+                font-size: 1.1rem;
+                font-weight: 700;
+                margin-bottom: 8px;
+            }
+
+            .place-address {
+                font-size: 0.9rem;
+                margin-bottom: 8px;
+                line-height: 1.4;
+            }
+
+            /* Enhanced loading states */
+            .loading {
+                padding: 40px 20px;
+                text-align: center;
+            }
+
+            .loading div {
+                font-size: 1.1rem;
+                color: #666;
+            }
+
+            /* Better modal header for mobile */
+            .image-modal-header {
+                padding: 24px 20px 20px 20px;
+            }
+
+            .image-modal-header h2 {
+                font-size: 1.4rem;
+                margin: 0;
+                font-weight: 700;
+            }
+
+            /* Enhanced edit modal for mobile */
+            .edit-modal-content {
+                max-height: 95vh;
+                border-radius: 20px 20px 0 0;
+            }
+
+            .edit-modal-body {
+                padding: 20px;
+            }
+
+            .edit-form-section {
+                margin-bottom: 24px;
+            }
+
+            .edit-input,
+            .edit-textarea {
+                padding: 16px;
+                font-size: 1rem;
+                border-radius: 12px;
+                min-height: 44px;
+            }
+
+            .edit-textarea {
+                min-height: 80px;
+            }
+
+            /* Better visual feedback for interactions */
+            .place-item:active,
+            .search-table-row:active {
+                transform: scale(0.98);
+                transition: transform 0.1s ease;
+            }
+
+            .btn-action:active,
+            .search-table-btn:active {
+                transform: scale(0.95);
+                transition: transform 0.1s ease;
+            }
+        }
+
         .search-status {
             text-align: center;
             padding: 10px;
@@ -2137,6 +2654,12 @@
             gap: 12px;
             margin-bottom: 16px;
             padding: 0 20px;
+            position: relative;
+            z-index: 100;
+            background: white;
+            border-top: 1px solid #f0f0f0;
+            margin-top: 8px;
+            padding-top: 16px;
         }
 
         .btn-action {
@@ -2850,6 +3373,14 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 <button class="edit-modal-close" id="closeEditModal">✕</button>
             </div>
             <div class="edit-modal-body">
+                <!-- Current Place Information Display -->
+                <div class="edit-info-display" id="editInfoDisplay">
+                    <div class="edit-info-title">📋 Current Place Information</div>
+                    <div class="edit-info-content" id="editInfoContent">
+                        <!-- Content will be populated by JavaScript -->
+                    </div>
+                </div>
+                
                 <!-- Place Name Section -->
                 <div class="edit-form-section">
                     <label for="editPlaceName">📍 Place Name:</label>
@@ -2919,6 +3450,26 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         <div>Loading places...</div>
                     </div>
                 </div>
+                
+                <!-- Dedicated Search Results Table Section -->
+                <div class="search-results-section" id="searchResultsSection" style="display: none;">
+                    <div class="search-results-header">
+                        <h4>🔮 AI Search Results</h4>
+                        <span class="search-results-count" id="searchResultsCount">0 results</span>
+                        <button class="btn-view-toggle" id="viewToggleBtn" onclick="toggleSearchResultsView()">
+                            📋 Switch to List View
+                        </button>
+                    </div>
+                    <div class="search-results-content">
+                        <div class="search-query-info" id="searchQueryInfo">
+                            Searching for: <span class="search-query-text"></span>
+                        </div>
+                        <div class="search-results-table" id="searchResultsTable">
+                            <!-- Table content will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="places-list" id="placesList">
                     <div class="no-places-message">
                         Select categories and click "Load" to see recommendations
@@ -2951,6 +3502,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         let hotelMarker;
         let placeMarkers = [];
         let allPlaces = {};
+        let originalPlacesBackup = {}; // Global backup for search restore functionality
         let activeCategories = new Set(['recommend']); // Start with recommend category selected by default to show user's stored restaurants
         let currentInfoWindow = null; // Track currently open info window
         let currentRadius = 2000; // Track current search radius (default to 2km for better coverage)
@@ -5166,12 +5718,55 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     <div class="place-info-full">
                         <div class="place-name-full">${place.name}</div>
                         <div class="place-address-full">${place.address}</div>
+                        
+                        <!-- Enhanced Stats Section -->
                         <div class="place-stats-full">
                             ${place.rating > 0 ? `<div class="place-stat rating">⭐ ${place.rating.toFixed(1)}</div>` : ''}
+                            ${place.userRatingCount > 0 ? `<div class="place-stat reviews">📝 ${place.userRatingCount} reviews</div>` : ''}
                             <div class="place-stat distance">🚶 ${place.distance}m</div>
                             <div class="place-stat distance">🌍 ${distanceInMiles} mi</div>
                             <div class="place-stat category">${categoryIcon} ${place.category.charAt(0).toUpperCase() + place.category.slice(1)}</div>
                         </div>
+                        
+                        <!-- Google Place Types Tags -->
+                        ${place.types && place.types.length > 0 ? `
+                            <div class="place-types-section">
+                                <div class="place-types-title">🏷️ Place Types</div>
+                                <div class="place-types-tags">
+                                    ${place.types.map(type => `<span class="place-type-tag">${type.replace(/_/g, ' ')}</span>`).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <!-- Contact Information -->
+                        ${place.nationalPhoneNumber || place.internationalPhoneNumber ? `
+                            <div class="place-contact-section">
+                                <div class="place-contact-title">📞 Contact Information</div>
+                                ${place.nationalPhoneNumber ? `<div class="place-phone">📱 <a href="tel:${place.nationalPhoneNumber}">${place.nationalPhoneNumber}</a></div>` : ''}
+                                ${place.internationalPhoneNumber && !place.nationalPhoneNumber ? `<div class="place-phone">📱 <a href="tel:${place.internationalPhoneNumber}">${place.internationalPhoneNumber}</a></div>` : ''}
+                                ${place.websiteUri ? `<div class="place-website">🌐 <a href="${place.websiteUri}" target="_blank">Visit Website</a></div>` : ''}
+                            </div>
+                        ` : ''}
+                        
+                        <!-- Business Information -->
+                        ${place.priceLevel || place.businessStatus ? `
+                            <div class="place-business-section">
+                                <div class="place-business-title">💼 Business Information</div>
+                                ${place.priceLevel !== undefined && place.priceLevel > 0 ? `<div class="place-price">💰 ${'$'.repeat(place.priceLevel)} (${'Inexpensive,Moderate,Expensive,Very Expensive'.split(',')[place.priceLevel - 1]})</div>` : ''}
+                                ${place.businessStatus ? `<div class="place-status">🏪 Status: ${place.businessStatus.replace(/_/g, ' ')}</div>` : ''}
+                            </div>
+                        ` : ''}
+                        
+                        <!-- Recommendation Metadata -->
+                        ${place.addedBy || place.addedDate || place.featured ? `
+                            <div class="place-metadata-section">
+                                <div class="place-metadata-title">ℹ️ Additional Information</div>
+                                ${place.addedBy ? `<div class="place-added-by">👤 Added by: ${place.addedBy.replace(/_/g, ' ')}</div>` : ''}
+                                ${place.addedDate ? `<div class="place-added-date">📅 Added: ${new Date(place.addedDate).toLocaleDateString()}</div>` : ''}
+                                ${place.featured ? `<div class="place-featured">⭐ Featured Location</div>` : ''}
+                            </div>
+                        ` : ''}
+                        
                         ${generateOpeningHoursHtml(place)}
                         ${place.description ? `<div class="place-description-full">💭 ${place.description}</div>` : `<div class="place-description-full">📱 Tap the buttons below to get directions or visit their website for more information about this ${place.category}.</div>`}
                     </div>
@@ -7577,6 +8172,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             // Reset search filter
             currentSearchFilter = null;
             
+            // Hide search results table
+            hideSearchResultsTable();
+            
             // Clear input and status
             const searchInput = document.getElementById('geminiSearchInput');
             const searchStatus = document.getElementById('searchStatus');
@@ -7599,10 +8197,28 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }
             }
 
-            // Restore original places display
-            console.log('🔄 Restoring original places display...');
+            // Restore original places data from backup
+            console.log('🔄 Restoring original places display from backup...');
             console.log('📊 After clear - activeCategories:', Array.from(activeCategories));
-            console.log('📊 After clear - allPlaces content check:', Object.entries(allPlaces).map(([key, places]) => `${key}: ${places?.length || 0} places`));
+            console.log('📊 Backup available:', Object.keys(originalPlacesBackup).length > 0);
+            
+            if (Object.keys(originalPlacesBackup).length > 0) {
+                // Restore from backup
+                allPlaces = JSON.parse(JSON.stringify(originalPlacesBackup)); // Deep copy back
+                originalPlacesBackup = {}; // Clear backup to allow fresh backup on next search
+                console.log('✅ Restored original places data from backup');
+                console.log('📊 Restored allPlaces content:', Object.entries(allPlaces).map(([key, places]) => `${key}: ${places?.length || 0} places`));
+            } else {
+                console.log('⚠️ No backup available, initializing empty state');
+                // Initialize empty state if no backup exists
+                allPlaces = {
+                    restaurants: [],
+                    landmarks: [],
+                    coffee: [],
+                    culture: [],
+                    recommend: []
+                };
+            }
             
             try {
                 updateMapMarkers();
@@ -7629,10 +8245,15 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     updatePlacesList();
                 } catch (e) { console.error('❌ updatePlacesList failed:', e); }
                 
-                // If all else fails, force reload
+                // If restoration fails, try reloading data instead of full page reload
                 if (activeCategories.size === 0) {
-                    console.log('🔄 Force reloading page as last resort...');
-                    location.reload();
+                    console.log('🔄 Attempting to reload places data...');
+                    try {
+                        loadPlaces(); // Try reloading data instead of full page
+                    } catch (loadError) {
+                        console.error('❌ Data reload failed, force reloading page as last resort...');
+                        location.reload();
+                    }
                 }
             }
         }
@@ -7719,8 +8340,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             console.log('🎯 Applying search filter for:', query);
             console.log('📊 Filtered places:', filteredPlaces);
 
-            // Temporarily replace allPlaces with filtered results
-            const originalPlaces = { ...allPlaces };
+            // Create global backup before modifying allPlaces
+            if (Object.keys(originalPlacesBackup).length === 0) {
+                originalPlacesBackup = JSON.parse(JSON.stringify(allPlaces)); // Deep copy
+                console.log('💾 Created backup of original places data');
+            }
             
             // Clear all current places
             Object.keys(allPlaces).forEach(category => {
@@ -7733,6 +8357,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     allPlaces[category] = places;
                 }
             });
+
+            // Show search results table by default
+            showSearchResultsTable(query, filteredPlaces);
 
             // Update display
             updateMapMarkers();
@@ -7901,6 +8528,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             
             currentEditPlaceId = placeId;
             
+            // Populate information display
+            populateEditInfoDisplay(place);
+            
             // Populate modal fields with current data
             document.getElementById('editPlaceName').value = place.name || '';
             document.getElementById('editPlaceAddress').value = place.address || '';
@@ -7931,6 +8561,84 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             setTimeout(() => {
                 document.getElementById('editPlaceName').focus();
             }, 300);
+        }
+
+        function populateEditInfoDisplay(place) {
+            const editInfoContent = document.getElementById('editInfoContent');
+            
+            // Create comprehensive information display
+            let infoHtml = '';
+            
+            // Basic information
+            infoHtml += `<div class="edit-info-item"><strong>📍 Current Name:</strong> ${place.name}</div>`;
+            infoHtml += `<div class="edit-info-item"><strong>🏠 Current Address:</strong> ${place.address}</div>`;
+            
+            // Rating and reviews
+            if (place.rating > 0) {
+                infoHtml += `<div class="edit-info-item"><strong>⭐ Rating:</strong> ${place.rating.toFixed(1)}/5`;
+                if (place.userRatingCount > 0) {
+                    infoHtml += ` (${place.userRatingCount} reviews)`;
+                }
+                infoHtml += `</div>`;
+            }
+            
+            // Category and distance
+            infoHtml += `<div class="edit-info-item"><strong>📂 Category:</strong> ${place.category}</div>`;
+            infoHtml += `<div class="edit-info-item"><strong>📏 Distance:</strong> ${place.distance}m (${(place.distance * 0.000621371).toFixed(2)} mi)</div>`;
+            
+            // Google place types
+            if (place.types && place.types.length > 0) {
+                infoHtml += `<div class="edit-info-item"><strong>🏷️ Place Types:</strong> ${place.types.join(', ')}</div>`;
+            }
+            
+            // Contact information
+            if (place.nationalPhoneNumber || place.internationalPhoneNumber) {
+                const phone = place.nationalPhoneNumber || place.internationalPhoneNumber;
+                infoHtml += `<div class="edit-info-item"><strong>📞 Phone:</strong> ${phone}</div>`;
+            }
+            
+            if (place.websiteUri) {
+                infoHtml += `<div class="edit-info-item"><strong>🌐 Website:</strong> <a href="${place.websiteUri}" target="_blank">${place.websiteUri}</a></div>`;
+            }
+            
+            // Business details
+            if (place.priceLevel !== undefined && place.priceLevel > 0) {
+                const priceLabels = ['', 'Inexpensive', 'Moderate', 'Expensive', 'Very Expensive'];
+                infoHtml += `<div class="edit-info-item"><strong>💰 Price Level:</strong> ${'$'.repeat(place.priceLevel)} (${priceLabels[place.priceLevel]})</div>`;
+            }
+            
+            if (place.businessStatus) {
+                infoHtml += `<div class="edit-info-item"><strong>🏪 Business Status:</strong> ${place.businessStatus.replace(/_/g, ' ')}</div>`;
+            }
+            
+            // Metadata for recommendations
+            if (place.addedBy) {
+                infoHtml += `<div class="edit-info-item"><strong>👤 Added By:</strong> ${place.addedBy.replace(/_/g, ' ')}</div>`;
+            }
+            
+            if (place.addedDate) {
+                infoHtml += `<div class="edit-info-item"><strong>📅 Added Date:</strong> ${new Date(place.addedDate).toLocaleDateString()}</div>`;
+            }
+            
+            if (place.featured) {
+                infoHtml += `<div class="edit-info-item"><strong>⭐ Status:</strong> Featured Location</div>`;
+            }
+            
+            // Opening hours summary
+            const compactHours = getCompactOpeningHours(place);
+            if (compactHours) {
+                infoHtml += `<div class="edit-info-item"><strong>🕒 Current Hours:</strong> ${compactHours}</div>`;
+            }
+            
+            // Image count
+            let imageCount = 0;
+            if (place.images && place.images.length > 0) imageCount += place.images.length;
+            if (place.photos && place.photos.length > 0) imageCount += place.photos.length;
+            if (imageCount > 0) {
+                infoHtml += `<div class="edit-info-item"><strong>📸 Images:</strong> ${imageCount} photo${imageCount !== 1 ? 's' : ''} available</div>`;
+            }
+            
+            editInfoContent.innerHTML = infoHtml;
         }
 
         function closeEditModal() {
@@ -8184,6 +8892,149 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }
             });
         });
+
+        // Search Results Table Functions
+        let searchTableViewActive = false;
+
+        function showSearchResultsTable(query, results) {
+            console.log('📊 Showing search results table for:', query);
+            
+            const searchResultsSection = document.getElementById('searchResultsSection');
+            const searchQueryText = searchResultsSection.querySelector('.search-query-text');
+            const searchResultsCount = document.getElementById('searchResultsCount');
+            const searchResultsTable = document.getElementById('searchResultsTable');
+            const placesListSection = document.getElementById('placesList');
+            
+            // Update query display
+            searchQueryText.textContent = query;
+            
+            // Count total results
+            let totalResults = 0;
+            Object.values(results).forEach(places => {
+                if (Array.isArray(places)) totalResults += places.length;
+            });
+            
+            searchResultsCount.textContent = `${totalResults} result${totalResults !== 1 ? 's' : ''}`;
+            
+            // Build table content
+            let tableHtml = '';
+            
+            Object.entries(results).forEach(([category, places]) => {
+                if (!Array.isArray(places) || places.length === 0) return;
+                
+                // Add category header
+                const categoryIcon = CATEGORY_ICONS[category] || '📍';
+                const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
+                
+                tableHtml += `
+                    <div class="search-category-header" style="background: #f8f0ff; padding: 12px 20px; border-bottom: 2px solid #9C27B0; font-weight: 700; color: #4a148c; font-size: 1rem;">
+                        ${categoryIcon} ${categoryName} (${places.length} result${places.length !== 1 ? 's' : ''})
+                    </div>
+                `;
+                
+                // Add places for this category
+                places.forEach((place, index) => {
+                    const distanceInMiles = (place.distance * 0.000621371).toFixed(2);
+                    const openingHours = getCompactOpeningHours(place);
+                    
+                    // Get image source
+                    let imageSrc = '';
+                    if (place.images && place.images.length > 0) {
+                        imageSrc = place.images[0].dataUrl;
+                    } else if (place.photos && place.photos.length > 0 && place.photos[0].name) {
+                        const encodedPhotoName = encodeURIComponent(place.photos[0].name);
+                        imageSrc = `/api/place-photo/${encodedPhotoName}?maxHeightPx=100&maxWidthPx=100`;
+                    }
+                    
+                    if (!imageSrc) {
+                        const categoryIcon = CATEGORY_ICONS[category] || '📍';
+                        imageSrc = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+                            <svg width="70" height="70" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="70" height="70" fill="#9C27B0" rx="8"/>
+                                <text x="35" y="45" font-family="Arial, sans-serif" font-size="20" fill="white" text-anchor="middle">${categoryIcon}</text>
+                            </svg>
+                        `)}`;
+                    }
+                    
+                    tableHtml += `
+                        <div class="search-table-row" onclick="showPlaceDetails(${JSON.stringify(place).replace(/"/g, '&quot;')})">
+                            <img class="search-table-image" src="${imageSrc}" alt="${place.name}" onerror="this.src='${imageSrc}'">
+                            <div class="search-table-info">
+                                <div class="search-table-name">${place.name}</div>
+                                <div class="search-table-address">${place.address}</div>
+                                ${openingHours ? `<div class="search-table-hours">🕒 ${openingHours}</div>` : ''}
+                            </div>
+                            <div class="search-table-stats">
+                                ${place.rating > 0 ? `<div class="search-table-rating">⭐ ${place.rating.toFixed(1)}</div>` : ''}
+                                <div class="search-table-distance">🚶 ${place.distance}m</div>
+                                <div class="search-table-distance">🌍 ${distanceInMiles} mi</div>
+                            </div>
+                            <div class="search-table-actions">
+                                <button class="search-table-btn" onclick="event.stopPropagation(); showPlaceDetails(${JSON.stringify(place).replace(/"/g, '&quot;')})">
+                                    👁️ Details
+                                </button>
+                                <button class="search-table-btn secondary" onclick="event.stopPropagation(); openDirections(${place.location.latitude}, ${place.location.longitude}, '${encodeURIComponent(place.name)}')">
+                                    🗺️ Directions
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+            
+            if (tableHtml === '') {
+                tableHtml = `
+                    <div style="text-align: center; padding: 40px 20px; color: #666;">
+                        <div style="font-size: 2rem; margin-bottom: 16px;">🔍</div>
+                        <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 8px;">No Results Found</div>
+                        <div style="font-size: 0.9rem;">Try a different search term or clear the search to see all places.</div>
+                    </div>
+                `;
+            }
+            
+            searchResultsTable.innerHTML = tableHtml;
+            
+            // Show search results section and hide regular places list
+            searchResultsSection.style.display = 'block';
+            placesListSection.style.display = 'none';
+            searchTableViewActive = true;
+            
+            // Update toggle button
+            const viewToggleBtn = document.getElementById('viewToggleBtn');
+            viewToggleBtn.textContent = '📋 Switch to List View';
+        }
+
+        function hideSearchResultsTable() {
+            console.log('📊 Hiding search results table');
+            
+            const searchResultsSection = document.getElementById('searchResultsSection');
+            const placesListSection = document.getElementById('placesList');
+            
+            searchResultsSection.style.display = 'none';
+            placesListSection.style.display = 'block';
+            searchTableViewActive = false;
+        }
+
+        function toggleSearchResultsView() {
+            console.log('🔄 Toggling search results view');
+            
+            const searchResultsSection = document.getElementById('searchResultsSection');
+            const placesListSection = document.getElementById('placesList');
+            const viewToggleBtn = document.getElementById('viewToggleBtn');
+            
+            if (searchTableViewActive) {
+                // Switch to list view
+                searchResultsSection.style.display = 'none';
+                placesListSection.style.display = 'block';
+                viewToggleBtn.textContent = '📊 Switch to Table View';
+                searchTableViewActive = false;
+            } else {
+                // Switch to table view
+                if (currentSearchFilter && currentSearchFilter.filteredPlaces) {
+                    showSearchResultsTable(currentSearchFilter.query, currentSearchFilter.filteredPlaces);
+                }
+            }
+        }
     </script>
 
     <!-- Load Google Maps API with Geometry Library -->
