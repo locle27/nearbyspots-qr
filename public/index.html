@@ -8998,14 +8998,27 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         async function autoParseWithGemini() {
-            const currentNameElement = document.getElementById('currentPlaceName');
             const newNameInput = document.getElementById('editPlaceName');
             const parseBtn = document.getElementById('autoParseBtn');
             
-            const currentName = currentNameElement.textContent;
+            // Add null checks to prevent errors
+            if (!newNameInput) {
+                console.error('❌ editPlaceName input not found');
+                alert('Error: Edit name input not found');
+                return;
+            }
+            
+            if (!parseBtn) {
+                console.error('❌ autoParseBtn button not found');
+                alert('Error: Parse button not found');
+                return;
+            }
+            
+            // Get current name from the input field (which should already be populated)
+            const currentName = newNameInput.value.trim();
             
             if (!currentName) {
-                alert('No place name found to parse');
+                alert('Please enter a place name first, then use auto-parse to improve it');
                 return;
             }
             
