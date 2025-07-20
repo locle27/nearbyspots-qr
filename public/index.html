@@ -5341,6 +5341,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 return null;
             }
             
+            // Debug logging for coordinate tracking
+            console.log(`🗺️ Adding marker for ${place.name} at coordinates: ${place.location.latitude}, ${place.location.longitude}`);
+            
             const color = CATEGORY_COLORS[category];
             const icon = CATEGORY_ICONS[category];
 
@@ -9242,9 +9245,55 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }
                 
                 if (updated) {
-                    // Refresh the display
+                    console.log('📍 Starting map and display refresh after edit...');
+                    
+                    // First update the places list
                     updatePlacesList();
-                    updateMapMarkers();
+                    
+                    // Force map markers update with explicit logging
+                    console.log('🗺️ Forcing map markers update...');
+                    if (typeof google !== 'undefined' && map) {
+                        updateMapMarkers();
+                        
+                        // If coordinates changed, also adjust map bounds to show the new location
+                        if (addressChanged && newCoordinates) {
+                            console.log('📍 Address changed - centering map on new location');
+                            const newLatLng = new google.maps.LatLng(newCoordinates.latitude, newCoordinates.longitude);
+                            
+                            // Pan to the new location
+                            map.panTo(newLatLng);
+                            
+                            // Optionally adjust zoom to make sure the marker is visible
+                            if (map.getZoom() < 15) {
+                                map.setZoom(15);
+                            }
+                            
+                            console.log(`🎯 Map centered on new coordinates: ${newCoordinates.latitude}, ${newCoordinates.longitude}`);
+                            
+                            // Add a slight delay to ensure map has time to update, then highlight the updated place
+                            setTimeout(() => {
+                                // Try to find and highlight the updated marker
+                                const updatedMarker = placeMarkerMap.get(currentEditPlaceId);
+                                if (updatedMarker) {
+                                    console.log('🎯 Highlighting updated marker on map');
+                                    // Briefly highlight the marker
+                                    const originalIcon = updatedMarker.getIcon();
+                                    updatedMarker.setIcon({
+                                        ...originalIcon,
+                                        strokeWeight: 4,
+                                        strokeColor: '#FF0000'
+                                    });
+                                    
+                                    // Reset highlighting after 3 seconds
+                                    setTimeout(() => {
+                                        updatedMarker.setIcon(originalIcon);
+                                    }, 3000);
+                                }
+                            }, 500);
+                        }
+                    } else {
+                        console.warn('⚠️ Google Maps not available for marker update');
+                    }
                     
                     // Close modal
                     closeEditModal();
@@ -9264,6 +9313,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     console.log('🔄 Place information updated successfully in all locations');
                     if (addressChanged && newCoordinates) {
                         console.log('📍 Map markers and coordinates have been updated for the new address');
+                        console.log('🗺️ Map should now show the place at its new location');
                     }
                 } else {
                     console.error('❌ Failed to find place for updating');
