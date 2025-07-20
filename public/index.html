@@ -2601,6 +2601,7 @@
             /* Ultra touch-friendly place list items for mobile */
             .place-item {
                 padding: 24px !important;
+                padding-bottom: 80px !important; /* Extra space for buttons below content */
                 margin-bottom: 20px !important;
                 border-radius: 16px !important;
                 min-height: 140px !important;
@@ -2608,6 +2609,9 @@
                 box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
                 border: 2px solid transparent !important;
                 transition: all 0.3s ease !important;
+                display: flex !important;
+                flex-direction: column !important;
+                position: relative !important;
             }
             
             .place-item:active {
@@ -2715,11 +2719,19 @@
                 align-items: center !important;
             }
             
-            /* Enhanced place actions section */
+            /* Enhanced place actions section - Fix overlapping on mobile */
             .place-actions {
+                position: static !important;
+                width: 100% !important;
+                justify-content: center !important;
+                flex-wrap: wrap !important;
+                padding: 12px 0 !important;
+                margin-top: 12px !important;
                 gap: 12px !important;
-                margin-top: 16px !important;
-                justify-content: space-between !important;
+                transform: none !important;
+                border-top: 1px solid #f0f0f0 !important;
+                background: none !important;
+                box-shadow: none !important;
             }
             
             /* Enhanced modal header for mobile */
@@ -3262,9 +3274,13 @@
             /* Larger place items for small screens */
             .place-item {
                 padding: 32px !important;
+                padding-bottom: 100px !important; /* Extra space for larger buttons */
                 min-height: 160px !important;
                 margin-bottom: 24px !important;
                 gap: 16px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                position: relative !important;
             }
             
             .place-image,
@@ -3326,13 +3342,16 @@
                 border-radius: 24px !important;
             }
             
-            /* Larger place actions positioning */
+            /* Better place actions positioning for small phones */
             .place-actions {
-                position: absolute;
-                top: 50%;
-                right: 20px !important;
-                transform: translateY(-50%);
+                position: static !important;
+                width: 100% !important;
+                justify-content: center !important;
+                flex-wrap: wrap !important;
+                padding: 16px 0 !important;
+                margin-top: 16px !important;
                 gap: 12px !important;
+                transform: none !important;
             }
         }
     </style>
