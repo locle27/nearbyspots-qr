@@ -2507,14 +2507,15 @@
                 margin: 8px 0 !important;
             }
             
-            /* Edit and action buttons in place items */
+            /* Edit and action buttons in place items - Reduced size */
             .edit-place-btn,
             .view-details-btn {
-                min-height: 56px !important;
-                min-width: 56px !important;
-                padding: 16px !important;
-                font-size: 1.1rem !important;
-                margin: 4px !important;
+                min-height: 36px !important;
+                min-width: 80px !important;
+                padding: 8px 12px !important;
+                font-size: 0.85rem !important;
+                margin: 2px !important;
+                border-radius: 6px !important;
             }
 
             /* Better spacing for mobile */
@@ -2598,16 +2599,16 @@
                 margin: 16px 0 !important;
             }
 
-            /* Ultra touch-friendly place list items for mobile */
+            /* Ultra compact place list items for mobile */
             .place-item {
-                padding: 16px !important;
-                padding-bottom: 70px !important; /* Reduced space for buttons */
-                margin-bottom: 12px !important; /* Reduced spacing between items */
-                border-radius: 12px !important;
-                min-height: 120px !important; /* Slightly reduced height */
+                padding: 12px !important;
+                padding-bottom: 50px !important; /* Much less space for smaller buttons */
+                margin-bottom: 8px !important; /* Tighter spacing between items */
+                border-radius: 8px !important;
+                min-height: 100px !important; /* More compact height */
                 background: white !important;
-                box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important; /* Lighter shadow */
-                border: 2px solid transparent !important;
+                box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important; /* Very light shadow */
+                border: 1px solid #f0f0f0 !important;
                 transition: all 0.3s ease !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -2629,27 +2630,27 @@
             }
 
             .place-name {
-                font-size: 1.2rem !important; /* Slightly smaller */
+                font-size: 1.1rem !important; /* More compact */
                 font-weight: 700 !important;
-                margin-bottom: 8px !important; /* Reduced margin */
-                line-height: 1.3 !important; /* Tighter line height */
+                margin-bottom: 4px !important; /* Much tighter margin */
+                line-height: 1.2 !important; /* Very tight line height */
                 color: #1a202c !important;
             }
 
             .place-address {
-                font-size: 1rem !important; /* Slightly smaller */
-                margin-bottom: 8px !important; /* Reduced margin */
-                line-height: 1.4 !important; /* Tighter line height */
+                font-size: 0.9rem !important; /* More compact */
+                margin-bottom: 4px !important; /* Much tighter margin */
+                line-height: 1.3 !important; /* Tighter line height */
                 color: #4a5568 !important;
             }
             
-            /* Larger opening hours display */
+            /* Compact opening hours display */
             .place-hours,
             .place-hours-placeholder {
-                font-size: 0.9rem !important; /* Slightly smaller */
-                padding: 6px 10px !important; /* Reduced padding */
-                margin-bottom: 6px !important; /* Reduced margin */
-                border-radius: 6px !important;
+                font-size: 0.8rem !important; /* More compact */
+                padding: 4px 8px !important; /* Minimal padding */
+                margin-bottom: 4px !important; /* Minimal margin */
+                border-radius: 4px !important;
             }
 
             /* Enhanced loading states */
@@ -2700,36 +2701,36 @@
                 min-height: 80px;
             }
 
-            /* Enhanced place meta information */
+            /* Ultra compact place meta information */
             .place-meta {
-                gap: 8px !important; /* Reduced gap */
+                gap: 4px !important; /* Minimal gap */
                 flex-wrap: wrap !important;
-                margin-top: 8px !important; /* Reduced margin */
+                margin-top: 4px !important; /* Minimal margin */
             }
             
             .place-rating,
             .place-distance,
             .place-category {
-                font-size: 0.85rem !important; /* Smaller font */
-                padding: 6px 10px !important; /* Reduced padding */
-                border-radius: 8px !important; /* Smaller radius */
+                font-size: 0.75rem !important; /* Much smaller font */
+                padding: 3px 6px !important; /* Minimal padding */
+                border-radius: 4px !important; /* Smaller radius */
                 font-weight: 600 !important;
-                min-height: 28px !important; /* Smaller height */
+                min-height: 20px !important; /* Much smaller height */
                 display: inline-flex !important;
                 align-items: center !important;
             }
             
-            /* Enhanced place actions section - Fix overlapping on mobile */
+            /* Ultra compact place actions section */
             .place-actions {
                 position: static !important;
                 width: 100% !important;
                 justify-content: center !important;
                 flex-wrap: wrap !important;
-                padding: 8px 0 !important; /* Reduced padding */
-                margin-top: 8px !important; /* Reduced margin */
-                gap: 8px !important; /* Reduced gap */
+                padding: 4px 0 !important; /* Minimal padding */
+                margin-top: 4px !important; /* Minimal margin */
+                gap: 4px !important; /* Minimal gap */
                 transform: none !important;
-                border-top: 1px solid #f0f0f0 !important;
+                border-top: 1px solid #f5f5f5 !important;
                 background: none !important;
                 box-shadow: none !important;
             }
@@ -3258,26 +3259,35 @@
                 padding: 16px !important;
             }
             
-            /* Even larger buttons for small phones */
+            /* Optimized buttons for small phones - balanced size */
             .btn-action,
-            .btn-gemini-search,
-            .edit-place-btn,
-            .view-details-btn {
-                min-height: 72px !important;
-                padding: 24px 32px !important;
-                font-size: 1.4rem !important;
-                font-weight: 800 !important;
-                border-radius: 20px !important;
-                margin: 8px 4px !important;
+            .btn-gemini-search {
+                min-height: 56px !important;
+                padding: 16px 24px !important;
+                font-size: 1.1rem !important;
+                font-weight: 700 !important;
+                border-radius: 12px !important;
+                margin: 6px 2px !important;
             }
             
-            /* Larger place items for small screens */
+            .edit-place-btn,
+            .view-details-btn {
+                min-height: 44px !important;
+                min-width: 90px !important;
+                padding: 12px 16px !important;
+                font-size: 0.95rem !important;
+                font-weight: 600 !important;
+                border-radius: 8px !important;
+                margin: 4px 2px !important;
+            }
+            
+            /* Compact place items for small screens */
             .place-item {
-                padding: 20px !important; /* Reduced padding */
-                padding-bottom: 80px !important; /* Reduced space for buttons */
-                min-height: 140px !important; /* Reduced height */
-                margin-bottom: 16px !important; /* Reduced spacing */
-                gap: 12px !important; /* Reduced gap */
+                padding: 14px !important; /* More compact padding */
+                padding-bottom: 60px !important; /* Less space for smaller buttons */
+                min-height: 110px !important; /* More compact height */
+                margin-bottom: 10px !important; /* Tighter spacing */
+                gap: 8px !important; /* Minimal gap */
                 display: flex !important;
                 flex-direction: column !important;
                 position: relative !important;
@@ -3292,15 +3302,15 @@
             }
             
             .place-name {
-                font-size: 1.3rem !important; /* Slightly smaller */
-                margin-bottom: 10px !important; /* Reduced margin */
+                font-size: 1.15rem !important; /* More compact */
+                margin-bottom: 6px !important; /* Minimal margin */
                 font-weight: 800 !important;
             }
             
             .place-address {
-                font-size: 1.1rem !important; /* Slightly smaller */
-                margin-bottom: 10px !important; /* Reduced margin */
-                line-height: 1.5 !important; /* Tighter line height */
+                font-size: 1rem !important; /* More compact */
+                margin-bottom: 6px !important; /* Minimal margin */
+                line-height: 1.4 !important; /* Tighter line height */
             }
             
             /* Larger search input for small phones */
