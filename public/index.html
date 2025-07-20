@@ -531,6 +531,19 @@
             border-radius: 4px;
             display: inline-block;
         }
+        
+        .place-hours-placeholder {
+            font-size: 0.8rem;
+            color: #9e9e9e;
+            margin-bottom: 6px;
+            line-height: 1.3;
+            font-weight: 500;
+            background: rgba(158, 158, 158, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            font-style: italic;
+        }
 
         .place-meta {
             display: flex;
@@ -1377,8 +1390,17 @@
         .image-modal-header {
             background: linear-gradient(135deg, #1976D2 0%, #42a5f5 100%);
             color: white;
-            padding: 20px 20px 16px 20px;
+            padding: 24px 20px 20px 20px;
             position: relative;
+            box-shadow: 0 2px 20px rgba(25, 118, 210, 0.3);
+        }
+        
+        .image-modal-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.3;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
         .image-modal-header::before {
@@ -1798,21 +1820,23 @@
 
         /* Professional Mobile Content Layout */
         .place-details-full {
-            padding: 16px 20px;
+            padding: 20px 24px;
             flex-shrink: 0;
+            background: linear-gradient(135deg, #fafbff 0%, #f8fafc 100%);
         }
 
         .place-hero-section {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         .place-main-image {
             width: 100%;
-            height: 200px;
-            border-radius: 12px;
+            height: 220px;
+            border-radius: 16px;
             object-fit: cover;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            margin-bottom: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            margin-bottom: 20px;
+            border: 2px solid #fff;
         }
 
         .place-info-full {
@@ -1820,21 +1844,28 @@
         }
 
         .place-name-full {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: 800;
-            color: #1a1a1a;
-            margin-bottom: 8px;
-            line-height: 1.2;
+            color: #1a202c;
+            margin-bottom: 12px;
+            line-height: 1.3;
+            letter-spacing: -0.02em;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .place-address-full {
-            color: #6b7280;
-            margin-bottom: 16px;
-            font-size: 1rem;
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.05rem;
             line-height: 1.5;
             display: flex;
             align-items: flex-start;
-            gap: 8px;
+            gap: 10px;
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
         }
 
         .place-address-full::before {
@@ -1846,21 +1877,32 @@
         .place-stats-full {
             display: flex;
             gap: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 24px;
             flex-wrap: wrap;
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
         }
 
         .place-stat {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            padding: 10px 14px;
-            border-radius: 50px;
+            padding: 12px 16px;
+            border-radius: 12px;
             font-weight: 600;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.2s ease;
+        }
+        
+        .place-stat:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         .place-stat.rating {
@@ -2651,34 +2693,54 @@
 
         .place-actions {
             display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-            padding: 0 20px;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding: 20px 24px;
             position: relative;
             z-index: 100;
-            background: white;
-            border-top: 1px solid #f0f0f0;
-            margin-top: 8px;
-            padding-top: 16px;
+            background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+            border-top: 2px solid #e2e8f0;
+            margin-top: 16px;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
         }
 
         .btn-action {
             background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
             color: white;
             border: none;
-            padding: 14px 24px;
-            border-radius: 50px;
-            font-weight: 600;
+            padding: 16px 28px;
+            border-radius: 16px;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            font-size: 1rem;
-            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+            gap: 10px;
+            font-size: 1.05rem;
+            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.3);
             flex: 1;
             justify-content: center;
+            min-height: 56px;
+            letter-spacing: 0.01em;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-action::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-action:hover::before {
+            left: 100%;
         }
 
         .btn-action:hover {
@@ -3785,43 +3847,6 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             const distanceInMiles = (place.distance * 0.000621371).toFixed(2);
             
             // Generate compact opening hours display for list view
-            function getCompactOpeningHours(place) {
-                let hoursText = '';
-                
-                // Try to get opening hours from various sources
-                let openingHours = place.openingHours || place.currentOpeningHours || place.regularOpeningHours;
-                
-                if (openingHours) {
-                    if (typeof openingHours === 'string') {
-                        hoursText = openingHours;
-                    } else if (openingHours.weekdayDescriptions && openingHours.weekdayDescriptions.length > 0) {
-                        // Get today's hours if available
-                        const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
-                        const todayHours = openingHours.weekdayDescriptions[today];
-                        
-                        if (todayHours) {
-                            // Extract just the time part from "Monday: 9:00 AM – 9:00 PM"
-                            const timeMatch = todayHours.match(/:\s*(.+)$/);
-                            hoursText = timeMatch ? timeMatch[1] : todayHours;
-                        } else {
-                            // Fallback to first available hours
-                            const firstHours = openingHours.weekdayDescriptions[0];
-                            const timeMatch = firstHours.match(/:\s*(.+)$/);
-                            hoursText = timeMatch ? timeMatch[1] : firstHours.substring(0, 30) + '...';
-                        }
-                    } else if (Array.isArray(openingHours)) {
-                        hoursText = openingHours[0] || '';
-                    }
-                }
-                
-                // Truncate if too long for list view
-                if (hoursText.length > 25) {
-                    hoursText = hoursText.substring(0, 22) + '...';
-                }
-                
-                return hoursText;
-            }
-            
             const compactHours = getCompactOpeningHours(place);
             
             // Create image element with fallback
@@ -3973,7 +3998,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 <div class="place-details">
                     <div class="place-name">${place.name}</div>
                     <div class="place-address">📍 ${place.address}</div>
-                    ${compactHours ? `<div class="place-hours">🕒 ${compactHours}</div>` : ''}
+                    ${getOpeningHoursDisplay(place)}
                     <div class="place-meta">
                         ${place.rating > 0 ? `<span class="place-rating">⭐ ${place.rating.toFixed(1)} (${place.userRatingCount})</span>` : ''}
                         <span class="place-distance">🚶 ${place.distance}m<span class="distance-conversion">(${distanceInMiles} mi)</span></span>
@@ -5422,6 +5447,64 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }, 3000);
             } else {
                 console.log('No list item found for place:', placeId);
+            }
+        }
+
+        // Opening Hours Utility Functions
+        function getCompactOpeningHours(place) {
+            let hoursText = '';
+            
+            // Try to get opening hours from various sources
+            let openingHours = place.openingHours || place.currentOpeningHours || place.regularOpeningHours;
+            
+            if (openingHours) {
+                if (typeof openingHours === 'string') {
+                    hoursText = openingHours;
+                } else if (openingHours.weekdayDescriptions && openingHours.weekdayDescriptions.length > 0) {
+                    // Get today's hours if available
+                    const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+                    const todayHours = openingHours.weekdayDescriptions[today];
+                    
+                    if (todayHours) {
+                        // Extract just the time part from "Monday: 9:00 AM – 9:00 PM"
+                        const timeMatch = todayHours.match(/:\s*(.+)$/);
+                        hoursText = timeMatch ? timeMatch[1] : todayHours;
+                    } else {
+                        // Fallback to first available hours
+                        const firstHours = openingHours.weekdayDescriptions[0];
+                        const timeMatch = firstHours.match(/:\s*(.+)$/);
+                        hoursText = timeMatch ? timeMatch[1] : firstHours.substring(0, 30) + '...';
+                    }
+                } else if (Array.isArray(openingHours)) {
+                    hoursText = openingHours[0] || '';
+                }
+            }
+            
+            // If no hours found, return empty string (will be handled in display)
+            if (!hoursText.trim()) {
+                return '';
+            }
+            
+            // Truncate if too long for list view
+            if (hoursText.length > 25) {
+                hoursText = hoursText.substring(0, 22) + '...';
+            }
+            
+            return hoursText;
+        }
+        
+        // Enhanced function to show opening hours or fallback message
+        function getOpeningHoursDisplay(place) {
+            const compactHours = getCompactOpeningHours(place);
+            
+            if (compactHours) {
+                return `<div class="place-hours">🕒 ${compactHours}</div>`;
+            } else if (place.category === 'recommend') {
+                // For user recommendations, show a more gentle message
+                return `<div class="place-hours-placeholder">🕒 Hours not available</div>`;
+            } else {
+                // For Google Places, suggest checking their website
+                return `<div class="place-hours-placeholder">🕒 See details for hours</div>`;
             }
         }
 
