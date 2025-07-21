@@ -1,5 +1,5 @@
 {
-  "name": "nearbyspots-qr-discovery",
+  "name": "nearby-places-qr-discovery",
   "version": "1.0.0",
   "description": "QR code-powered nearby places discovery system with Google Maps integration",
   "main": "server.js",
@@ -16,7 +16,7 @@
     "mobile-first",
     "railway"
   ],
-  "author": "NearbySpots Team",
+  "author": "Nearby Places Team",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",

@@ -1,4 +1,4 @@
-# NearbySpots QR Discovery System
+# Nearby Places QR Discovery System
 
 A professional QR code-powered web application that allows users to instantly discover nearby restaurants, landmarks, coffee shops, and cultural sites with photos, ratings, and direct Google Maps integration.
 
@@ -49,7 +49,7 @@ A professional QR code-powered web application that allows users to instantly di
 ```bash
 # Clone and install
 git clone <repository-url>
-cd nearbyspots-qr
+cd nearby-places-qr
 npm install
 
 # Environment setup

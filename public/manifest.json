@@ -1,6 +1,6 @@
 {
-  "name": "NearbySpots QR Discovery",
-  "short_name": "NearbySpots",
+  "name": "Nearby Places QR Discovery",
+  "short_name": "Nearby Places",
   "description": "Discover nearby restaurants, landmarks, coffee shops, and cultural sites with QR code scanning",
   "start_url": "/",
   "display": "standalone",

@@ -464,7 +464,7 @@ async function handleGenerateQR() {
 
 function handleDownloadQR() {
     const link = document.createElement('a');
-    link.download = 'nearbyspots-qr-code.png';
+    link.download = 'nearby-places-qr-code.png';
     link.href = elements.qrImage.src;
     link.click();
 }

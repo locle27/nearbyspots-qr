@@ -255,7 +255,7 @@ QR codes encode the base URL with optional lat/lng parameters for immediate loca
 - **Place Name Extraction**: `server.js:1358-1400` (4-tier fallback system)
 
 ### Deployment Status
-- **Repository**: `https://github.com/locle27/nearbyspots-qr.git`
+- **Repository**: `https://github.com/locle27/nearby-places-qr.git`
 - **Latest Commit**: `135d063` - Professional mobile interface with worldwide hotel support
 - **Production Status**: ✅ **FULLY OPERATIONAL** - Professional mobile-first interface
 - **Global Support**: ✅ Works worldwide with any hotel/accommodation location
