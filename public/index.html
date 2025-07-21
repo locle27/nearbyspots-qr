@@ -4671,7 +4671,25 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 console.log('🔍 Fetching manual recommendations from API...');
                 console.log('🌍 Hotel location:', HOTEL_LOCATION);
                 
-                const response = await fetch(`/api/recommendations?latitude=${HOTEL_LOCATION.lat}&longitude=${HOTEL_LOCATION.lng}`);
+                const url = `/api/recommendations?latitude=${HOTEL_LOCATION.lat}&longitude=${HOTEL_LOCATION.lng}`;
+                console.log('🔗 Request URL:', url);
+                
+                // Add timeout to prevent hanging
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => {
+                    console.log('⏰ Request timeout after 10 seconds');
+                    controller.abort();
+                }, 10000);
+                
+                const response = await fetch(url, { 
+                    signal: controller.signal,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                clearTimeout(timeoutId);
+                console.log('✅ Response received, status:', response.status);
                 
                 if (!response.ok) {
                     throw new Error(`Failed to fetch recommendations: ${response.status}`);
@@ -4717,6 +4735,14 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }
             } catch (error) {
                 console.error('❌ Error fetching manual recommendations:', error);
+                console.error('❌ Error type:', error.name);
+                console.error('❌ Error message:', error.message);
+                if (error.name === 'AbortError') {
+                    console.error('❌ API request timed out after 10 seconds');
+                } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    console.error('❌ Network error - server may be down');
+                }
+                console.error('❌ Error stack:', error.stack);
                 // Don't show alert for recommendations - it's not critical
             }
         }
@@ -5927,17 +5953,10 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         function updateLoadButtonText() {
-            const loadBtn = document.getElementById('loadPlacesBtn');
-            if (!loadBtn) {
-                console.log('🔍 Load button not found yet - checking if element exists');
-                const loadBtn = document.querySelector('.load-places-btn');
-                if (loadBtn) {
-                    console.log('✅ Load button found:', loadBtn);
-                } else {
-                    console.log('❌ Load button element missing from DOM');
-                }
-                return;
-            }
+            // Load button was removed - this function is no longer needed
+            // Just log and continue with initialization
+            console.log('📝 updateLoadButtonText: Load button not present (expected)');
+            return;
             
             const selectedCount = activeCategories.size;
             console.log('Updating button text, selected count:', selectedCount);
@@ -7630,24 +7649,32 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
 
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
-            updateLoadButtonText(); // Initialize button text
+            // updateLoadButtonText(); // Load button removed, skip this step
             updateSelectedCategoriesDisplay(); // Initialize category display
             updatePlacesList(); // Initialize places list
             
             // Auto-load manual recommendations since 'recommend' is selected by default
             if (activeCategories.has('recommend')) {
                 console.log('Auto-loading manual recommendations on page load...');
-                fetchManualRecommendations().then(() => {
-                    updateMapMarkers();
-                    updateStats();
-                    
-                    // If Google Maps isn't ready yet, set up a retry
-                    if (typeof google === 'undefined' || !map) {
-                        console.log('Map not ready, will retry when Google Maps loads...');
-                        // Set up a flag to retry map updates when Google Maps loads
-                        window.retryMapUpdate = true;
-                    }
-                });
+                fetchManualRecommendations()
+                    .then(() => {
+                        console.log('✅ Manual recommendations loaded successfully');
+                        updateMapMarkers();
+                        updateStats();
+                        
+                        // If Google Maps isn't ready yet, set up a retry
+                        if (typeof google === 'undefined' || !map) {
+                            console.log('Map not ready, will retry when Google Maps loads...');
+                            // Set up a flag to retry map updates when Google Maps loads
+                            window.retryMapUpdate = true;
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('❌ Auto-loading manual recommendations failed:', error);
+                        console.log('🔄 Continuing with initialization anyway...');
+                        updateMapMarkers();
+                        updateStats();
+                    });
             }
             
             // Initialize address extraction functionality
