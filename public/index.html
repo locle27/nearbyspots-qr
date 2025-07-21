@@ -1366,7 +1366,7 @@
         .image-modal-content {
             position: relative;
             width: 100%;
-            height: 95vh;
+            height: 98vh; /* Larger modal on mobile */
             background: white;
             border-radius: 20px 20px 0 0;
             overflow: hidden;
@@ -2507,15 +2507,20 @@
                 margin: 8px 0 !important;
             }
             
-            /* Edit and action buttons in place items - Reduced size */
+            /* Enhanced action buttons for better mobile touch */
             .edit-place-btn,
             .view-details-btn {
-                min-height: 36px !important;
-                min-width: 80px !important;
-                padding: 8px 12px !important;
-                font-size: 0.85rem !important;
-                margin: 2px !important;
-                border-radius: 6px !important;
+                min-height: 48px !important; /* Larger for easier touch */
+                min-width: 100px !important; /* Wider for better target */
+                padding: 12px 16px !important; /* More padding for touch */
+                font-size: 1rem !important; /* Larger text */
+                margin: 3px !important; /* Slightly more margin */
+                border-radius: 8px !important; /* Rounded corners */
+                font-weight: 600 !important; /* Bold text */
+                touch-action: manipulation !important; /* Better touch response */
+                -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+                position: relative !important;
+                z-index: 10 !important; /* Ensure buttons are on top */
             }
 
             /* Better spacing for mobile */
@@ -2599,15 +2604,15 @@
                 margin: 16px 0 !important;
             }
 
-            /* Ultra compact place list items for mobile */
+            /* Ultra tight place list items for mobile */
             .place-item {
-                padding: 12px !important;
-                padding-bottom: 50px !important; /* Much less space for smaller buttons */
-                margin-bottom: 8px !important; /* Tighter spacing between items */
-                border-radius: 8px !important;
-                min-height: 100px !important; /* More compact height */
+                padding: 8px !important; /* Reduced padding */
+                padding-bottom: 55px !important; /* Space for larger buttons */
+                margin-bottom: 4px !important; /* Much tighter spacing between items */
+                border-radius: 6px !important; /* Smaller border radius */
+                min-height: 95px !important; /* More compact height */
                 background: white !important;
-                box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important; /* Very light shadow */
+                box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important; /* Subtle shadow */
                 border: 1px solid #f0f0f0 !important;
                 transition: all 0.3s ease !important;
                 display: flex !important;
@@ -2630,17 +2635,17 @@
             }
 
             .place-name {
-                font-size: 1.1rem !important; /* More compact */
+                font-size: 1.05rem !important; /* Slightly smaller */
                 font-weight: 700 !important;
-                margin-bottom: 4px !important; /* Much tighter margin */
-                line-height: 1.2 !important; /* Very tight line height */
+                margin-bottom: 2px !important; /* Ultra tight margin */
+                line-height: 1.1 !important; /* Tighter line height */
                 color: #1a202c !important;
             }
 
             .place-address {
-                font-size: 0.9rem !important; /* More compact */
-                margin-bottom: 4px !important; /* Much tighter margin */
-                line-height: 1.3 !important; /* Tighter line height */
+                font-size: 0.85rem !important; /* Smaller */
+                margin-bottom: 2px !important; /* Ultra tight margin */
+                line-height: 1.2 !important; /* Tighter line height */
                 color: #4a5568 !important;
             }
             
@@ -2720,19 +2725,23 @@
                 align-items: center !important;
             }
             
-            /* Ultra compact place actions section */
+            /* Optimized place actions section for larger buttons */
             .place-actions {
-                position: static !important;
+                position: absolute !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
                 width: 100% !important;
                 justify-content: center !important;
                 flex-wrap: wrap !important;
-                padding: 4px 0 !important; /* Minimal padding */
-                margin-top: 4px !important; /* Minimal margin */
-                gap: 4px !important; /* Minimal gap */
+                padding: 6px 8px !important; /* Padding for larger buttons */
+                margin: 0 !important;
+                gap: 6px !important; /* Gap for larger buttons */
                 transform: none !important;
-                border-top: 1px solid #f5f5f5 !important;
-                background: none !important;
-                box-shadow: none !important;
+                border-top: 1px solid #e0e0e0 !important;
+                background: rgba(255, 255, 255, 0.95) !important; /* Semi-transparent background */
+                backdrop-filter: blur(8px) !important; /* Blur effect */
+                box-shadow: 0 -2px 8px rgba(0,0,0,0.08) !important;
             }
             
             /* Enhanced modal header for mobile */
@@ -2748,7 +2757,8 @@
             
             /* Enhanced modal content spacing */
             .place-details-full {
-                padding: 28px !important;
+                padding: 20px !important; /* Optimized padding */
+                padding-bottom: 80px !important; /* Space for action buttons */
             }
             
             .place-main-image {
@@ -2902,9 +2912,11 @@
                 padding: 16px !important;
             }
 
-            /* Enhanced modal content for phones */
+            /* Enhanced modal content for phones - optimized for full screen */
             .place-details-full {
-                padding: 32px !important;
+                padding: 16px !important; /* Optimized for full screen */
+                padding-bottom: 100px !important; /* More space for larger action buttons */
+                height: auto !important; /* Allow content to flow naturally */
             }
 
             .place-main-image {
@@ -2973,16 +2985,26 @@
                 min-height: 100px !important;
             }
 
-            /* Enhanced modal header for phones */
+            /* Enhanced modal header for phones - full screen optimized */
             .image-modal-header {
-                padding: 32px 28px !important;
-                min-height: 90px !important;
+                padding: 20px 16px !important; /* Reduced for full screen */
+                min-height: 70px !important; /* Smaller header for more content space */
+                background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%) !important;
+                color: white !important; /* White text for colored background */
             }
 
             .image-modal-header h2 {
-                font-size: 1.8rem !important;
+                font-size: 1.6rem !important;
                 line-height: 1.2 !important;
                 font-weight: 800 !important;
+                color: white !important; /* Ensure white text */
+            }
+            
+            /* Update close button for colored header */
+            .image-modal-close {
+                color: white !important;
+                background: rgba(255, 255, 255, 0.2) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
             }
 
             /* Ultra touch feedback for phones */
@@ -3582,10 +3604,11 @@
                 margin: 4px !important;
             }
             
-            /* Better modal scaling for small phones */
+            /* Ultra-large modal for small phones */
             .image-modal-content {
-                height: 98vh !important;
-                border-radius: 24px 24px 0 0 !important;
+                height: 100vh !important; /* Full screen height */
+                border-radius: 0 !important; /* No border radius for full screen */
+                max-height: none !important; /* Remove any height restrictions */
             }
             
             .place-main-image {
