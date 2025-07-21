@@ -9620,10 +9620,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         if (geocodeResponse.ok) {
                             const geocodeData = await geocodeResponse.json();
                             newCoordinates = {
-                                latitude: geocodeData.location.lat,
-                                longitude: geocodeData.location.lng
+                                latitude: geocodeData.latitude || geocodeData.location?.lat,
+                                longitude: geocodeData.longitude || geocodeData.location?.lng
                             };
                             console.log('✅ Geocoded new coordinates:', newCoordinates);
+                            console.log('📋 Raw geocode response:', geocodeData);
                         } else {
                             console.warn('⚠️ Geocoding failed, keeping original coordinates');
                         }
@@ -9744,7 +9745,55 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 if (updated) {
                     console.log('📍 Starting map and display refresh after edit...');
                     
-                    // First update the places list
+                    // Save to server for persistence
+                    saveBtn.textContent = 'Saving to server...';
+                    try {
+                        console.log('💾 Saving place to server for persistence...');
+                        
+                        // Find the updated place to send to server
+                        let updatedPlace = null;
+                        for (const category in allPlaces) {
+                            const place = allPlaces[category].find(p => p.id === currentEditPlaceId);
+                            if (place) {
+                                updatedPlace = place;
+                                break;
+                            }
+                        }
+                        
+                        if (updatedPlace) {
+                            const saveResponse = await fetch('/api/save-place', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    id: updatedPlace.id,
+                                    name: updatedPlace.name,
+                                    address: updatedPlace.address,
+                                    location: updatedPlace.location,
+                                    openingHours: updatedPlace.openingHours,
+                                    category: updatedPlace.category || 'recommend',
+                                    rating: updatedPlace.rating || 0,
+                                    userRatingCount: updatedPlace.userRatingCount || 0,
+                                    distance: updatedPlace.distance || 0,
+                                    websiteUri: updatedPlace.websiteUri || '',
+                                    description: updatedPlace.description || '',
+                                    photos: updatedPlace.photos || []
+                                })
+                            });
+                            
+                            if (saveResponse.ok) {
+                                console.log('✅ Place saved to server successfully');
+                            } else {
+                                console.warn('⚠️ Failed to save place to server, but keeping local changes');
+                                const errorData = await saveResponse.json().catch(() => ({}));
+                                console.warn('Save error details:', errorData);
+                            }
+                        }
+                    } catch (saveError) {
+                        console.warn('⚠️ Error saving to server:', saveError);
+                        console.warn('Place updated locally but may not persist on reload');
+                    }
+                    
+                    // Update the places list
                     updatePlacesList();
                     
                     // Force map markers update with explicit logging
@@ -9752,20 +9801,55 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     if (typeof google !== 'undefined' && map) {
                         updateMapMarkers();
                         
-                        // If coordinates changed, also adjust map bounds to show the new location
+                        // If coordinates changed, adjust map to show both hotel and new location
                         if (addressChanged && newCoordinates) {
-                            console.log('📍 Address changed - centering map on new location');
+                            console.log('📍 Address changed - adjusting map to show hotel and new location');
                             const newLatLng = new google.maps.LatLng(newCoordinates.latitude, newCoordinates.longitude);
+                            const hotelLatLng = new google.maps.LatLng(HOTEL_LOCATION.lat, HOTEL_LOCATION.lng);
                             
-                            // Pan to the new location
-                            map.panTo(newLatLng);
+                            // Calculate distance between hotel and new place
+                            const distance = calculateDistance(
+                                HOTEL_LOCATION.lat, HOTEL_LOCATION.lng,
+                                newCoordinates.latitude, newCoordinates.longitude
+                            );
                             
-                            // Optionally adjust zoom to make sure the marker is visible
-                            if (map.getZoom() < 15) {
-                                map.setZoom(15);
+                            console.log(`📏 Distance between hotel and new location: ${Math.round(distance)}m`);
+                            
+                            if (distance > 100000) { // If more than 100km apart
+                                console.log('🗺️ Large distance detected - fitting bounds to show both locations');
+                                
+                                // Create bounds that include both hotel and new place
+                                const bounds = new google.maps.LatLngBounds();
+                                bounds.extend(hotelLatLng);
+                                bounds.extend(newLatLng);
+                                
+                                // Add padding for better view
+                                const padding = { top: 50, right: 50, bottom: 50, left: 50 };
+                                map.fitBounds(bounds, padding);
+                                
+                                // Ensure reasonable zoom limits
+                                setTimeout(() => {
+                                    const currentZoom = map.getZoom();
+                                    if (currentZoom < 6) {
+                                        map.setZoom(6); // Don't zoom out too much
+                                    } else if (currentZoom > 16) {
+                                        map.setZoom(16); // Don't zoom in too much
+                                    }
+                                    console.log(`🔍 Final zoom level: ${map.getZoom()}`);
+                                }, 100);
+                                
+                            } else {
+                                console.log('🎯 Locations close together - centering on new location');
+                                // Pan to the new location for nearby changes
+                                map.panTo(newLatLng);
+                                
+                                // Adjust zoom to make sure the marker is visible
+                                if (map.getZoom() < 15) {
+                                    map.setZoom(15);
+                                }
                             }
                             
-                            console.log(`🎯 Map centered on new coordinates: ${newCoordinates.latitude}, ${newCoordinates.longitude}`);
+                            console.log(`🎯 Map adjusted for new coordinates: ${newCoordinates.latitude}, ${newCoordinates.longitude}`);
                             
                             // Add a slight delay to ensure map has time to update, then highlight the updated place
                             setTimeout(() => {

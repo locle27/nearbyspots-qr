@@ -1210,6 +1210,129 @@ app.delete('/api/recommendations/:id', async (req, res) => {
   }
 });
 
+// Save/Update place endpoint for edited places
+app.post('/api/save-place', async (req, res) => {
+  try {
+    const {
+      id,
+      name,
+      address,
+      location,
+      openingHours,
+      category = 'recommend',
+      rating = 0,
+      userRatingCount = 0,
+      distance = 0,
+      websiteUri = '',
+      description = '',
+      photos = []
+    } = req.body;
+    
+    console.log(`💾 Saving place to server: ${name} (ID: ${id})`);
+    
+    // Validation
+    if (!id || !name || !address || !location) {
+      return res.status(400).json({
+        error: 'Missing required fields: id, name, address, location'
+      });
+    }
+    
+    // Validate coordinates
+    const lat = parseFloat(location.latitude);
+    const lng = parseFloat(location.longitude);
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return res.status(400).json({
+        error: 'Invalid coordinates. Latitude must be -90 to 90, longitude must be -180 to 180'
+      });
+    }
+    
+    // Check if place already exists
+    let existingPlaceIndex = manualRecommendations.findIndex(rec => rec.id === id);
+    
+    const placeData = {
+      id: sanitizeInput(id, 'string'),
+      name: sanitizeInput(name, 'string'),
+      address: sanitizeInput(address, 'string'),
+      location: {
+        latitude: lat,
+        longitude: lng
+      },
+      rating: Math.max(0, Math.min(5, parseFloat(rating) || 0)),
+      userRatingCount: Math.max(0, parseInt(userRatingCount) || 0),
+      distance: Math.max(0, parseInt(distance) || 0),
+      description: sanitizeInput(description, 'string'),
+      category: sanitizeInput(category, 'string'),
+      photos: Array.isArray(photos) ? photos : [],
+      websiteUri: sanitizeInput(websiteUri, 'string'),
+      openingHours: openingHours || null,
+      currentOpeningHours: openingHours || null,
+      regularOpeningHours: openingHours || null,
+      addedBy: 'place_edit',
+      addedDate: existingPlaceIndex === -1 ? new Date().toISOString() : manualRecommendations[existingPlaceIndex].addedDate,
+      updatedDate: new Date().toISOString(),
+      featured: existingPlaceIndex === -1 ? false : manualRecommendations[existingPlaceIndex].featured
+    };
+    
+    if (existingPlaceIndex === -1) {
+      // Add new place
+      console.log(`➕ Adding new place: ${name}`);
+      
+      if (useDatabase) {
+        const dbResult = await db.addRecommendation(placeData);
+        if (dbResult) {
+          // Refresh in-memory cache from database
+          const dbRecommendations = await db.getAllRecommendations();
+          if (dbRecommendations) {
+            manualRecommendations = dbRecommendations;
+          }
+          console.log(`✅ Added new place to database: ${name}`);
+        } else {
+          throw new Error('Failed to save to database');
+        }
+      } else {
+        manualRecommendations.push(placeData);
+        saveRecommendations();
+        console.log(`✅ Added new place to file: ${name}`);
+      }
+    } else {
+      // Update existing place
+      console.log(`✏️ Updating existing place: ${name}`);
+      
+      if (useDatabase) {
+        const dbResult = await db.updateRecommendation(id, placeData);
+        if (dbResult) {
+          // Refresh in-memory cache from database
+          const dbRecommendations = await db.getAllRecommendations();
+          if (dbRecommendations) {
+            manualRecommendations = dbRecommendations;
+          }
+          console.log(`✅ Updated place in database: ${name}`);
+        } else {
+          throw new Error('Failed to update in database');
+        }
+      } else {
+        manualRecommendations[existingPlaceIndex] = placeData;
+        saveRecommendations();
+        console.log(`✅ Updated place in file: ${name}`);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: existingPlaceIndex === -1 ? 'Place added successfully' : 'Place updated successfully',
+      place: placeData,
+      action: existingPlaceIndex === -1 ? 'created' : 'updated'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error saving place:', error);
+    res.status(500).json({ 
+      error: 'Failed to save place',
+      message: error.message
+    });
+  }
+});
+
 // Backup management endpoints
 app.get('/api/backups', (req, res) => {
   try {
