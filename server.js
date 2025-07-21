@@ -632,8 +632,14 @@ function verifyQRAccess(req, res, next) {
 // PRIORITY HEALTH ENDPOINTS - Must be first to avoid middleware issues
 // Ultra-minimal health check for Render (no JSON, no processing)
 app.get('/health', (req, res) => {
-  console.log('Health check requested');
+  console.log('🟢 RENDER Health check requested - server is alive');
   res.status(200).end('OK');
+});
+
+// Additional startup verification endpoint for Render
+app.get('/status', (req, res) => {
+  console.log('🟢 RENDER Status check - server is ready for traffic');
+  res.status(200).json({ status: 'ready', port: PORT, timestamp: new Date().toISOString() });
 });
 
 app.get('/api/health', (req, res) => {
@@ -3190,13 +3196,33 @@ async function initializeApp() {
     }
     
     // Start server after initialization
-    app.listen(PORT, '0.0.0.0', () => {
+    console.log('🛠️ Starting server on port:', PORT);
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Nearby Places QR Discovery Server running on port ${PORT}`);
       console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🗺️  Google Maps API: ${GOOGLE_MAPS_API_KEY ? 'Configured' : 'Missing'}`);
       console.log(`⭐ Manual Recommendations: ${manualRecommendations.length} loaded`);
       console.log(`🗄️ Storage: ${useDatabase ? 'PostgreSQL Database' : 'File System'}`);
       console.log(`🌐 Server accessible at http://0.0.0.0:${PORT}`);
+      console.log(`✅ SERVER READY - Render can detect this port now`);
+    });
+    
+    // Handle server startup errors for Render debugging
+    server.on('error', (error) => {
+      console.error('❌ RENDER DEPLOYMENT ERROR - Server startup failed:', error);
+      if (error.code === 'EADDRINUSE') {
+        console.error(`❌ Port ${PORT} is already in use`);
+      } else if (error.code === 'EACCES') {
+        console.error(`❌ Permission denied to bind to port ${PORT}`);
+      }
+      process.exit(1);
+    });
+    
+    // Confirm server is listening for Render
+    server.on('listening', () => {
+      console.log(`📶 RENDER: Server is actively listening on port ${PORT}`);
+      const address = server.address();
+      console.log(`📍 RENDER: Confirmed server address:`, address);
     });
     
   } catch (error) {
