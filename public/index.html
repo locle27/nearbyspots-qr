@@ -5527,11 +5527,14 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             if (loadingList) loadingList.classList.add('show');
 
             // Handle radius changes intelligently
+            console.log('🛠️ loadPlaces: About to handle radius changes, allPlaces:', typeof allPlaces, Object.keys(allPlaces));
                 if (radius < previousRadius && Object.keys(allPlaces).length > 0) {
                     console.log('Smaller radius: filtering existing places without API call');
                     // For smaller radius, just filter existing places (no API call needed)
                     // BUT preserve manual recommendations regardless of distance
+                    try {
                     Object.keys(allPlaces).forEach(category => {
+                        console.log(`🛠️ Processing category for filtering: ${category}`);
                         if (allPlaces[category]) {
                             if (category === 'recommend') {
                                 // Keep all manual recommendations regardless of distance
@@ -5539,11 +5542,20 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                             } else {
                                 // Apply distance filtering to other categories
                                 const beforeFilter = allPlaces[category].length;
-                                allPlaces[category] = allPlaces[category].filter(place => place.distance <= radius);
-                                console.log(`${category}: ${beforeFilter} → ${allPlaces[category].length} places (distance filtered)`);
+                                try {
+                                    allPlaces[category] = allPlaces[category].filter(place => place.distance <= radius);
+                                    console.log(`${category}: ${beforeFilter} → ${allPlaces[category].length} places (distance filtered)`);
+                                } catch (filterError) {
+                                    console.error(`❌ Error filtering ${category}:`, filterError);
+                                    throw filterError;
+                                }
                             }
                         }
                     });
+                    } catch (radiusFilterError) {
+                        console.error('❌ Error in radius filtering:', radiusFilterError);
+                        throw radiusFilterError;
+                    }
                     
                     console.log('Places filtered for smaller radius:', allPlaces);
                     updateMapMarkers();
@@ -5591,10 +5603,13 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         }
                     }
                     
+                    console.log('🛠️ API response data:', data);
                     if (data.success && data.results) {
                         console.log('Merging new places with existing');
                         // Merge new places with existing ones
+                        try {
                         Object.entries(data.results).forEach(([category, newPlaces]) => {
+                            console.log(`🛠️ Processing category: ${category}, places count:`, newPlaces?.length);
                             if (!allPlaces[category]) {
                                 allPlaces[category] = [];
                             }
@@ -5617,6 +5632,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                                 .sort((a, b) => a.distance - b.distance)
                                 .slice(0, 50); // Keep max 50 places per category for better coverage
                         });
+                        } catch (dataProcessingError) {
+                            console.error('❌ Error processing API response data:', dataProcessingError);
+                            console.error('❌ Error stack:', dataProcessingError.stack);
+                            throw dataProcessingError;
+                        }
                         
                         console.log('Places merged and updated:', allPlaces);
                         updateMapMarkers();
@@ -7487,10 +7507,35 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             window.open(url, '_blank');
         }
 
-        // Global error handler to catch JavaScript errors
+        // Global error handler to catch JavaScript errors (filtered)
         window.addEventListener('error', function(e) {
-            console.error('❌ JavaScript Error:', e.error);
-            console.error('❌ Error details:', { message: e.message, filename: e.filename, lineno: e.lineno });
+            // Filter out cross-origin and meaningless errors
+            const isCrossOriginError = e.message === 'Script error.' && e.filename === '' && e.lineno === 0;
+            const isExtensionError = e.filename.includes('extension') || e.filename.includes('webkit-masked-url') || e.filename.includes('moz-extension');
+            const isErudaError = e.message.includes('Eruda') || e.filename.includes('eruda');
+            
+            if (isCrossOriginError || isExtensionError || isErudaError) {
+                // Silently ignore these errors as they're not from our code
+                return;
+            }
+            
+            // Only log actual errors from our application
+            console.error('❌ Application JavaScript Error:', e.error);
+            console.error('❌ Error details:', { 
+                message: e.message, 
+                filename: e.filename, 
+                lineno: e.lineno,
+                colno: e.colno,
+                stack: e.error?.stack 
+            });
+        });
+        
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('❌ Unhandled Promise Rejection:', e.reason);
+            console.error('❌ Promise:', e.promise);
+            // Prevent the default browser error reporting
+            e.preventDefault();
         });
         
         // Global fallback click handler for debugging button issues
