@@ -4152,6 +4152,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         let currentInfoWindow = null; // Track currently open info window
         let currentRadius = 2000; // Track current search radius (default to 2km for better coverage)
         let placeMarkerMap = new Map(); // Map place IDs to markers for cross-tab interaction
+        let placeDataStore = new Map(); // Store place data for reliable button clicks
 
         // Hotel location
         const HOTEL_LOCATION = {
@@ -4444,6 +4445,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         function createPlaceListItem(place, index) {
+            // Store place data for reliable button access
+            placeDataStore.set(place.id, place);
+            
             const item = document.createElement('div');
             item.className = 'place-item';
             item.dataset.placeId = place.id;
@@ -4621,7 +4625,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     <button class="edit-place-btn" onclick="event.stopPropagation(); showEditPlaceModal('${place.id}')" title="Edit place information">
                         ✏️ Edit
                     </button>
-                    <button class="view-details-btn" onclick="event.stopPropagation(); showPlaceDetails(${JSON.stringify(place).replace(/"/g, '&quot;')})" title="View detailed information">
+                    <button class="view-details-btn" onclick="event.stopPropagation(); showPlaceDetailsById('${place.id}')" title="View detailed information">
                         👁️ Details
                     </button>
                 </div>
@@ -5782,7 +5786,10 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         <h3 style="margin: 0 0 6px 0; font-size: 0.95rem; color: #333; line-height: 1.2;">${icon} ${place.name}</h3>
                         <p style="margin: 2px 0; color: #1976D2; font-weight: bold; font-size: 0.8rem;">🚶 ${place.distance}m away</p>
                         ${place.rating > 0 ? `<p style="margin: 2px 0; color: #ff9800; font-weight: bold; font-size: 0.8rem;">⭐ ${place.rating.toFixed(1)}</p>` : ''}
-                        <button onclick="openDirections(${place.location.latitude}, ${place.location.longitude}, '${place.name}')" 
+                        <button class="marker-directions-btn" 
+                                data-lat="${place.location.latitude}" 
+                                data-lng="${place.location.longitude}" 
+                                data-place-name="${place.name}" 
                                 style="background: #1976D2; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; margin-top: 6px; width: 100%;">
                             🗺️ Directions
                         </button>
@@ -5798,7 +5805,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 highlightPlaceInList(place.id);
                 
                 // Show place details in modal
-                showPlaceDetails(Object.assign(place, { category }));
+                const placeWithCategory = Object.assign(place, { category });
+                placeDataStore.set(placeWithCategory.id, placeWithCategory);
+                showPlaceDetails(placeWithCategory);
             });
 
             // Store the info window reference on the marker for cross-tab interaction
@@ -6230,8 +6239,19 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             `;
         }
 
+        function showPlaceDetailsById(placeId) {
+            console.log('🔍 Loading place details for ID:', placeId);
+            const place = placeDataStore.get(placeId);
+            if (!place) {
+                console.error('❌ Place not found in data store:', placeId);
+                alert('Sorry, place details are not available. Please try again.');
+                return;
+            }
+            showPlaceDetails(place);
+        }
+        
         function showPlaceDetails(place) {
-            console.log('Showing place details for:', place.name);
+            console.log('📋 Showing place details for:', place.name);
             
             const modal = document.getElementById('imageModal');
             const modalTitle = document.getElementById('modalPlaceName');
@@ -6351,7 +6371,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                                  id="${imageId}"
                                  src="${uploadedImage.dataUrl}" 
                                  alt="${place.name}" 
-                                 onclick="openFullImage('${uploadedImage.dataUrl}', '${place.name}')" 
+                                 data-image-url="${uploadedImage.dataUrl}" 
+                                 data-place-name="${place.name}" 
+                                 class="gallery-image clickable-gallery-image" 
                                  style="cursor: pointer; display: block;">
                         </div>
                     `;
@@ -6385,7 +6407,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                                      data-loading-id="${loadingId}"
                                      data-error-id="${errorId}"
                                      alt="${place.name}" 
-                                     onclick="openFullImage('${photoUrl}', '${place.name}')" 
+                                     data-image-url="${photoUrl}" 
+                                     data-place-name="${place.name}" 
+                                     class="gallery-image clickable-gallery-image" 
                                      style="cursor: pointer; display: none;">
                                 <div class="gallery-error" id="${errorId}" style="display: none;">
                                     <div class="error-icon">❌</div>
@@ -6488,10 +6512,13 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     </div>
                 </div>
                 <div class="place-actions">
-                    <button class="btn-action" onclick="openDirections(${place.location.latitude}, ${place.location.longitude}, '${encodeURIComponent(place.name)}')">
+                    <button class="btn-action directions-btn" 
+                            data-lat="${place.location.latitude}" 
+                            data-lng="${place.location.longitude}" 
+                            data-place-name="${place.name}">
                         🗺️ Get Directions
                     </button>
-                    ${place.websiteUri ? `<a href="${place.websiteUri}" target="_blank" class="btn-action">🌐 Website</a>` : `<button class="btn-action" onclick="sharePlace('${encodeURIComponent(place.name)}', ${place.location.latitude}, ${place.location.longitude})">📤 Share</button>`}
+                    ${place.websiteUri ? `<a href="${place.websiteUri}" target="_blank" class="btn-action">🌐 Website</a>` : `<button class="btn-action share-btn" data-lat="${place.location.latitude}" data-lng="${place.location.longitude}" data-place-name="${place.name}">📤 Share</button>`}
                 </div>
                 ${galleryHtml}
             `;
@@ -6500,8 +6527,44 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             modal.classList.add('show');
             document.body.style.overflow = 'hidden';
             
-            // Load gallery images with proper error handling
+            // Add safe event listeners for modal buttons (prevents onclick attribute issues)
             setTimeout(() => {
+                // Directions button handler
+                const directionsBtn = modal.querySelector('.directions-btn');
+                if (directionsBtn) {
+                    directionsBtn.addEventListener('click', function() {
+                        const lat = parseFloat(this.dataset.lat);
+                        const lng = parseFloat(this.dataset.lng);
+                        const placeName = this.dataset.placeName;
+                        console.log('🗺️ Opening directions for:', placeName);
+                        openDirections(lat, lng, placeName);
+                    });
+                }
+                
+                // Share button handler
+                const shareBtn = modal.querySelector('.share-btn');
+                if (shareBtn) {
+                    shareBtn.addEventListener('click', function() {
+                        const lat = parseFloat(this.dataset.lat);
+                        const lng = parseFloat(this.dataset.lng);
+                        const placeName = this.dataset.placeName;
+                        console.log('📤 Sharing place:', placeName);
+                        sharePlace(placeName, lat, lng);
+                    });
+                }
+                
+                // Gallery image click handlers
+                const galleryImages = modal.querySelectorAll('.clickable-gallery-image');
+                galleryImages.forEach(img => {
+                    img.addEventListener('click', function() {
+                        const imageUrl = this.dataset.imageUrl;
+                        const placeName = this.dataset.placeName;
+                        console.log('🖼️ Opening full image for:', placeName);
+                        openFullImage(imageUrl, placeName);
+                    });
+                });
+                
+                // Load gallery images with proper error handling
                 loadGalleryImages(place);
             }, 100);
         }
@@ -10070,6 +10133,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 
                 // Add places for this category
                 places.forEach((place, index) => {
+                    // Store place data for reliable button access
+                    placeDataStore.set(place.id, place);
+                    
                     const distanceInMiles = (place.distance * 0.000621371).toFixed(2);
                     const openingHours = getCompactOpeningHours(place);
                     
@@ -10109,7 +10175,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                                 <button class="search-table-btn" onclick="event.stopPropagation(); showPlaceDetails(${JSON.stringify(place).replace(/"/g, '&quot;')})">
                                     👁️ Details
                                 </button>
-                                <button class="search-table-btn secondary" onclick="event.stopPropagation(); openDirections(${place.location.latitude}, ${place.location.longitude}, '${encodeURIComponent(place.name)}')">
+                                <button class="search-table-btn secondary directions-btn" 
+                                        data-lat="${place.location.latitude}" 
+                                        data-lng="${place.location.longitude}" 
+                                        data-place-name="${place.name}" 
+                                        onclick="event.stopPropagation();">
                                     🗺️ Directions
                                 </button>
                             </div>
@@ -10129,6 +10199,21 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             }
             
             searchResultsTable.innerHTML = tableHtml;
+            
+            // Add safe event listeners for search table directions buttons
+            setTimeout(() => {
+                const searchDirectionsBtns = searchResultsTable.querySelectorAll('.directions-btn');
+                searchDirectionsBtns.forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const lat = parseFloat(this.dataset.lat);
+                        const lng = parseFloat(this.dataset.lng);
+                        const placeName = this.dataset.placeName;
+                        console.log('🗺️ Search table - Opening directions for:', placeName);
+                        openDirections(lat, lng, placeName);
+                    });
+                });
+            }, 50);
             
             // Show search results section and hide regular places list
             searchResultsSection.style.display = 'block';
