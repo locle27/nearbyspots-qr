@@ -6689,7 +6689,8 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             // Add safe event listeners for modal buttons (prevents onclick attribute issues)
             setTimeout(() => {
                 console.log('🛠️ Adding modal event listeners for place:', place.id);
-                console.log('🔍 Modal DOM structure:', modalBody.innerHTML.substring(0, 500));
+                const modalBodyForDebug = document.getElementById('modalPlaceDetails');
+                console.log('🔍 Modal DOM structure:', modalBodyForDebug ? modalBodyForDebug.innerHTML.substring(0, 500) : 'Modal body not found');
                 
                 // Directions button handler (has both btn-action and directions-btn classes)
                 const directionsBtn = modal.querySelector('.btn-action.directions-btn');
