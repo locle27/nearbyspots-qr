@@ -6371,8 +6371,6 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             
             const modal = document.getElementById('imageModal');
             console.log('📋 Modal element found:', !!modal);
-            
-            const modal = document.getElementById('imageModal');
             const modalTitle = document.getElementById('modalPlaceName');
             const modalBody = document.getElementById('modalPlaceDetails');
             
@@ -7565,8 +7563,8 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
         
         function hideImageModal() {
-            const modal = document.getElementById('imageModal');
-            modal.classList.remove('show');
+            const imageModal = document.getElementById('imageModal');
+            imageModal.classList.remove('show');
             document.body.style.overflow = 'auto';
         }
 
