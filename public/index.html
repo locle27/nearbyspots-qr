@@ -2806,7 +2806,10 @@
             
             /* Ensure buttons inside actions area are clickable */
             .place-actions .edit-place-btn,
-            .place-actions .view-details-btn {
+            .place-actions .view-details-btn,
+            .place-actions .btn-action,
+            .place-actions .directions-btn,
+            .place-actions .share-btn {
                 pointer-events: auto !important; /* Re-enable clicks on buttons */
                 position: relative !important;
                 z-index: 1000 !important; /* Higher than container */
@@ -3370,15 +3373,22 @@
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             aspect-ratio: 1.1;
+            display: block !important;
+            visibility: visible !important;
         }
 
         .gallery-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
             border-radius: 8px;
             cursor: pointer;
             transition: transform 0.2s;
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            max-width: none !important;
+            max-height: none !important;
         }
 
         .gallery-image:hover {
@@ -6763,8 +6773,41 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     });
                 });
                 
-                // Gallery images are now loaded directly with src - no need for complex loading system
-                console.log('📸 Gallery images loaded directly');
+                // Gallery images debugging and visibility fix
+                console.log('📸 Checking gallery images...');
+                const galleryImages = modal.querySelectorAll('.gallery-image');
+                console.log(`📸 Found ${galleryImages.length} gallery images in DOM`);
+                
+                // Force images to be visible
+                galleryImages.forEach((img, index) => {
+                    console.log(`📸 Image ${index + 1}:`, {
+                        src: img.src,
+                        style: img.style.cssText,
+                        visible: img.offsetWidth > 0 && img.offsetHeight > 0
+                    });
+                    
+                    // Force visibility
+                    img.style.display = 'block';
+                    img.style.opacity = '1';
+                    img.style.visibility = 'visible';
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    
+                    // Add load debugging
+                    img.onload = () => console.log(`✅ Image ${index + 1} loaded successfully`);
+                    img.onerror = (e) => console.error(`❌ Image ${index + 1} failed to load:`, e);
+                });
+                
+                const photoGallery = modal.querySelector('.photo-gallery');
+                const photoGrid = modal.querySelector('.photo-grid');
+                console.log('📸 Gallery container:', !!photoGallery);
+                console.log('📸 Grid container:', !!photoGrid);
+                
+                if (photoGrid) {
+                    console.log('📸 Grid display style:', getComputedStyle(photoGrid).display);
+                    console.log('📸 Grid children count:', photoGrid.children.length);
+                }
             }, 100);
         }
         
