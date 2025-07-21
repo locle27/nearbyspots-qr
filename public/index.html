@@ -3195,6 +3195,10 @@
             letter-spacing: 0.01em;
             position: relative;
             overflow: hidden;
+            z-index: 10;
+            pointer-events: auto;
+            -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
+            touch-action: manipulation;
         }
         
         .btn-action::before {
@@ -6655,10 +6659,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 </div>
                 <div class="place-actions">
                     <button class="btn-action directions-btn" 
-                            data-place-id="${place.id}">
+                            data-place-id="${place.id}"
+                            onclick="event.stopPropagation(); event.preventDefault(); console.log('🗺️ Direct onclick triggered for directions'); const placeData = placeDataStore.get('${place.id}'); if (placeData) { openDirections(placeData.location.latitude, placeData.location.longitude, placeData.name); } else { console.error('Place data not found for ${place.id}'); }">
                         🗺️ Get Directions
                     </button>
-                    ${place.websiteUri ? `<a href="${place.websiteUri}" target="_blank" class="btn-action">🌐 Website</a>` : `<button class="btn-action share-btn" data-place-id="${place.id}">📤 Share</button>`}
+                    ${place.websiteUri ? `<a href="${place.websiteUri}" target="_blank" class="btn-action">🌐 Website</a>` : `<button class="btn-action share-btn" data-place-id="${place.id}" onclick="event.stopPropagation(); event.preventDefault(); console.log('📤 Direct onclick triggered for share'); const placeData = placeDataStore.get('${place.id}'); if (placeData) { sharePlace(placeData.name, placeData.location.latitude, placeData.location.longitude); } else { console.error('Place data not found for ${place.id}'); }">📤 Share</button>`}
                 </div>
                 ${galleryHtml}
             `;
@@ -6681,18 +6686,35 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 console.log('🔍 All modal buttons:', Array.from(allButtons).map(btn => ({ class: btn.className, text: btn.textContent.trim() })));
                 
                 if (directionsBtn) {
-                    console.log('✅ Found directions button, adding listener');
+                    console.log('✅ Found directions button, adding multiple event listeners');
                     console.log('🔍 Directions button details:', { className: directionsBtn.className, dataset: directionsBtn.dataset });
-                    directionsBtn.addEventListener('click', function() {
+                    
+                    // Add multiple event types for better mobile support
+                    const directionsHandler = function(e) {
+                        console.log('🗺️ Directions button event triggered:', e.type);
+                        e.stopPropagation();
+                        e.preventDefault();
+                        
                         const placeId = this.dataset.placeId;
                         const placeData = placeDataStore.get(placeId);
                         if (placeData) {
-                            console.log('🗺️ Opening directions for:', placeData.name);
+                            console.log('✅ Opening directions for:', placeData.name);
                             openDirections(placeData.location.latitude, placeData.location.longitude, placeData.name);
                         } else {
                             console.error('❌ Place data not found for directions:', placeId);
                         }
+                    };
+                    
+                    directionsBtn.addEventListener('click', directionsHandler);
+                    directionsBtn.addEventListener('touchend', directionsHandler);
+                    directionsBtn.addEventListener('touchstart', function(e) { 
+                        console.log('👆 Directions button touch started');
+                        this.style.transform = 'scale(0.95)';
                     });
+                    directionsBtn.addEventListener('touchcancel', function(e) { 
+                        this.style.transform = 'scale(1)';
+                    });
+                    
                 } else {
                     console.error('❌ Directions button not found in modal');
                     console.error('❌ Available button classes:', Array.from(allButtons).map(b => b.className));
