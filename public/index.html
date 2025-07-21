@@ -6545,11 +6545,19 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             // Add safe event listeners for modal buttons (prevents onclick attribute issues)
             setTimeout(() => {
                 console.log('🛠️ Adding modal event listeners for place:', place.id);
+                console.log('🔍 Modal DOM structure:', modalBody.innerHTML.substring(0, 500));
                 
                 // Directions button handler
                 const directionsBtn = modal.querySelector('.directions-btn');
+                console.log('🔍 Searching for directions button, found:', directionsBtn);
+                
+                // Also search by different selectors to debug
+                const allButtons = modal.querySelectorAll('button');
+                console.log('🔍 All modal buttons:', Array.from(allButtons).map(btn => ({ class: btn.className, text: btn.textContent.trim() })));
+                
                 if (directionsBtn) {
                     console.log('✅ Found directions button, adding listener');
+                    console.log('🔍 Directions button details:', { className: directionsBtn.className, dataset: directionsBtn.dataset });
                     directionsBtn.addEventListener('click', function() {
                         const placeId = this.dataset.placeId;
                         const placeData = placeDataStore.get(placeId);
@@ -6561,7 +6569,8 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         }
                     });
                 } else {
-                    console.error('❌ Directions button not found');
+                    console.error('❌ Directions button not found in modal');
+                    console.error('❌ Available button classes:', Array.from(allButtons).map(b => b.className));
                 }
                 
                 // Share button handler
@@ -6610,6 +6619,23 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 // Load gallery images with proper error handling
                 loadGalleryImages(place);
             }, 100);
+        }
+        
+        // Function to add event listeners to place buttons after they're in DOM
+        function addEventListenersToPlace(placeId) {
+            console.log('🛠️ Adding event listeners for place:', placeId);
+            
+            // The place list items use showPlaceDetailsById which should work
+            // The main issue is in the modal buttons and search table
+            // This function is mainly for completeness and debugging
+            
+            const placeItem = document.getElementById(`place-${placeId}`);
+            if (!placeItem) {
+                console.log('📝 Place item not found for:', placeId, '(this is normal)');
+                return;
+            }
+            
+            console.log('✅ Place item found for:', placeId, 'buttons should work via existing onclick');
         }
         
         // Professional gallery loading system
@@ -9529,6 +9555,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             activePlaces.forEach((place, index) => {
                 const placeItem = createPlaceListItem(place, index);
                 placesList.appendChild(placeItem);
+                
+                // Add event listeners immediately after adding to DOM
+                setTimeout(() => {
+                    addEventListenersToPlace(place.id);
+                }, 10);
             });
         }
 
