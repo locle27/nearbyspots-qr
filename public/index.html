@@ -3628,8 +3628,12 @@
         </div>
         <div class="location-input-container">
             <div class="form-group" style="flex: 1;">
-                <label for="hotelMapsUrl">📍 Google Maps URL of your hotel/accommodation</label>
-                <input type="url" id="hotelMapsUrl" placeholder="Paste Google Maps link of your hotel location here..." style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem;">
+                <label for="hotelMapsUrl">📍 Hotel Location (Google Maps URL or Address)</label>
+                <input type="text" id="hotelMapsUrl" placeholder="Enter: Google Maps URL OR plain address (e.g., 'Pham Ngoc Thach, Hanoi')" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem;">
+                <div style="font-size: 0.8rem; color: #666; margin-top: 4px;">
+                    ✅ Google Maps URL: https://maps.google.com/... <br>
+                    ✅ Plain Address: Street Name, District, City
+                </div>
             </div>
             <button type="button" id="updateLocationBtn" class="btn-update-location">
                 🔄 Update Location
@@ -6958,37 +6962,67 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         async function updateHotelLocation() {
-            const urlInput = document.getElementById('hotelMapsUrl');
+            const input = document.getElementById('hotelMapsUrl');
             const updateBtn = document.getElementById('updateLocationBtn');
             const currentLocationText = document.getElementById('currentLocationText');
             const locationDescription = document.getElementById('locationDescription');
             
-            const url = urlInput.value.trim();
+            const inputValue = input.value.trim();
             
-            if (!url) {
-                alert('Please paste a Google Maps URL first');
+            if (!inputValue) {
+                alert('Please enter a Google Maps URL or address (e.g., "Pham Ngoc Thach, Hanoi")');
                 return;
             }
             
             // Disable button and show loading
             updateBtn.disabled = true;
-            updateBtn.textContent = '🔄 Extracting...';
+            updateBtn.textContent = '🔄 Processing...';
             
             try {
-                // Extract coordinates from URL
-                const coordinates = extractCoordinatesFromGoogleMapsUrl(url);
+                let coordinates;
                 
-                if (!coordinates) {
-                    throw new Error('Could not extract coordinates from the URL. Please make sure it\'s a valid Google Maps link.');
+                // Detect if input is a URL or plain address
+                const isUrl = inputValue.includes('maps.google') || inputValue.includes('google.com/maps') || inputValue.startsWith('http');
+                
+                if (isUrl) {
+                    // Handle Google Maps URL
+                    updateBtn.textContent = '🔄 Extracting coordinates...';
+                    coordinates = extractCoordinatesFromGoogleMapsUrl(inputValue);
+                    if (!coordinates) {
+                        throw new Error('Could not extract coordinates from the URL. Please make sure you pasted a valid Google Maps URL with location information.');
+                    }
+                    console.log('Extracted coordinates from URL:', coordinates);
+                } else {
+                    // Handle plain address
+                    updateBtn.textContent = '🌐 Finding location...';
+                    console.log('Geocoding plain address:', inputValue);
+                    
+                    const response = await fetch('/api/geocode-address', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ address: inputValue })
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `Could not find location for "${inputValue}". Please check the address and try again.`);
+                    }
+                    
+                    const geocodeData = await response.json();
+                    coordinates = {
+                        lat: geocodeData.latitude,
+                        lng: geocodeData.longitude
+                    };
+                    console.log('Geocoded address to coordinates:', coordinates);
                 }
                 
-                // Update the global hotel location
+                // Update global hotel location
                 HOTEL_LOCATION.lat = coordinates.lat;
                 HOTEL_LOCATION.lng = coordinates.lng;
                 
-                // Try to get address from coordinates using reverse geocoding
-                updateBtn.textContent = '🌐 Getting address...';
+                updateBtn.textContent = '🌐 Getting address details...';
                 
+                // Get human-readable address from coordinates (reverse geocoding)
                 try {
                     const response = await fetch('/api/geocode-coordinates', {
                         method: 'POST',
@@ -7008,22 +7042,22 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         currentLocationText.textContent = `📍 Current: ${data.address}`;
                         locationDescription.textContent = `Discover restaurants, landmarks, coffee shops & culture near ${data.address}`;
                     } else {
-                        // Use coordinates if reverse geocoding fails
-                        const coordsText = `${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}`;
-                        HOTEL_LOCATION.address = coordsText;
+                        // Use input value or coordinates if reverse geocoding fails
+                        const fallbackAddress = isUrl ? `${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}` : inputValue;
+                        HOTEL_LOCATION.address = fallbackAddress;
                         HOTEL_LOCATION.name = 'Your Hotel Location';
                         
-                        currentLocationText.textContent = `📍 Current: ${coordsText}`;
-                        locationDescription.textContent = `Discover restaurants, landmarks, coffee shops & culture near ${coordsText}`;
+                        currentLocationText.textContent = `📍 Current: ${fallbackAddress}`;
+                        locationDescription.textContent = `Discover restaurants, landmarks, coffee shops & culture near ${fallbackAddress}`;
                     }
                 } catch (geocodeError) {
-                    console.log('Reverse geocoding failed, using coordinates:', geocodeError);
-                    const coordsText = `${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}`;
-                    HOTEL_LOCATION.address = coordsText;
+                    console.log('Reverse geocoding failed, using fallback:', geocodeError);
+                    const fallbackAddress = isUrl ? `${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}` : inputValue;
+                    HOTEL_LOCATION.address = fallbackAddress;
                     HOTEL_LOCATION.name = 'Your Hotel Location';
                     
-                    currentLocationText.textContent = `📍 Current: ${coordsText}`;
-                    locationDescription.textContent = `Discover restaurants, landmarks, coffee shops & culture near ${coordsText}`;
+                    currentLocationText.textContent = `📍 Current: ${fallbackAddress}`;
+                    locationDescription.textContent = `Discover restaurants, landmarks, coffee shops & culture near ${fallbackAddress}`;
                 }
                 
                 // Update map if it exists
@@ -7040,13 +7074,22 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 clearAllPlaces();
                 
                 // Clear the input
-                urlInput.value = '';
+                input.value = '';
                 
-                alert('✅ Hotel location updated successfully! Click "Load Places on Map" to find nearby places.');
+                alert('✅ Hotel location updated successfully! Click a category to load nearby places.');
                 
             } catch (error) {
                 console.error('Error updating hotel location:', error);
-                alert('❌ Error: ' + error.message);
+                
+                // More helpful error messages
+                let errorMessage = error.message;
+                if (errorMessage.includes('fetch')) {
+                    errorMessage = 'Network error. Please check your connection and try again.';
+                } else if (errorMessage.includes('ZERO_RESULTS')) {
+                    errorMessage = `Could not find location "${inputValue}". Please try:\n• More specific address (include district/city)\n• Different spelling\n• Google Maps URL instead`;
+                }
+                
+                alert('❌ Error: ' + errorMessage);
             } finally {
                 // Re-enable button
                 updateBtn.disabled = false;
