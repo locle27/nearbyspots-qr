@@ -6547,9 +6547,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 console.log('🛠️ Adding modal event listeners for place:', place.id);
                 console.log('🔍 Modal DOM structure:', modalBody.innerHTML.substring(0, 500));
                 
-                // Directions button handler
-                const directionsBtn = modal.querySelector('.directions-btn');
-                console.log('🔍 Searching for directions button, found:', directionsBtn);
+                // Directions button handler (has both btn-action and directions-btn classes)
+                const directionsBtn = modal.querySelector('.btn-action.directions-btn');
+                console.log('🔍 Searching for directions button (.btn-action.directions-btn), found:', directionsBtn);
                 
                 // Also search by different selectors to debug
                 const allButtons = modal.querySelectorAll('button');
@@ -6573,10 +6573,10 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     console.error('❌ Available button classes:', Array.from(allButtons).map(b => b.className));
                 }
                 
-                // Share button handler
-                const shareBtn = modal.querySelector('.share-btn');
+                // Share button handler (has both btn-action and share-btn classes)
+                const shareBtn = modal.querySelector('.btn-action.share-btn');
                 if (shareBtn) {
-                    console.log('✅ Found share button, adding listener');
+                    console.log('✅ Found share button (.btn-action.share-btn), adding listener');
                     shareBtn.addEventListener('click', function() {
                         const placeId = this.dataset.placeId;
                         const placeData = placeDataStore.get(placeId);
@@ -7482,7 +7482,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         // Global fallback click handler for debugging button issues
         document.addEventListener('click', function(e) {
             console.log('👆 Click detected on:', e.target.tagName, e.target.className);
-            if (e.target.classList.contains('directions-btn') || e.target.classList.contains('marker-directions-btn')) {
+            if (e.target.classList.contains('directions-btn') || e.target.classList.contains('marker-directions-btn') || (e.target.classList.contains('btn-action') && e.target.classList.contains('directions-btn'))) {
                 console.log('🔍 FALLBACK: Directions button clicked:', e.target);
                 const placeId = e.target.dataset.placeId;
                 if (placeId) {
@@ -7496,7 +7496,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 } else {
                     console.error('❌ FALLBACK: No place ID found on button');
                 }
-            } else if (e.target.classList.contains('share-btn')) {
+            } else if (e.target.classList.contains('share-btn') || (e.target.classList.contains('btn-action') && e.target.classList.contains('share-btn'))) {
                 console.log('🔍 FALLBACK: Share button clicked:', e.target);
                 const placeId = e.target.dataset.placeId;
                 if (placeId) {
@@ -10327,7 +10327,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             
             // Add safe event listeners for search table directions buttons
             setTimeout(() => {
-                const searchDirectionsBtns = searchResultsTable.querySelectorAll('.directions-btn');
+                const searchDirectionsBtns = searchResultsTable.querySelectorAll('.directions-btn, .btn-action.directions-btn');
                 console.log(`🔍 Found ${searchDirectionsBtns.length} search directions buttons`);
                 searchDirectionsBtns.forEach(btn => {
                     btn.addEventListener('click', function(e) {
