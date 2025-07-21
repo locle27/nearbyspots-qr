@@ -1487,6 +1487,9 @@
             display: flex;
             flex-direction: column;
             padding-bottom: 100px; /* Reserve space for action buttons */
+            pointer-events: auto;
+            position: relative;
+            z-index: 1;
         }
 
         /* Desktop styles for larger screens */
@@ -3164,17 +3167,18 @@
         }
 
         .place-actions {
-            display: flex;
+            display: flex !important;
             gap: 16px;
             margin-bottom: 20px;
             padding: 20px 24px;
-            position: relative;
-            z-index: 100;
+            position: relative !important;
+            z-index: 1000 !important;
             background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
             border-top: 2px solid #e2e8f0;
             margin-top: 16px;
             border-radius: 20px 20px 0 0;
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+            pointer-events: auto !important;
         }
 
         .btn-action {
@@ -3187,7 +3191,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            display: inline-flex;
+            display: inline-flex !important;
             align-items: center;
             gap: 10px;
             font-size: 1.05rem;
@@ -3196,10 +3200,10 @@
             justify-content: center;
             min-height: 56px;
             letter-spacing: 0.01em;
-            position: relative;
+            position: relative !important;
             overflow: hidden;
-            z-index: 10;
-            pointer-events: auto;
+            z-index: 1001 !important;
+            pointer-events: auto !important;
             -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
             touch-action: manipulation;
         }
@@ -6807,6 +6811,42 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 if (photoGrid) {
                     console.log('📸 Grid display style:', getComputedStyle(photoGrid).display);
                     console.log('📸 Grid children count:', photoGrid.children.length);
+                }
+                
+                // Add modal body click interceptor for button clicks
+                const modalBody = modal.querySelector('.image-modal-body');
+                if (modalBody) {
+                    modalBody.addEventListener('click', function(e) {
+                        console.log('🎯 Modal body clicked, checking if should redirect to button');
+                        console.log('🎯 Click coordinates:', { x: e.clientX, y: e.clientY });
+                        
+                        // Check if click is in button area
+                        const placeActions = modal.querySelector('.place-actions');
+                        if (placeActions) {
+                            const rect = placeActions.getBoundingClientRect();
+                            const isInButtonArea = e.clientY >= rect.top - 20 && e.clientY <= rect.bottom + 20;
+                            
+                            if (isInButtonArea) {
+                                console.log('🎯 Click is in button area, finding closest button');
+                                e.stopPropagation();
+                                e.preventDefault();
+                                
+                                // Find the directions button and trigger it
+                                const directionsBtn = placeActions.querySelector('.directions-btn');
+                                if (directionsBtn && e.clientX >= rect.left && e.clientX <= rect.left + (rect.width / 2)) {
+                                    console.log('🗺️ Triggering directions button');
+                                    directionsBtn.click();
+                                }
+                                
+                                // Find the share button and trigger it
+                                const shareBtn = placeActions.querySelector('.share-btn');
+                                if (shareBtn && e.clientX > rect.left + (rect.width / 2) && e.clientX <= rect.right) {
+                                    console.log('📤 Triggering share button');
+                                    shareBtn.click();
+                                }
+                            }
+                        }
+                    });
                 }
             }, 100);
         }
