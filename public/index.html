@@ -4647,10 +4647,49 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             
             // Add click/touch handler for smart zoom (no details modal)
             const handlePlaceSelect = (e) => {
-                // Prevent event if clicking on delete button, view details button, or edit button
-                if (e.target.closest('.delete-recommendation-btn') || e.target.closest('.view-details-btn') || e.target.closest('.edit-place-btn')) {
+                // Enhanced mobile button detection with multiple fallbacks
+                console.log('🖱️ Place select event:', {
+                    target: e.target.tagName,
+                    className: e.target.className,
+                    textContent: e.target.textContent?.trim(),
+                    parentClass: e.target.parentElement?.className
+                });
+                
+                // Check if clicking on buttons or their children with multiple methods
+                const isButtonClick = 
+                    // Direct button detection
+                    e.target.matches('.delete-recommendation-btn, .view-details-btn, .edit-place-btn') ||
+                    // Parent button detection
+                    e.target.closest('.delete-recommendation-btn, .view-details-btn, .edit-place-btn') ||
+                    // Text content detection (mobile fallback)
+                    (e.target.textContent && (
+                        e.target.textContent.includes('Details') || 
+                        e.target.textContent.includes('👁️') ||
+                        e.target.textContent.includes('Edit') || 
+                        e.target.textContent.includes('✏️') ||
+                        e.target.textContent.includes('Delete') || 
+                        e.target.textContent.includes('🗑️')
+                    )) ||
+                    // Actions container detection
+                    e.target.closest('.place-actions');
+                
+                if (isButtonClick) {
+                    console.log('🚫 Button click detected, preventing place selection');
+                    
+                    // If this is a details button, manually trigger the modal
+                    if ((e.target.classList.contains('view-details-btn') || 
+                         e.target.textContent?.includes('Details') || 
+                         e.target.textContent?.includes('👁️')) && 
+                        !e.target.textContent?.includes('Edit')) {
+                        
+                        console.log('👁️ MANUAL DETAILS TRIGGER for mobile');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showPlaceDetailsById(place.id);
+                    }
                     return;
                 }
+                
                 console.log(`🔍 Place clicked: ${place.name} (ID: ${place.id})`);
                 console.log(`🎯 Triggering zoom for place at distance: ${place.distance}m`);
                 // Only trigger smart zoom, not details modal
@@ -6310,18 +6349,28 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         function showPlaceDetailsById(placeId) {
-            console.log('🔍 Loading place details for ID:', placeId);
+            console.log('🔍 showPlaceDetailsById CALLED with ID:', placeId);
+            console.log('📋 placeDataStore size:', placeDataStore.size);
+            console.log('📋 placeDataStore keys:', Array.from(placeDataStore.keys()));
+            
             const place = placeDataStore.get(placeId);
             if (!place) {
                 console.error('❌ Place not found in data store:', placeId);
+                console.error('❌ Available place IDs:', Array.from(placeDataStore.keys()));
                 alert('Sorry, place details are not available. Please try again.');
                 return;
             }
+            
+            console.log('✅ Found place data, calling showPlaceDetails');
             showPlaceDetails(place);
         }
         
         function showPlaceDetails(place) {
-            console.log('📋 Showing place details for:', place.name);
+            console.log('📋 showPlaceDetails CALLED for:', place.name);
+            console.log('📋 Modal will now open...');
+            
+            const modal = document.getElementById('imageModal');
+            console.log('📋 Modal element found:', !!modal);
             
             const modal = document.getElementById('imageModal');
             const modalTitle = document.getElementById('modalPlaceName');
@@ -7557,16 +7606,65 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             e.preventDefault();
         });
         
-        // Global fallback click handler for debugging button issues
+        // Enhanced global fallback click handler for mobile debugging
         document.addEventListener('click', function(e) {
-            console.log('👆 Click detected on:', e.target.tagName, e.target.className);
-            if (e.target.classList.contains('directions-btn') || e.target.classList.contains('marker-directions-btn') || (e.target.classList.contains('btn-action') && e.target.classList.contains('directions-btn'))) {
+            console.log('👆 Global click detected on:', e.target.tagName, e.target.className, 'Text:', e.target.textContent?.trim());
+            
+            // Enhanced mobile-friendly details button detection
+            const isDetailsButton = 
+                e.target.classList.contains('view-details-btn') || 
+                e.target.textContent?.includes('Details') ||
+                e.target.textContent?.includes('👁️') ||
+                e.target.closest('.view-details-btn');
+            
+            if (isDetailsButton && !e.target.textContent?.includes('Edit')) {
+                console.log('👁️ GLOBAL DETAILS BUTTON CLICKED - This should open modal');
+                
+                // Multiple methods to get place ID
+                let placeId = null;
+                
+                // Method 1: From onclick attribute
+                const onclickMatch = e.target.getAttribute('onclick')?.match(/showPlaceDetailsById\('([^']+)'\)/);
+                if (onclickMatch) {
+                    placeId = onclickMatch[1];
+                    console.log('🔑 Method 1 - Extracted place ID from onclick:', placeId);
+                }
+                
+                // Method 2: From data attribute
+                if (!placeId) {
+                    placeId = e.target.dataset.placeId || e.target.closest('[data-place-id]')?.dataset.placeId;
+                    console.log('🔑 Method 2 - Extracted place ID from data attribute:', placeId);
+                }
+                
+                // Method 3: From parent place item
+                if (!placeId) {
+                    const placeItem = e.target.closest('.place-item');
+                    if (placeItem) {
+                        placeId = placeItem.dataset.placeId;
+                        console.log('🔑 Method 3 - Extracted place ID from parent place item:', placeId);
+                    }
+                }
+                
+                if (placeId) {
+                    console.log('✅ Place ID found, opening modal for:', placeId);
+                    e.stopPropagation();
+                    e.preventDefault();
+                    showPlaceDetailsById(placeId);
+                } else {
+                    console.error('❌ Could not extract place ID from button');
+                }
+            }
+            
+            // Enhanced directions button detection
+            else if (e.target.classList.contains('directions-btn') || e.target.classList.contains('marker-directions-btn') || (e.target.classList.contains('btn-action') && e.target.classList.contains('directions-btn')) || e.target.textContent?.includes('🗺️')) {
                 console.log('🔍 FALLBACK: Directions button clicked:', e.target);
-                const placeId = e.target.dataset.placeId;
+                const placeId = e.target.dataset.placeId || e.target.closest('[data-place-id]')?.dataset.placeId;
                 if (placeId) {
                     const placeData = placeDataStore.get(placeId);
                     if (placeData) {
                         console.log('🔍 FALLBACK: Opening directions for:', placeData.name);
+                        e.stopPropagation();
+                        e.preventDefault();
                         openDirections(placeData.location.latitude, placeData.location.longitude, placeData.name);
                     } else {
                         console.error('❌ FALLBACK: Place data not found:', placeId);
@@ -7576,11 +7674,13 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }
             } else if (e.target.classList.contains('share-btn') || (e.target.classList.contains('btn-action') && e.target.classList.contains('share-btn'))) {
                 console.log('🔍 FALLBACK: Share button clicked:', e.target);
-                const placeId = e.target.dataset.placeId;
+                const placeId = e.target.dataset.placeId || e.target.closest('[data-place-id]')?.dataset.placeId;
                 if (placeId) {
                     const placeData = placeDataStore.get(placeId);
                     if (placeData) {
                         console.log('🔍 FALLBACK: Sharing place:', placeData.name);
+                        e.stopPropagation();
+                        e.preventDefault();
                         sharePlace(placeData.name, placeData.location.latitude, placeData.location.longitude);
                     } else {
                         console.error('❌ FALLBACK: Place data not found for share:', placeId);
@@ -7590,12 +7690,14 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }
             } else if (e.target.classList.contains('clickable-gallery-image')) {
                 console.log('🔍 FALLBACK: Gallery image clicked:', e.target);
-                const placeId = e.target.dataset.placeId;
+                const placeId = e.target.dataset.placeId || e.target.closest('[data-place-id]')?.dataset.placeId;
                 if (placeId) {
                     const placeData = placeDataStore.get(placeId);
                     if (placeData) {
                         const imageUrl = e.target.dataset.realSrc || e.target.src;
                         console.log('🔍 FALLBACK: Opening image:', imageUrl);
+                        e.stopPropagation();
+                        e.preventDefault();
                         openFullImage(imageUrl, placeData.name);
                     }
                 }

@@ -1,5 +1,5 @@
 // Simple Service Worker for PWA
-const CACHE_NAME = 'nearby-places-v2';
+const CACHE_NAME = 'nearby-places-v3-' + Date.now(); // Force cache refresh
 const urlsToCache = [
   '/',
   '/styles.css',
