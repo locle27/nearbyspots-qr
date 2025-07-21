@@ -5478,6 +5478,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         async function loadPlaces() {
             console.log('Auto-loading places! Current activeCategories:', Array.from(activeCategories), 'Size:', activeCategories.size);
             
+            try {
             // Prevent rapid successive calls
             const now = Date.now();
             if (now - lastLoadTime < LOAD_COOLDOWN) {
@@ -5504,7 +5505,15 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             
             console.log('Categories selected, proceeding with load...');
 
-            const radius = parseInt(document.getElementById('radiusSelect').value);
+            const radiusElement = document.getElementById('radiusSelect');
+            if (!radiusElement) {
+                throw new Error('Radius select element not found');
+            }
+            const radius = parseInt(radiusElement.value);
+            if (isNaN(radius)) {
+                throw new Error('Invalid radius value: ' + radiusElement.value);
+            }
+            console.log('✅ Radius parsed successfully:', radius);
             const previousRadius = currentRadius;
             currentRadius = radius;
             
@@ -5637,6 +5646,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     }
                 }
 
+            } catch (loadError) {
+                console.error('❌ Inner loadPlaces error:', loadError);
+                console.error('❌ Error stack:', loadError.stack);
+                throw loadError; // Re-throw for outer catch
+            }
             } catch (error) {
                 console.error('Error loading places:', error);
                 
@@ -5901,7 +5915,13 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         function updateLoadButtonText() {
             const loadBtn = document.getElementById('loadPlacesBtn');
             if (!loadBtn) {
-                console.log('Load button not found yet');
+                console.log('🔍 Load button not found yet - checking if element exists');
+                const loadBtn = document.querySelector('.load-places-btn');
+                if (loadBtn) {
+                    console.log('✅ Load button found:', loadBtn);
+                } else {
+                    console.log('❌ Load button element missing from DOM');
+                }
                 return;
             }
             
