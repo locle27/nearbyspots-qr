@@ -5526,8 +5526,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             if (loadingMap) loadingMap.classList.add('show');
             if (loadingList) loadingList.classList.add('show');
 
-            try {
-                // Handle radius changes intelligently
+            // Handle radius changes intelligently
                 if (radius < previousRadius && Object.keys(allPlaces).length > 0) {
                     console.log('Smaller radius: filtering existing places without API call');
                     // For smaller radius, just filter existing places (no API call needed)
@@ -5646,11 +5645,6 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     }
                 }
 
-            } catch (loadError) {
-                console.error('❌ Inner loadPlaces error:', loadError);
-                console.error('❌ Error stack:', loadError.stack);
-                throw loadError; // Re-throw for outer catch
-            }
             } catch (error) {
                 console.error('Error loading places:', error);
                 
