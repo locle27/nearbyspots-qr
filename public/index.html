@@ -1366,7 +1366,7 @@
         .image-modal-content {
             position: relative;
             width: 100%;
-            height: 98vh; /* Larger modal on mobile */
+            height: 100vh; /* Full screen on mobile */
             background: white;
             border-radius: 20px 20px 0 0;
             overflow: hidden;
@@ -2507,20 +2507,43 @@
                 margin: 8px 0 !important;
             }
             
-            /* Enhanced action buttons for better mobile touch */
+            /* ULTRA-ENHANCED action buttons - GUARANTEED clickability on phones */
             .edit-place-btn,
             .view-details-btn {
-                min-height: 48px !important; /* Larger for easier touch */
-                min-width: 100px !important; /* Wider for better target */
-                padding: 12px 16px !important; /* More padding for touch */
-                font-size: 1rem !important; /* Larger text */
-                margin: 3px !important; /* Slightly more margin */
-                border-radius: 8px !important; /* Rounded corners */
-                font-weight: 600 !important; /* Bold text */
-                touch-action: manipulation !important; /* Better touch response */
-                -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+                min-height: 56px !important; /* Larger for guaranteed touch */
+                min-width: 120px !important; /* Wider for better targeting */
+                padding: 16px 20px !important; /* More generous touch padding */
+                font-size: 1.1rem !important; /* Larger, clearer text */
+                margin: 6px !important; /* More spacing for safe touches */
+                border-radius: 12px !important; /* Larger touch-friendly corners */
+                font-weight: 700 !important;
+                touch-action: manipulation !important;
+                -webkit-tap-highlight-color: rgba(25, 118, 210, 0.3) !important;
                 position: relative !important;
-                z-index: 10 !important; /* Ensure buttons are on top */
+                z-index: 9999 !important; /* Ultra-high z-index */
+                pointer-events: auto !important;
+                cursor: pointer !important;
+                border: 3px solid #1976D2 !important; /* Thicker border for definition */
+                background: #1976D2 !important;
+                color: white !important;
+                box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4) !important;
+                isolation: isolate !important; /* Ensure rendering context */
+                user-select: none !important; /* Prevent text selection */
+                -webkit-user-select: none !important;
+                transform: translateZ(0) !important; /* Force hardware acceleration */
+            }
+            
+            .edit-place-btn:hover,
+            .view-details-btn:hover,
+            .edit-place-btn:active,
+            .view-details-btn:active,
+            .edit-place-btn:focus,
+            .view-details-btn:focus {
+                background: #1565C0 !important;
+                border-color: #1565C0 !important;
+                transform: scale(0.96) translateZ(0) !important; /* Clear visual feedback */
+                z-index: 10000 !important;
+                box-shadow: 0 6px 16px rgba(21, 101, 192, 0.5) !important;
             }
 
             /* Better spacing for mobile */
@@ -2535,34 +2558,58 @@
                 min-height: 32px;
             }
 
-            /* Enhanced typography for mobile readability */
+            /* ULTRA-COMPACT typography for maximum mobile efficiency */
             .place-name-full {
-                font-size: 1.3rem;
-                line-height: 1.3;
-                margin-bottom: 12px;
+                font-size: 1.0rem !important; /* Even smaller for efficiency */
+                line-height: 1.1 !important; /* Ultra-tight */
+                margin-bottom: 4px !important; /* Minimal margin */
+                font-weight: 700 !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+                padding: 8px 12px !important; /* Add padding for readability */
+                background: #f8f9fa !important; /* Light background */
+                border-radius: 6px !important;
             }
 
             .place-address-full {
-                font-size: 0.95rem;
-                line-height: 1.4;
-                margin-bottom: 20px;
+                font-size: 0.8rem !important; /* Ultra-compact */
+                line-height: 1.2 !important; /* Ultra-tight */
+                margin-bottom: 6px !important; /* Minimal margin */
+                color: #666 !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+                padding: 6px 12px !important; /* Compact padding */
             }
 
-            /* Better information section spacing */
+            /* ULTRA-COMPACT information sections for maximum efficiency */
             .place-types-section,
             .place-contact-section,
             .place-business-section,
             .place-metadata-section {
-                margin-bottom: 20px;
-                padding: 16px;
+                margin-bottom: 4px !important; /* Ultra-minimal margins */
+                padding: 6px 10px !important; /* Ultra-reduced padding */
+                font-size: 0.75rem !important; /* Ultra-small text */
+                background: #f8f9fa !important;
+                border-radius: 4px !important;
+                border: 1px solid #e9ecef !important;
             }
 
             .place-types-title,
             .place-contact-title,
             .place-business-title,
             .place-metadata-title {
-                font-size: 1rem;
-                margin-bottom: 16px;
+                font-size: 0.8rem !important; /* Ultra-compact titles */
+                margin-bottom: 2px !important; /* Ultra-minimal margin */
+                font-weight: 600 !important;
+                color: #333 !important;
+            }
+            
+            /* Ultra-compact description */
+            .place-description-full {
+                font-size: 0.8rem !important; /* Smaller description text */
+                line-height: 1.3 !important; /* Tighter line height */
+                margin-bottom: 8px !important; /* Reduced margin */
+                padding: 8px 10px !important; /* Compact padding */
             }
 
             /* Ultra-enhanced search input for mobile */
@@ -2725,23 +2772,39 @@
                 align-items: center !important;
             }
             
-            /* Optimized place actions section for larger buttons */
+            /* Ultra-enhanced place actions for guaranteed button clicks */
             .place-actions {
                 position: absolute !important;
                 bottom: 0 !important;
                 left: 0 !important;
                 right: 0 !important;
                 width: 100% !important;
+                display: flex !important;
                 justify-content: center !important;
+                align-items: center !important;
                 flex-wrap: wrap !important;
-                padding: 6px 8px !important; /* Padding for larger buttons */
+                padding: 12px 16px !important; /* Enhanced padding for touch safety */
+                background: linear-gradient(to top, rgba(255,255,255,1) 70%, rgba(255,255,255,0.9) 100%) !important;
+                backdrop-filter: blur(8px) !important;
+                z-index: 9998 !important; /* High but below buttons */
                 margin: 0 !important;
-                gap: 6px !important; /* Gap for larger buttons */
+                gap: 8px !important; /* More gap for larger buttons */
+                min-height: 70px !important; /* Minimum height for touch targets */
                 transform: none !important;
-                border-top: 1px solid #e0e0e0 !important;
-                background: rgba(255, 255, 255, 0.95) !important; /* Semi-transparent background */
-                backdrop-filter: blur(8px) !important; /* Blur effect */
-                box-shadow: 0 -2px 8px rgba(0,0,0,0.08) !important;
+                border-top: 2px solid #e0e0e0 !important;
+                background: rgba(255, 255, 255, 0.98) !important; /* More opaque background */
+                backdrop-filter: blur(12px) !important; /* More blur effect */
+                box-shadow: 0 -4px 16px rgba(0,0,0,0.12) !important;
+                z-index: 999 !important; /* High z-index but lower than buttons */
+                pointer-events: none !important; /* Allow clicks to pass through to buttons */
+            }
+            
+            /* Ensure buttons inside actions area are clickable */
+            .place-actions .edit-place-btn,
+            .place-actions .view-details-btn {
+                pointer-events: auto !important; /* Re-enable clicks on buttons */
+                position: relative !important;
+                z-index: 1000 !important; /* Higher than container */
             }
             
             /* Enhanced modal header for mobile */
