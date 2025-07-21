@@ -3651,10 +3651,16 @@
         <div class="current-location-display">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap;">
                 <span id="currentLocationText">📍 Current: 118 Hang Bac, Hanoi Old Quarter</span>
-                <button type="button" id="viewHotelOnMapsBtn" onclick="viewHotelOnGoogleMaps()" 
-                        style="background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(25, 118, 210, 0.3); white-space: nowrap;">
-                    🗺️ View on Maps
-                </button>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" id="viewHotelOnMapsBtn" onclick="viewHotelOnGoogleMaps()" 
+                            style="background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(25, 118, 210, 0.3); white-space: nowrap;">
+                        🗺️ View on Maps
+                    </button>
+                    <button type="button" id="refreshMapBtn" onclick="forceMapRefresh()" 
+                            style="background: linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(255, 107, 53, 0.3); white-space: nowrap;">
+                        🔄 Refresh Map
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -4140,6 +4146,15 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
 
             // Add hotel marker
             addHotelMarker();
+
+            // Ensure map is properly centered on hotel location after initialization
+            console.log('🗺️ Centering map on hotel location during initialization');
+            console.log('📍 HOTEL_LOCATION:', HOTEL_LOCATION);
+            if (map && hotelMarker) {
+                map.setCenter(HOTEL_LOCATION);
+                map.setZoom(14);
+                console.log('✅ Map centered on hotel location during initialization');
+            }
 
             // Set up event listeners  
             setupEventListeners();
@@ -5599,6 +5614,26 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 });
             }
             
+            // Ensure map is centered on hotel location and properly sized
+            if (map && hotelMarker) {
+                console.log('🗺️ Auto-centering map on hotel location after marker update');
+                console.log('📍 HOTEL_LOCATION:', HOTEL_LOCATION);
+                
+                try {
+                    // Make sure hotel marker is at the correct position
+                    hotelMarker.setPosition(HOTEL_LOCATION);
+                    
+                    // Adjust map bounds to include hotel and all places
+                    adjustMapBounds();
+                    
+                    console.log('✅ Map auto-centered successfully');
+                } catch (error) {
+                    console.error('❌ Error auto-centering map:', error);
+                }
+            } else {
+                console.warn('⚠️ Map or hotel marker not available for auto-centering');
+            }
+            
             // Always update places list in split-screen view
             updatePlacesList();
         }
@@ -6771,6 +6806,51 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             window.open(mapsUrl, '_blank');
         }
 
+        function forceMapRefresh() {
+            console.log('🔄 Force refreshing map to hotel location...');
+            console.log('📍 Current HOTEL_LOCATION:', HOTEL_LOCATION);
+            
+            if (!map) {
+                console.warn('❌ Map not available for refresh');
+                alert('Map not loaded yet. Please wait for the map to initialize.');
+                return;
+            }
+            
+            if (!hotelMarker) {
+                console.warn('❌ Hotel marker not available for refresh');
+                // Try to recreate hotel marker
+                addHotelMarker();
+            }
+            
+            try {
+                // Force map to center on hotel location
+                map.setCenter(HOTEL_LOCATION);
+                
+                // Update hotel marker position
+                if (hotelMarker) {
+                    hotelMarker.setPosition(HOTEL_LOCATION);
+                }
+                
+                // Set appropriate zoom
+                map.setZoom(14);
+                
+                // Force map resize/refresh
+                google.maps.event.trigger(map, 'resize');
+                
+                // Update info window
+                if (hotelInfoWindow) {
+                    hotelInfoWindow.setContent(generateHotelInfoContent());
+                }
+                
+                console.log('✅ Force map refresh completed');
+                alert('✅ Map refreshed to hotel location!');
+                
+            } catch (error) {
+                console.error('❌ Error during force refresh:', error);
+                alert('❌ Map refresh failed: ' + error.message);
+            }
+        }
+
         // Hotel Location Update Functions
         function extractCoordinatesFromGoogleMapsUrl(url) {
             console.log('Extracting coordinates from URL:', url);
@@ -7060,14 +7140,79 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     locationDescription.textContent = `Discover restaurants, landmarks, coffee shops & culture near ${fallbackAddress}`;
                 }
                 
-                // Update map if it exists
+                // Update map if it exists - with comprehensive debugging
+                console.log('🗺️ Attempting to update map...');
+                console.log('📍 New HOTEL_LOCATION:', HOTEL_LOCATION);
+                console.log('🗺️ Map exists?', !!map);
+                console.log('📌 Hotel marker exists?', !!hotelMarker);
+                console.log('ℹ️ Hotel info window exists?', !!hotelInfoWindow);
+                
                 if (map && hotelMarker) {
-                    map.setCenter(HOTEL_LOCATION);
-                    hotelMarker.setPosition(HOTEL_LOCATION);
-                    map.setZoom(14);
+                    console.log('✅ Map and hotel marker exist, updating...');
                     
-                    // Update hotel marker info window with new dynamic links
-                    hotelInfoWindow.setContent(generateHotelInfoContent());
+                    try {
+                        // Update map center
+                        console.log('🎯 Setting map center to:', HOTEL_LOCATION);
+                        map.setCenter(HOTEL_LOCATION);
+                        
+                        // Update hotel marker position
+                        console.log('📌 Moving hotel marker to:', HOTEL_LOCATION);
+                        hotelMarker.setPosition(HOTEL_LOCATION);
+                        
+                        // Set zoom level
+                        console.log('🔍 Setting zoom to 14');
+                        map.setZoom(14);
+                        
+                        // Update hotel marker info window with new dynamic links
+                        if (hotelInfoWindow) {
+                            console.log('ℹ️ Updating hotel info window content');
+                            hotelInfoWindow.setContent(generateHotelInfoContent());
+                        }
+                        
+                        console.log('✅ Map update completed successfully!');
+                        
+                        // Force map refresh in case of display issues
+                        setTimeout(() => {
+                            console.log('🔄 Triggering map refresh...');
+                            google.maps.event.trigger(map, 'resize');
+                            map.setCenter(HOTEL_LOCATION);
+                        }, 100);
+                        
+                    } catch (mapError) {
+                        console.error('❌ Error during map update:', mapError);
+                        alert('Map update failed: ' + mapError.message);
+                    }
+                } else {
+                    console.warn('⚠️ Cannot update map:');
+                    console.warn('   Map exists?', !!map);
+                    console.warn('   Hotel marker exists?', !!hotelMarker);
+                    
+                    if (!map) {
+                        console.warn('❌ Map not initialized. Attempting to initialize...');
+                        // Try to initialize map if it doesn't exist
+                        if (typeof google !== 'undefined' && google.maps) {
+                            console.log('🔄 Google Maps API available, initializing...');
+                            initializeGoogleMap();
+                            
+                            // Retry map update after initialization
+                            setTimeout(() => {
+                                console.log('🔄 Retrying map update after initialization...');
+                                if (map && hotelMarker) {
+                                    map.setCenter(HOTEL_LOCATION);
+                                    hotelMarker.setPosition(HOTEL_LOCATION);
+                                    map.setZoom(14);
+                                    if (hotelInfoWindow) {
+                                        hotelInfoWindow.setContent(generateHotelInfoContent());
+                                    }
+                                    console.log('✅ Map update retry successful!');
+                                } else {
+                                    console.error('❌ Map still not available after initialization attempt');
+                                }
+                            }, 1000);
+                        } else {
+                            console.error('❌ Google Maps API not available');
+                        }
+                    }
                 }
                 
                 // Clear existing places so user knows to reload
