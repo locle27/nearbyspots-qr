@@ -6775,11 +6775,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 
                 // Gallery images debugging and visibility fix
                 console.log('📸 Checking gallery images...');
-                const galleryImages = modal.querySelectorAll('.gallery-image');
-                console.log(`📸 Found ${galleryImages.length} gallery images in DOM`);
+                const allGalleryImgs = modal.querySelectorAll('.gallery-image');
+                console.log(`📸 Found ${allGalleryImgs.length} gallery images in DOM`);
                 
                 // Force images to be visible
-                galleryImages.forEach((img, index) => {
+                allGalleryImgs.forEach((img, index) => {
                     console.log(`📸 Image ${index + 1}:`, {
                         src: img.src,
                         style: img.style.cssText,
@@ -10677,7 +10677,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
 
     <!-- Load Google Maps API with Geometry Library -->
     <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAVdAZdO0tjOSoNImELNfi5HtZVzitN3Y4&libraries=geometry&callback=initMap">
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAVdAZdO0tjOSoNImELNfi5HtZVzitN3Y4&libraries=geometry&loading=async&callback=initMap">
     </script>
 </body>
 </html>
