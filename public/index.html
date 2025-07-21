@@ -6518,14 +6518,13 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     const imageId = `gallery-uploaded-${timestamp}-${index}`;
                     return `
                         <div class="gallery-image-container" id="container-${imageId}">
-                            <img class="gallery-image" 
+                            <img class="gallery-image clickable-gallery-image" 
                                  id="${imageId}"
                                  src="${uploadedImage.dataUrl}" 
                                  alt="${place.name}" 
                                  data-place-id="${place.id}" 
                                  data-image-index="uploaded-${index}" 
-                                 class="gallery-image clickable-gallery-image" 
-                                 style="cursor: pointer; display: block;">
+                                 style="cursor: pointer; width: 100%; height: 100%; object-fit: cover; display: block;">
                         </div>
                     `;
                 });
@@ -6547,25 +6546,18 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         const errorId = `error-${timestamp}-${index}`;
                         return `
                             <div class="gallery-image-container" id="container-${imageId}">
-                                <div class="gallery-loading" id="${loadingId}">
-                                    <div class="loading-spinner"></div>
-                                    <div class="loading-text">Loading...</div>
-                                </div>
-                                <img class="gallery-image" 
+                                <img class="gallery-image clickable-gallery-image" 
                                      id="${imageId}"
-                                     src="${fallbackImage}" 
+                                     src="${photoUrl}" 
                                      data-real-src="${photoUrl}" 
                                      data-loading-id="${loadingId}"
                                      data-error-id="${errorId}"
                                      alt="${place.name}" 
                                      data-place-id="${place.id}" 
                                      data-image-index="photo-${index}" 
-                                     class="gallery-image clickable-gallery-image" 
-                                     style="cursor: pointer; display: none;">
-                                <div class="gallery-error" id="${errorId}" style="display: none;">
-                                    <div class="error-icon">❌</div>
-                                    <div class="error-text">Failed to load</div>
-                                </div>
+                                     style="cursor: pointer; width: 100%; height: 100%; object-fit: cover;"
+                                     onload="this.style.opacity = '1';"
+                                     onerror="this.src='${fallbackImage}'; this.style.opacity = '0.8';">
                             </div>
                         `;
                     }
@@ -6749,8 +6741,8 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     });
                 });
                 
-                // Load gallery images with proper error handling
-                loadGalleryImages(place);
+                // Gallery images are now loaded directly with src - no need for complex loading system
+                console.log('📸 Gallery images loaded directly');
             }, 100);
         }
         
@@ -7689,19 +7681,31 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             // Enhanced directions button detection
             else if (e.target.classList.contains('directions-btn') || e.target.classList.contains('marker-directions-btn') || (e.target.classList.contains('btn-action') && e.target.classList.contains('directions-btn')) || e.target.textContent?.includes('🗺️')) {
                 console.log('🔍 FALLBACK: Directions button clicked:', e.target);
+                console.log('🔍 Element details:', {
+                    classList: e.target.classList.toString(),
+                    dataset: e.target.dataset,
+                    textContent: e.target.textContent
+                });
+                
                 const placeId = e.target.dataset.placeId || e.target.closest('[data-place-id]')?.dataset.placeId;
+                console.log('🔑 Place ID found:', placeId);
+                
                 if (placeId) {
                     const placeData = placeDataStore.get(placeId);
+                    console.log('🗄️ Place data from store:', !!placeData, placeData?.name);
+                    
                     if (placeData) {
-                        console.log('🔍 FALLBACK: Opening directions for:', placeData.name);
+                        console.log('✅ FALLBACK: Opening directions for:', placeData.name);
                         e.stopPropagation();
                         e.preventDefault();
                         openDirections(placeData.location.latitude, placeData.location.longitude, placeData.name);
                     } else {
-                        console.error('❌ FALLBACK: Place data not found:', placeId);
+                        console.error('❌ FALLBACK: Place data not found in store for ID:', placeId);
+                        console.error('❌ Available place IDs in store:', Array.from(placeDataStore.keys()));
                     }
                 } else {
                     console.error('❌ FALLBACK: No place ID found on button');
+                    console.error('❌ Element attributes:', e.target.attributes);
                 }
             } else if (e.target.classList.contains('share-btn') || (e.target.classList.contains('btn-action') && e.target.classList.contains('share-btn'))) {
                 console.log('🔍 FALLBACK: Share button clicked:', e.target);
