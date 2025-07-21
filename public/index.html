@@ -5787,9 +5787,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         <p style="margin: 2px 0; color: #1976D2; font-weight: bold; font-size: 0.8rem;">🚶 ${place.distance}m away</p>
                         ${place.rating > 0 ? `<p style="margin: 2px 0; color: #ff9800; font-weight: bold; font-size: 0.8rem;">⭐ ${place.rating.toFixed(1)}</p>` : ''}
                         <button class="marker-directions-btn" 
-                                data-lat="${place.location.latitude}" 
-                                data-lng="${place.location.longitude}" 
-                                data-place-name="${place.name}" 
+                                data-place-id="${place.id}" 
                                 style="background: #1976D2; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; margin-top: 6px; width: 100%;">
                             🗺️ Directions
                         </button>
@@ -5817,6 +5815,25 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             placeMarkerMap.set(place.id, marker);
             
             placeMarkers.push(marker);
+            
+            // Add event listener for info window directions button (when clicked)
+            google.maps.event.addListener(infoWindow, 'domready', function() {
+                const markerDirectionsBtn = document.querySelector('.marker-directions-btn[data-place-id="' + place.id + '"]');
+                if (markerDirectionsBtn && !markerDirectionsBtn.hasListener) {
+                    console.log('✅ Adding marker directions listener for:', place.name);
+                    markerDirectionsBtn.addEventListener('click', function() {
+                        const placeId = this.dataset.placeId;
+                        const placeData = placeDataStore.get(placeId);
+                        if (placeData) {
+                            console.log('🗺️ Marker - Opening directions for:', placeData.name);
+                            openDirections(placeData.location.latitude, placeData.location.longitude, placeData.name);
+                        } else {
+                            console.error('❌ Place data not found for marker directions:', placeId);
+                        }
+                    });
+                    markerDirectionsBtn.hasListener = true; // Prevent duplicate listeners
+                }
+            });
         }
 
         function updateStats() {
@@ -6371,8 +6388,8 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                                  id="${imageId}"
                                  src="${uploadedImage.dataUrl}" 
                                  alt="${place.name}" 
-                                 data-image-url="${uploadedImage.dataUrl}" 
-                                 data-place-name="${place.name}" 
+                                 data-place-id="${place.id}" 
+                                 data-image-index="uploaded-${index}" 
                                  class="gallery-image clickable-gallery-image" 
                                  style="cursor: pointer; display: block;">
                         </div>
@@ -6407,8 +6424,8 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                                      data-loading-id="${loadingId}"
                                      data-error-id="${errorId}"
                                      alt="${place.name}" 
-                                     data-image-url="${photoUrl}" 
-                                     data-place-name="${place.name}" 
+                                     data-place-id="${place.id}" 
+                                     data-image-index="photo-${index}" 
                                      class="gallery-image clickable-gallery-image" 
                                      style="cursor: pointer; display: none;">
                                 <div class="gallery-error" id="${errorId}" style="display: none;">
@@ -6513,12 +6530,10 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 </div>
                 <div class="place-actions">
                     <button class="btn-action directions-btn" 
-                            data-lat="${place.location.latitude}" 
-                            data-lng="${place.location.longitude}" 
-                            data-place-name="${place.name}">
+                            data-place-id="${place.id}">
                         🗺️ Get Directions
                     </button>
-                    ${place.websiteUri ? `<a href="${place.websiteUri}" target="_blank" class="btn-action">🌐 Website</a>` : `<button class="btn-action share-btn" data-lat="${place.location.latitude}" data-lng="${place.location.longitude}" data-place-name="${place.name}">📤 Share</button>`}
+                    ${place.websiteUri ? `<a href="${place.websiteUri}" target="_blank" class="btn-action">🌐 Website</a>` : `<button class="btn-action share-btn" data-place-id="${place.id}">📤 Share</button>`}
                 </div>
                 ${galleryHtml}
             `;
@@ -6529,38 +6544,66 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             
             // Add safe event listeners for modal buttons (prevents onclick attribute issues)
             setTimeout(() => {
+                console.log('🛠️ Adding modal event listeners for place:', place.id);
+                
                 // Directions button handler
                 const directionsBtn = modal.querySelector('.directions-btn');
                 if (directionsBtn) {
+                    console.log('✅ Found directions button, adding listener');
                     directionsBtn.addEventListener('click', function() {
-                        const lat = parseFloat(this.dataset.lat);
-                        const lng = parseFloat(this.dataset.lng);
-                        const placeName = this.dataset.placeName;
-                        console.log('🗺️ Opening directions for:', placeName);
-                        openDirections(lat, lng, placeName);
+                        const placeId = this.dataset.placeId;
+                        const placeData = placeDataStore.get(placeId);
+                        if (placeData) {
+                            console.log('🗺️ Opening directions for:', placeData.name);
+                            openDirections(placeData.location.latitude, placeData.location.longitude, placeData.name);
+                        } else {
+                            console.error('❌ Place data not found for directions:', placeId);
+                        }
                     });
+                } else {
+                    console.error('❌ Directions button not found');
                 }
                 
                 // Share button handler
                 const shareBtn = modal.querySelector('.share-btn');
                 if (shareBtn) {
+                    console.log('✅ Found share button, adding listener');
                     shareBtn.addEventListener('click', function() {
-                        const lat = parseFloat(this.dataset.lat);
-                        const lng = parseFloat(this.dataset.lng);
-                        const placeName = this.dataset.placeName;
-                        console.log('📤 Sharing place:', placeName);
-                        sharePlace(placeName, lat, lng);
+                        const placeId = this.dataset.placeId;
+                        const placeData = placeDataStore.get(placeId);
+                        if (placeData) {
+                            console.log('📤 Sharing place:', placeData.name);
+                            sharePlace(placeData.name, placeData.location.latitude, placeData.location.longitude);
+                        } else {
+                            console.error('❌ Place data not found for sharing:', placeId);
+                        }
                     });
+                } else {
+                    console.log('🔗 Share button not found (likely website link)');
                 }
                 
                 // Gallery image click handlers
                 const galleryImages = modal.querySelectorAll('.clickable-gallery-image');
+                console.log(`🖼️ Found ${galleryImages.length} gallery images`);
                 galleryImages.forEach(img => {
                     img.addEventListener('click', function() {
-                        const imageUrl = this.dataset.imageUrl;
-                        const placeName = this.dataset.placeName;
-                        console.log('🖼️ Opening full image for:', placeName);
-                        openFullImage(imageUrl, placeName);
+                        const placeId = this.dataset.placeId;
+                        const imageIndex = this.dataset.imageIndex;
+                        const placeData = placeDataStore.get(placeId);
+                        if (placeData) {
+                            let imageUrl;
+                            if (imageIndex.startsWith('uploaded-')) {
+                                const index = parseInt(imageIndex.replace('uploaded-', ''));
+                                imageUrl = placeData.images[index + 1]?.dataUrl; // +1 because we skip first image
+                            } else {
+                                // For photo images, get the real src
+                                imageUrl = this.dataset.realSrc || this.src;
+                            }
+                            console.log('🖼️ Opening full image for:', placeData.name);
+                            openFullImage(imageUrl, placeData.name);
+                        } else {
+                            console.error('❌ Place data not found for gallery image:', placeId);
+                        }
                     });
                 });
                 
@@ -6887,6 +6930,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
         
         function openFullImage(imageUrl, placeName) {
+            console.log('🖼️ openFullImage called with:', { imageUrl, placeName });
             const fullImageWindow = window.open('', '_blank');
             fullImageWindow.document.write(`
                 <html>
@@ -6905,6 +6949,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         function sharePlace(placeName, latitude, longitude) {
+            console.log('📤 sharePlace called with:', { placeName, latitude, longitude });
             const shareText = `Check out ${placeName}! 📍`;
             const shareUrl = `https://maps.google.com/maps?q=${latitude},${longitude}`;
             
@@ -7402,6 +7447,57 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             window.open(url, '_blank');
         }
 
+        // Global error handler to catch JavaScript errors
+        window.addEventListener('error', function(e) {
+            console.error('❌ JavaScript Error:', e.error);
+            console.error('❌ Error details:', { message: e.message, filename: e.filename, lineno: e.lineno });
+        });
+        
+        // Global fallback click handler for debugging button issues
+        document.addEventListener('click', function(e) {
+            console.log('👆 Click detected on:', e.target.tagName, e.target.className);
+            if (e.target.classList.contains('directions-btn') || e.target.classList.contains('marker-directions-btn')) {
+                console.log('🔍 FALLBACK: Directions button clicked:', e.target);
+                const placeId = e.target.dataset.placeId;
+                if (placeId) {
+                    const placeData = placeDataStore.get(placeId);
+                    if (placeData) {
+                        console.log('🔍 FALLBACK: Opening directions for:', placeData.name);
+                        openDirections(placeData.location.latitude, placeData.location.longitude, placeData.name);
+                    } else {
+                        console.error('❌ FALLBACK: Place data not found:', placeId);
+                    }
+                } else {
+                    console.error('❌ FALLBACK: No place ID found on button');
+                }
+            } else if (e.target.classList.contains('share-btn')) {
+                console.log('🔍 FALLBACK: Share button clicked:', e.target);
+                const placeId = e.target.dataset.placeId;
+                if (placeId) {
+                    const placeData = placeDataStore.get(placeId);
+                    if (placeData) {
+                        console.log('🔍 FALLBACK: Sharing place:', placeData.name);
+                        sharePlace(placeData.name, placeData.location.latitude, placeData.location.longitude);
+                    } else {
+                        console.error('❌ FALLBACK: Place data not found for share:', placeId);
+                    }
+                } else {
+                    console.error('❌ FALLBACK: No place ID found on share button');
+                }
+            } else if (e.target.classList.contains('clickable-gallery-image')) {
+                console.log('🔍 FALLBACK: Gallery image clicked:', e.target);
+                const placeId = e.target.dataset.placeId;
+                if (placeId) {
+                    const placeData = placeDataStore.get(placeId);
+                    if (placeData) {
+                        const imageUrl = e.target.dataset.realSrc || e.target.src;
+                        console.log('🔍 FALLBACK: Opening image:', imageUrl);
+                        openFullImage(imageUrl, placeData.name);
+                    }
+                }
+            }
+        });
+        
         // Global initMap function for Google Maps callback
         window.initMap = function() {
             console.log('🗺️ Google Maps API callback triggered');
@@ -10176,9 +10272,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                                     👁️ Details
                                 </button>
                                 <button class="search-table-btn secondary directions-btn" 
-                                        data-lat="${place.location.latitude}" 
-                                        data-lng="${place.location.longitude}" 
-                                        data-place-name="${place.name}" 
+                                        data-place-id="${place.id}" 
                                         onclick="event.stopPropagation();">
                                     🗺️ Directions
                                 </button>
@@ -10203,14 +10297,18 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             // Add safe event listeners for search table directions buttons
             setTimeout(() => {
                 const searchDirectionsBtns = searchResultsTable.querySelectorAll('.directions-btn');
+                console.log(`🔍 Found ${searchDirectionsBtns.length} search directions buttons`);
                 searchDirectionsBtns.forEach(btn => {
                     btn.addEventListener('click', function(e) {
                         e.stopPropagation();
-                        const lat = parseFloat(this.dataset.lat);
-                        const lng = parseFloat(this.dataset.lng);
-                        const placeName = this.dataset.placeName;
-                        console.log('🗺️ Search table - Opening directions for:', placeName);
-                        openDirections(lat, lng, placeName);
+                        const placeId = this.dataset.placeId;
+                        const placeData = placeDataStore.get(placeId);
+                        if (placeData) {
+                            console.log('🗺️ Search table - Opening directions for:', placeData.name);
+                            openDirections(placeData.location.latitude, placeData.location.longitude, placeData.name);
+                        } else {
+                            console.error('❌ Place data not found for search directions:', placeId);
+                        }
                     });
                 });
             }, 50);
