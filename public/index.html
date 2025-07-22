@@ -1367,6 +1367,7 @@
             position: relative;
             width: 100%;
             height: 100vh; /* Full screen on mobile */
+            max-height: 100vh; /* Ensure it doesn't exceed viewport */
             background: white;
             border-radius: 20px 20px 0 0;
             overflow: hidden;
@@ -1483,6 +1484,7 @@
             padding: 0;
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             scroll-behavior: smooth;
             display: flex;
             flex-direction: column;
@@ -1491,6 +1493,39 @@
             position: relative;
             z-index: 1;
             min-height: 0; /* Allow proper flexbox sizing */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            height: calc(100vh - 80px); /* Account for header height */
+            max-height: calc(100vh - 80px);
+        }
+
+        /* Mobile-specific scrolling improvements */
+        @media (max-width: 767px) {
+            .image-modal-body {
+                /* Enhanced mobile scrolling */
+                scroll-padding-top: 20px;
+                scrollbar-width: none; /* Hide scrollbar on Firefox */
+                -ms-overflow-style: none; /* Hide scrollbar on IE/Edge */
+            }
+            
+            .image-modal-body::-webkit-scrollbar {
+                display: none; /* Hide scrollbar on WebKit browsers */
+            }
+            
+            /* Ensure all content sections can scroll properly */
+            .place-details-full * {
+                max-width: 100% !important;
+                overflow-wrap: break-word !important;
+            }
+            
+            /* Photo galleries should not interfere with modal scrolling */
+            .photo-gallery {
+                overflow: visible !important;
+                height: auto !important;
+            }
+            
+            .photo-grid {
+                overflow: visible !important;
+            }
         }
 
         /* Desktop styles for larger screens */
@@ -2831,9 +2866,12 @@
             /* Enhanced modal content spacing */
             .place-details-full {
                 padding: 20px !important; /* Optimized padding */
-                padding-bottom: 100px !important; /* Add bottom padding for sticky buttons */
+                padding-bottom: 120px !important; /* Add bottom padding for sticky buttons */
                 flex: none !important; /* Remove flex to allow natural scrolling */
                 display: block !important; /* Use block layout for better scrolling */
+                min-height: auto !important; /* Allow content to size naturally */
+                height: auto !important; /* Auto height for proper content flow */
+                overflow: visible !important; /* Ensure content is not clipped */
             }
             
             .place-main-image {
@@ -2990,8 +3028,11 @@
             /* Enhanced modal content for phones - optimized for full screen */
             .place-details-full {
                 padding: 16px !important; /* Optimized for full screen */
-                padding-bottom: 100px !important; /* More space for larger action buttons */
+                padding-bottom: 120px !important; /* More space for larger action buttons */
                 height: auto !important; /* Allow content to flow naturally */
+                min-height: auto !important; /* Ensure natural content sizing */
+                overflow: visible !important; /* Prevent content clipping */
+                display: block !important; /* Block layout for better mobile flow */
             }
 
             .place-main-image {
