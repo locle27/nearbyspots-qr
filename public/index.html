@@ -3651,12 +3651,99 @@
             box-shadow: 0 2px 6px rgba(156, 39, 176, 0.3);
         }
 
-        /* Mobile responsiveness */
+        /* Compact Mobile Place List - Show 4-5 places on screen */
         @media (max-width: 768px) {
-            .split-container {
-                margin: 10px;
+            /* Compact place items for mobile efficiency */
+            .place-item {
+                padding: 8px !important; /* Reduced from 12px */
+                margin-bottom: 6px !important; /* Reduced from 12px */
+                gap: 10px !important; /* Reduced from 12px */
+                min-height: 38px !important; /* Reduced from 44px */
+                border-radius: 6px !important; /* Slightly smaller radius */
             }
             
+            /* Smaller images for mobile */
+            .place-image,
+            .place-image-placeholder {
+                width: 50px !important; /* Reduced from 70px */
+                height: 50px !important; /* Reduced from 70px */
+                min-height: 50px !important;
+                max-width: 50px !important;
+                max-height: 50px !important;
+                border-radius: 5px !important;
+            }
+            
+            /* Optimized text sizes for mobile */
+            .place-name {
+                font-size: 0.9rem !important; /* Reduced from 1rem */
+                margin-bottom: 2px !important; /* Reduced from 4px */
+                line-height: 1.2 !important; /* Tighter line height */
+                font-weight: 600 !important;
+            }
+            
+            .place-address {
+                font-size: 0.75rem !important; /* Reduced from 0.85rem */
+                margin-bottom: 3px !important; /* Reduced from 6px */
+                line-height: 1.2 !important;
+                color: #777 !important; /* Slightly lighter for hierarchy */
+            }
+            
+            .place-hours,
+            .place-hours-placeholder {
+                font-size: 0.7rem !important; /* Reduced from 0.8rem */
+                margin-bottom: 3px !important; /* Reduced from 6px */
+                padding: 1px 4px !important; /* Reduced padding */
+                line-height: 1.2 !important;
+            }
+            
+            .place-rating {
+                font-size: 0.7rem !important; /* Reduced from 0.8rem */
+                font-weight: 600 !important;
+            }
+            
+            .place-distance {
+                font-size: 0.7rem !important; /* Smaller distance text */
+                color: #666 !important;
+            }
+            
+            /* Compact meta information */
+            .place-meta {
+                gap: 6px !important; /* Reduced from 10px */
+                margin-top: 2px !important;
+            }
+            
+            /* Smaller action buttons for mobile */
+            .view-details-btn,
+            .edit-place-btn {
+                padding: 6px 10px !important; /* Reduced from 8px 12px */
+                font-size: 0.7rem !important; /* Reduced from 0.8rem */
+                min-height: 36px !important; /* Reduced from 44px */
+                min-width: 36px !important; /* Reduced from 44px */
+                border-radius: 5px !important;
+            }
+            
+            /* Optimize place actions container */
+            .place-actions {
+                gap: 6px !important; /* Reduced from 8px */
+                right: 10px !important; /* Reduced from 15px */
+            }
+            
+            /* Compact container margins */
+            .split-container {
+                margin: 10px !important;
+            }
+            
+            /* Reduce split content padding for more list space */
+            .split-content {
+                padding: 12px !important; /* Reduced padding for more space */
+            }
+            
+            /* Optimize place image placeholder icon */
+            .place-image-placeholder {
+                font-size: 1.4rem !important; /* Reduced from 1.8rem */
+            }
+            
+            /* Layout adjustments for mobile */
             .split-content {
                 flex-direction: column;
                 height: auto;
@@ -3669,44 +3756,12 @@
             .list-panel {
                 border-right: none;
                 border-bottom: 2px solid #e9ecef;
-                max-height: 400px;
+                max-height: 400px; /* Maintain scrollable list height */
+                min-height: 300px; /* Ensure enough space for 4-5 places */
             }
             
             .map-panel {
                 height: 300px;
-            }
-            
-            .map-container-split {
-                height: 300px;
-            }
-            
-            .place-item {
-                flex-direction: row;
-                text-align: left;
-            }
-            
-            .place-image, .place-image-placeholder {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .place-meta {
-                justify-content: flex-start;
-            }
-
-            .admin-panel {
-                width: 95%;
-                max-height: 90vh;
-            }
-
-            .form-row {
-                flex-direction: column;
-                gap: 0;
-            }
-
-            .admin-toggle {
-                bottom: 10px;
-                right: 10px;
             }
         }
 
