@@ -4267,13 +4267,41 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         let placeMarkerMap = new Map(); // Map place IDs to markers for cross-tab interaction
         let placeDataStore = new Map(); // Store place data for reliable button clicks
 
-        // Hotel location
+        // Hotel location - FIXED to Hanoi Old Quarter
         const HOTEL_LOCATION = {
             lat: 21.034087,
             lng: 105.85114,
             name: "Old Quarter Hotel",
             address: "118 Hang Bac, Hoan Kiem, Hanoi, Vietnam"
         };
+        
+        // Function to verify and fix hotel location
+        function verifyHotelLocation() {
+            console.log('🏨 Current HOTEL_LOCATION:', HOTEL_LOCATION);
+            
+            // Check if location is in Hanoi (approximate bounds)
+            const isInHanoi = HOTEL_LOCATION.lat >= 20.9 && HOTEL_LOCATION.lat <= 21.2 && 
+                             HOTEL_LOCATION.lng >= 105.7 && HOTEL_LOCATION.lng <= 105.95;
+            
+            console.log('📍 Location is in Hanoi bounds:', isInHanoi);
+            
+            if (!isInHanoi) {
+                console.log('⚠️ Hotel location not in Hanoi, resetting to Old Quarter...');
+                HOTEL_LOCATION.lat = 21.034087;
+                HOTEL_LOCATION.lng = 105.85114;
+                HOTEL_LOCATION.name = "Old Quarter Hotel";
+                HOTEL_LOCATION.address = "118 Hang Bac, Hoan Kiem, Hanoi, Vietnam";
+                
+                // Update map center if map exists
+                if (typeof google !== 'undefined' && map) {
+                    console.log('🗺️ Recentering map to Hanoi...');
+                    map.setCenter(HOTEL_LOCATION);
+                    map.setZoom(15);
+                }
+            }
+            
+            return isInHanoi;
+        }
 
         // Category colors
         const CATEGORY_COLORS = {
@@ -5884,6 +5912,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         function updateMapMarkers() {
+            // Verify hotel location is still correct
+            verifyHotelLocation();
+            
             // Check if Google Maps is available and map is initialized
             if (typeof google === 'undefined' || !map) {
                 console.log('Google Maps not ready yet, skipping marker update');
@@ -6682,31 +6713,8 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 console.log('🖼️ First gallery image HTML sample:', allGalleryImages[0].substring(0, 200) + '...');
             }
             
-            // Generate gallery HTML - FORCE TEST MODE FOR DEBUGGING
-            console.log('🖼️ FORCING TEST MODE - Showing visible test images');
-            // ULTRA SIMPLE TEXT APPROACH - Maximum visibility
-            galleryHtml = `
-                <div class="photo-gallery">
-                    <h1>==========================================</h1>
-                    <h1>📸 GALLERY IS WORKING! 📸</h1>
-                    <h1>==========================================</h1>
-                    <br><br>
-                    <h2>🖼️🖼️🖼️ IMAGE 1 🖼️🖼️🖼️</h2>
-                    <h3 onclick="alert('SUCCESS! Image 1 clicked!')">[ CLICK HERE FOR IMAGE 1 POPUP ]</h3>
-                    <p>👆 Tap the text above to test click! 👆</p>
-                    <br><br>
-                    <h2>📷📷📷 IMAGE 2 📷📷📷</h2>
-                    <h3 onclick="alert('SUCCESS! Image 2 clicked!')">[ CLICK HERE FOR IMAGE 2 POPUP ]</h3>
-                    <p>👆 Tap the text above to test click! 👆</p>
-                    <br><br>
-                    <h1>==========================================</h1>
-                    <h2>✅ GALLERY PHOTOS ARE NOW WORKING! ✅</h2>
-                    <h1>==========================================</h1>
-                </div>
-            `;
-            
-            // ORIGINAL CODE - commented out for debugging
-            /*if (allGalleryImages.length > 0) {
+            // Generate gallery HTML
+            if (allGalleryImages.length > 0) {
                 const totalImages = (place.images ? place.images.length - 1 : 0) + (place.photos ? place.photos.length - (place.images && place.images.length > 0 ? 0 : 1) : 0);
                 galleryHtml = `
                     <div class="photo-gallery">
@@ -6745,7 +6753,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         </div>
                     </div>
                 `;
-            }*/
+            }
             
             // Create professional mobile modal content
             modalBody.innerHTML = `
@@ -8275,6 +8283,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
 
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
+            // Verify hotel location is set correctly
+            verifyHotelLocation();
+            
             // updateLoadButtonText(); // Load button removed, skip this step
             updateSelectedCategoriesDisplay(); // Initialize category display
             updatePlacesList(); // Initialize places list
