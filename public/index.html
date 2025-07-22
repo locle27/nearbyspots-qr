@@ -3964,7 +3964,7 @@
                 overflow: visible !important;
             }
             
-            /* Compact list panel on LEFT */
+            /* Compact list panel on LEFT - with visible scrollbar */
             .list-panel {
                 width: 50% !important; /* Left half */
                 border-right: 2px solid #e9ecef !important;
@@ -3972,11 +3972,31 @@
                 height: 100vh !important;
                 max-height: none !important;
                 min-height: none !important;
-                overflow-y: auto !important;
+                overflow-y: scroll !important; /* Always show scrollbar */
                 overflow-x: hidden !important;
                 -webkit-overflow-scrolling: touch !important;
                 background: white !important;
                 padding: 8px !important;
+            }
+            
+            /* Enhanced scrollbar styling */
+            .list-panel::-webkit-scrollbar {
+                width: 8px !important;
+            }
+            
+            .list-panel::-webkit-scrollbar-track {
+                background: #f1f1f1 !important;
+                border-radius: 4px !important;
+            }
+            
+            .list-panel::-webkit-scrollbar-thumb {
+                background: #c1c1c1 !important;
+                border-radius: 4px !important;
+                border: 1px solid #f1f1f1 !important;
+            }
+            
+            .list-panel::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8 !important;
             }
             
             /* Map panel on RIGHT */
@@ -4597,12 +4617,100 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         let placeDataStore = new Map(); // Store place data for reliable button clicks
 
         // Hotel location - FIXED to Hanoi Old Quarter
-        const HOTEL_LOCATION = {
-            lat: 21.034087,
-            lng: 105.85114,
-            name: "Old Quarter Hotel",
-            address: "118 Hang Bac, Hoan Kiem, Hanoi, Vietnam"
-        };
+        // Load hotel location from localStorage with fallback to default
+        function loadHotelLocationFromStorage() {
+            const defaultLocation = {
+                lat: 21.034087,
+                lng: 105.85114,
+                name: "Old Quarter Hotel",
+                address: "118 Hang Bac, Hoan Kiem, Hanoi, Vietnam"
+            };
+            
+            try {
+                const saved = localStorage.getItem('hotel_location');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    console.log('📦 Loaded hotel location from localStorage:', parsed);
+                    return { ...defaultLocation, ...parsed };
+                }
+            } catch (error) {
+                console.warn('⚠️ Failed to load hotel location from localStorage:', error);
+            }
+            
+            console.log('🏨 Using default hotel location');
+            return defaultLocation;
+        }
+        
+        // Save hotel location to localStorage and optionally to server
+        function saveHotelLocationToStorage(location) {
+            try {
+                localStorage.setItem('hotel_location', JSON.stringify(location));
+                console.log('✅ Hotel location saved to localStorage:', location);
+                
+                // Also try to save to server for cross-device sync
+                saveHotelLocationToServer(location);
+            } catch (error) {
+                console.warn('⚠️ Failed to save hotel location to localStorage:', error);
+            }
+        }
+        
+        // Save to server for cross-device persistence
+        async function saveHotelLocationToServer(location) {
+            try {
+                const response = await fetch('/api/save-hotel-location', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(location)
+                });
+                
+                if (response.ok) {
+                    console.log('☁️ Hotel location saved to server for cross-device sync');
+                } else {
+                    console.log('📱 Server persistence not available, using localStorage only');
+                }
+            } catch (error) {
+                console.log('📱 Server persistence not available, using localStorage only');
+            }
+        }
+        
+        // Load from server for cross-device sync (optional)
+        async function loadHotelLocationFromServer() {
+            try {
+                const response = await fetch('/api/get-hotel-location');
+                if (response.ok) {
+                    const serverLocation = await response.json();
+                    console.log('☁️ Loaded hotel location from server:', serverLocation);
+                    return serverLocation;
+                }
+            } catch (error) {
+                console.log('📱 Server location not available, using localStorage');
+            }
+            return null;
+        }
+        
+        // Initialize HOTEL_LOCATION with persistence
+        const HOTEL_LOCATION = loadHotelLocationFromStorage();
+        
+        // PIN Protection System
+        const ADMIN_PIN = '001022';
+        
+        function verifyAdminPIN(actionName = 'this action') {
+            const enteredPIN = prompt(`🔐 Admin Access Required\n\nEnter PIN to ${actionName}:`);
+            
+            if (enteredPIN === null) {
+                console.log('🚫 Admin action cancelled by user');
+                return false;
+            }
+            
+            if (enteredPIN !== ADMIN_PIN) {
+                alert('❌ Incorrect PIN. Access denied.');
+                console.log('🚫 Incorrect PIN entered for admin action');
+                return false;
+            }
+            
+            console.log('✅ Admin PIN verified successfully');
+            return true;
+        }
         
         // Function to verify and fix hotel location
         function verifyHotelLocation() {
@@ -5508,6 +5616,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
         
         async function addNewRecommendation() {
+            // 🔐 Require admin PIN for adding recommendations
+            if (!verifyAdminPIN('add new recommendation')) {
+                return;
+            }
+            
             // Prevent duplicate submissions
             if (isSubmitting) {
                 console.log('⚠️ Submission already in progress, ignoring duplicate request');
@@ -8156,6 +8269,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     document.getElementById('currentLocationText').textContent = `📍 Current: ${coordsText}`;
                 }
                 
+                // ✨ SAVE COORDINATES TO STORAGE FOR PERSISTENCE
+                saveHotelLocationToStorage(HOTEL_LOCATION);
+                
                 // Clear the URL input since we're using GPS
                 document.getElementById('hotelMapsUrl').value = '';
                 
@@ -8389,6 +8505,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     }
                 }
                 
+                // ✨ SAVE COORDINATES TO STORAGE FOR PERSISTENCE
+                saveHotelLocationToStorage(HOTEL_LOCATION);
+                
                 // Clear existing places so user knows to reload
                 clearAllPlaces();
                 
@@ -8586,8 +8705,32 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         // Initialize when page loads - with better timing and mobile support
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
             console.log('📱 Page loaded, checking for Google Maps API...');
+            
+            // 🌐 Try to load hotel location from server for cross-device sync
+            try {
+                const serverLocation = await loadHotelLocationFromServer();
+                if (serverLocation) {
+                    console.log('☁️ Updating HOTEL_LOCATION from server:', serverLocation);
+                    Object.assign(HOTEL_LOCATION, serverLocation);
+                    
+                    // Update UI elements with server location
+                    const currentLocationText = document.getElementById('currentLocationText');
+                    const locationDescription = document.getElementById('locationDescription');
+                    
+                    if (currentLocationText) {
+                        currentLocationText.textContent = `📍 Current: ${HOTEL_LOCATION.address}`;
+                    }
+                    if (locationDescription) {
+                        locationDescription.textContent = `Discover restaurants, landmarks, coffee shops & culture near ${HOTEL_LOCATION.address}`;
+                    }
+                    
+                    console.log('✅ Hotel location synced from server successfully');
+                }
+            } catch (error) {
+                console.log('📱 Server sync not available, using localStorage/default');
+            }
             
             // Check if Google Maps API is already loaded
             if (typeof google !== 'undefined' && google.maps) {
@@ -9332,6 +9475,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             // Prevent triggering the place click event
             event.stopPropagation();
             
+            // 🔐 Require admin PIN for delete access
+            if (!verifyAdminPIN('delete this recommendation')) {
+                return;
+            }
+            
             // Find the recommendation
             const recommendation = allPlaces.recommend?.find(rec => rec.id === recommendationId);
             if (!recommendation) {
@@ -9930,6 +10078,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         async function quickAddRecommendation() {
+            // 🔐 Require admin PIN for adding recommendations
+            if (!verifyAdminPIN('add new recommendation')) {
+                return;
+            }
+            
             if (!parsedData) {
                 alert('Please parse content first');
                 return;
@@ -10724,6 +10877,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         }
 
         function showEditPlaceModal(placeId) {
+            // 🔐 Require admin PIN for edit access
+            if (!verifyAdminPIN('edit place information')) {
+                return;
+            }
+            
             console.log('🔧 Opening edit modal for place ID:', placeId);
             
             // Find the place in search results or allPlaces
