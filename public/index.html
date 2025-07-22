@@ -3751,6 +3751,8 @@
             
             .split-panel {
                 max-width: 100%;
+                display: block !important; /* Ensure panels are visible */
+                overflow: visible !important;
             }
             
             .list-panel {
@@ -3762,6 +3764,19 @@
             
             .map-panel {
                 height: 300px;
+                display: block !important;
+                position: relative !important;
+                overflow: hidden !important;
+                background: #f5f5f5 !important; /* Fallback background to see if panel exists */
+            }
+            
+            /* Ensure map container inside panel has proper height */
+            .map-panel .map-container,
+            .map-panel .map-container-split,
+            .map-panel #map {
+                height: 100% !important;
+                width: 100% !important;
+                min-height: 300px !important;
             }
         }
 
