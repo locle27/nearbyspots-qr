@@ -1376,6 +1376,25 @@
             display: flex;
             flex-direction: column;
         }
+        
+        /* Mobile-specific modal behavior to preserve split layout */
+        @media (max-width: 768px) {
+            .image-modal {
+                position: fixed;
+                z-index: 4000; /* Higher z-index to ensure it shows above everything */
+            }
+            
+            .image-modal-content {
+                height: 85vh !important; /* Reduced height to show some background */
+                max-height: 85vh !important;
+                border-radius: 16px 16px 0 0 !important;
+            }
+            
+            /* Ensure modal doesn't completely cover the map */
+            .image-modal.show {
+                background: rgba(0,0,0,0.6) !important; /* Less opacity to show background */
+            }
+        }
 
         @keyframes slideUp {
             from {
@@ -3653,89 +3672,90 @@
 
         /* Compact Mobile Place List - Show 4-5 places on screen */
         @media (max-width: 768px) {
-            /* Compact place items for mobile efficiency */
+            /* Ultra-compact place items for mobile efficiency */
             .place-item {
-                padding: 8px !important; /* Reduced from 12px */
-                margin-bottom: 6px !important; /* Reduced from 12px */
-                gap: 10px !important; /* Reduced from 12px */
-                min-height: 38px !important; /* Reduced from 44px */
-                border-radius: 6px !important; /* Slightly smaller radius */
+                padding: 6px !important; /* Further reduced from 8px */
+                margin-bottom: 3px !important; /* Further reduced from 6px */
+                gap: 8px !important; /* Further reduced from 10px */
+                min-height: 32px !important; /* Further reduced from 38px */
+                border-radius: 4px !important; /* Smaller radius */
+                line-height: 1.1 !important; /* Tighter overall line height */
             }
             
-            /* Smaller images for mobile */
+            /* Ultra-compact images for mobile */
             .place-image,
             .place-image-placeholder {
-                width: 50px !important; /* Reduced from 70px */
-                height: 50px !important; /* Reduced from 70px */
-                min-height: 50px !important;
-                max-width: 50px !important;
-                max-height: 50px !important;
-                border-radius: 5px !important;
+                width: 40px !important; /* Further reduced from 50px */
+                height: 40px !important; /* Further reduced from 50px */
+                min-height: 40px !important;
+                max-width: 40px !important;
+                max-height: 40px !important;
+                border-radius: 4px !important;
             }
             
-            /* Optimized text sizes for mobile */
+            /* Ultra-optimized text sizes for mobile */
             .place-name {
-                font-size: 0.9rem !important; /* Reduced from 1rem */
-                margin-bottom: 2px !important; /* Reduced from 4px */
-                line-height: 1.2 !important; /* Tighter line height */
+                font-size: 0.85rem !important; /* Further reduced from 0.9rem */
+                margin-bottom: 1px !important; /* Minimal margin */
+                line-height: 1.1 !important; /* Tighter line height */
                 font-weight: 600 !important;
             }
             
             .place-address {
-                font-size: 0.75rem !important; /* Reduced from 0.85rem */
-                margin-bottom: 3px !important; /* Reduced from 6px */
-                line-height: 1.2 !important;
+                font-size: 0.7rem !important; /* Further reduced from 0.75rem */
+                margin-bottom: 1px !important; /* Minimal margin */
+                line-height: 1.1 !important;
                 color: #777 !important; /* Slightly lighter for hierarchy */
             }
             
             .place-hours,
             .place-hours-placeholder {
-                font-size: 0.7rem !important; /* Reduced from 0.8rem */
-                margin-bottom: 3px !important; /* Reduced from 6px */
-                padding: 1px 4px !important; /* Reduced padding */
-                line-height: 1.2 !important;
+                font-size: 0.65rem !important; /* Further reduced from 0.7rem */
+                margin-bottom: 1px !important; /* Minimal margin */
+                padding: 1px 3px !important; /* Further reduced padding */
+                line-height: 1.1 !important;
             }
             
             .place-rating {
-                font-size: 0.7rem !important; /* Reduced from 0.8rem */
+                font-size: 0.65rem !important; /* Further reduced from 0.7rem */
                 font-weight: 600 !important;
             }
             
             .place-distance {
-                font-size: 0.7rem !important; /* Smaller distance text */
+                font-size: 0.65rem !important; /* Further reduced from 0.7rem */
                 color: #666 !important;
             }
             
-            /* Compact meta information */
+            /* Ultra-compact meta information */
             .place-meta {
-                gap: 6px !important; /* Reduced from 10px */
-                margin-top: 2px !important;
+                gap: 4px !important; /* Further reduced from 6px */
+                margin-top: 1px !important; /* Minimal margin */
             }
             
-            /* Smaller action buttons for mobile */
+            /* Ultra-compact action buttons for mobile */
             .view-details-btn,
             .edit-place-btn {
-                padding: 6px 10px !important; /* Reduced from 8px 12px */
-                font-size: 0.7rem !important; /* Reduced from 0.8rem */
-                min-height: 36px !important; /* Reduced from 44px */
-                min-width: 36px !important; /* Reduced from 44px */
-                border-radius: 5px !important;
+                padding: 4px 8px !important; /* Further reduced from 6px 10px */
+                font-size: 0.65rem !important; /* Further reduced from 0.7rem */
+                min-height: 30px !important; /* Further reduced from 36px */
+                min-width: 30px !important; /* Further reduced from 36px */
+                border-radius: 4px !important; /* Smaller radius */
             }
             
             /* Optimize place actions container */
             .place-actions {
-                gap: 6px !important; /* Reduced from 8px */
-                right: 10px !important; /* Reduced from 15px */
+                gap: 4px !important; /* Further reduced from 6px */
+                right: 6px !important; /* Further reduced from 10px */
             }
             
             /* Compact container margins */
             .split-container {
-                margin: 10px !important;
+                margin: 5px !important; /* Further reduced from 10px */
             }
             
-            /* Reduce split content padding for more list space */
+            /* Minimize split content padding for maximum list space */
             .split-content {
-                padding: 12px !important; /* Reduced padding for more space */
+                padding: 8px !important; /* Further reduced from 12px */
             }
             
             /* Optimize place image placeholder icon */
@@ -3758,12 +3778,16 @@
             .list-panel {
                 border-right: none;
                 border-bottom: 2px solid #e9ecef;
-                max-height: 400px; /* Maintain scrollable list height */
-                min-height: 300px; /* Ensure enough space for 4-5 places */
+                height: 50vh !important; /* Fixed height for consistent scrolling */
+                max-height: none !important; /* Remove max-height constraint */
+                min-height: none !important; /* Remove min-height constraint */
+                overflow-y: auto !important; /* Enable vertical scrolling */
+                overflow-x: hidden !important; /* Hide horizontal scroll */
+                -webkit-overflow-scrolling: touch !important; /* Smooth iOS scrolling */
             }
             
             .map-panel {
-                height: 300px;
+                height: 50vh !important; /* Match list panel for equal split */
                 display: block !important;
                 position: relative !important;
                 overflow: hidden !important;
@@ -3776,7 +3800,7 @@
             .map-panel #map {
                 height: 100% !important;
                 width: 100% !important;
-                min-height: 300px !important;
+                min-height: 50vh !important; /* Match panel height */
             }
         }
 
