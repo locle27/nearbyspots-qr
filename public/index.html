@@ -6783,25 +6783,53 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 const allGalleryImgs = modal.querySelectorAll('.gallery-image');
                 console.log(`📸 Found ${allGalleryImgs.length} gallery images in DOM`);
                 
-                // Force images to be visible
+                // Force images to be visible and debug thoroughly
                 allGalleryImgs.forEach((img, index) => {
                     console.log(`📸 Image ${index + 1}:`, {
                         src: img.src,
                         style: img.style.cssText,
-                        visible: img.offsetWidth > 0 && img.offsetHeight > 0
+                        visible: img.offsetWidth > 0 && img.offsetHeight > 0,
+                        parent: img.parentElement?.tagName,
+                        parentDisplay: img.parentElement ? getComputedStyle(img.parentElement).display : null
                     });
                     
-                    // Force visibility
-                    img.style.display = 'block';
-                    img.style.opacity = '1';
-                    img.style.visibility = 'visible';
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = 'cover';
+                    // Force visibility with more aggressive styles
+                    img.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important; width: 100% !important; height: 100% !important; object-fit: cover !important; max-width: none !important; max-height: none !important; min-width: 100px !important; min-height: 100px !important;';
                     
-                    // Add load debugging
-                    img.onload = () => console.log(`✅ Image ${index + 1} loaded successfully`);
-                    img.onerror = (e) => console.error(`❌ Image ${index + 1} failed to load:`, e);
+                    // Also force parent container to be visible
+                    if (img.parentElement) {
+                        img.parentElement.style.display = 'block';
+                        img.parentElement.style.visibility = 'visible';
+                        img.parentElement.style.opacity = '1';
+                    }
+                    
+                    // Add load debugging with more details
+                    img.onload = () => {
+                        console.log(`✅ Image ${index + 1} loaded successfully`, { 
+                            naturalWidth: img.naturalWidth, 
+                            naturalHeight: img.naturalHeight,
+                            displayedWidth: img.offsetWidth,
+                            displayedHeight: img.offsetHeight
+                        });
+                        // Force final display
+                        img.style.opacity = '1';
+                        img.style.display = 'block';
+                    };
+                    img.onerror = (e) => {
+                        console.error(`❌ Image ${index + 1} failed to load:`, { 
+                            src: img.src, 
+                            error: e,
+                            hasError: img.complete && img.naturalHeight === 0 
+                        });
+                    };
+                    
+                    // Force load if not already loading
+                    if (img.complete && img.naturalHeight === 0) {
+                        console.log(`🔄 Forcing reload of image ${index + 1}`);
+                        const originalSrc = img.src;
+                        img.src = '';
+                        img.src = originalSrc;
+                    }
                 });
                 
                 const photoGallery = modal.querySelector('.photo-gallery');
@@ -6823,28 +6851,51 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         
                         // Check if click is in button area
                         const placeActions = modal.querySelector('.place-actions');
+                        console.log('🎯 Place actions found:', !!placeActions);
+                        
                         if (placeActions) {
                             const rect = placeActions.getBoundingClientRect();
-                            const isInButtonArea = e.clientY >= rect.top - 20 && e.clientY <= rect.bottom + 20;
+                            console.log('🎯 Button area rect:', { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right });
+                            console.log('🎯 Click Y vs button area:', { clickY: e.clientY, buttonTop: rect.top - 20, buttonBottom: rect.bottom + 20 });
+                            
+                            const isInButtonArea = e.clientY >= rect.top - 50 && e.clientY <= rect.bottom + 50;
                             
                             if (isInButtonArea) {
-                                console.log('🎯 Click is in button area, finding closest button');
+                                console.log('✅ Click IS in button area, finding closest button');
                                 e.stopPropagation();
                                 e.preventDefault();
                                 
-                                // Find the directions button and trigger it
-                                const directionsBtn = placeActions.querySelector('.directions-btn');
-                                if (directionsBtn && e.clientX >= rect.left && e.clientX <= rect.left + (rect.width / 2)) {
-                                    console.log('🗺️ Triggering directions button');
-                                    directionsBtn.click();
-                                }
+                                // Find the directions button and trigger its onclick directly
+                                const directionsBtn = placeActions.querySelector('.directions-btn, .btn-action[onclick*="directions"]');
+                                const shareBtn = placeActions.querySelector('.share-btn, .btn-action[onclick*="share"]');
                                 
-                                // Find the share button and trigger it
-                                const shareBtn = placeActions.querySelector('.share-btn');
-                                if (shareBtn && e.clientX > rect.left + (rect.width / 2) && e.clientX <= rect.right) {
-                                    console.log('📤 Triggering share button');
-                                    shareBtn.click();
+                                console.log('🔍 Found directions button:', !!directionsBtn);
+                                console.log('🔍 Found share button:', !!shareBtn);
+                                
+                                const isLeftHalf = e.clientX <= rect.left + (rect.width / 2);
+                                console.log('🎯 Click position:', isLeftHalf ? 'LEFT HALF (directions)' : 'RIGHT HALF (share)');
+                                
+                                if (directionsBtn && isLeftHalf) {
+                                    console.log('🗺️ Manually triggering directions button onclick');
+                                    // Trigger the onclick directly
+                                    if (directionsBtn.onclick) {
+                                        directionsBtn.onclick();
+                                    } else {
+                                        console.log('🗺️ No onclick, trying click() method');
+                                        directionsBtn.click();
+                                    }
+                                } else if (shareBtn && !isLeftHalf) {
+                                    console.log('📤 Manually triggering share button onclick');
+                                    // Trigger the onclick directly
+                                    if (shareBtn.onclick) {
+                                        shareBtn.onclick();
+                                    } else {
+                                        console.log('📤 No onclick, trying click() method');
+                                        shareBtn.click();
+                                    }
                                 }
+                            } else {
+                                console.log('❌ Click is NOT in button area');
                             }
                         }
                     });
