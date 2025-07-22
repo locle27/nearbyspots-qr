@@ -7110,30 +7110,89 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 // Backup: Add event delegation to the entire modal for button clicks
                 modal.addEventListener('click', function(e) {
                     console.log('🎯 Modal clicked, target:', e.target.tagName, e.target.className);
+                    console.log('🎯 Target text content:', e.target.textContent?.substring(0, 50));
                     
-                    // Check if the clicked element or its parent is a button
-                    const clickedButton = e.target.closest('.btn-action, .directions-btn, .share-btn');
+                    // Enhanced button detection - check for multiple ways to identify buttons
+                    const clickedButton = e.target.closest('.btn-action, .directions-btn, .share-btn, button');
                     
-                    if (clickedButton) {
-                        console.log('🎯 BUTTON FOUND via delegation:', clickedButton.className);
+                    // Also check if the text content indicates it's a button click
+                    const isDirectionsClick = e.target.textContent?.includes('Get Directions') || 
+                                            e.target.textContent?.includes('🗺️') ||
+                                            e.target.closest('[data-place-id]');
+                    
+                    const isShareClick = e.target.textContent?.includes('Share') || 
+                                        e.target.textContent?.includes('📤');
+                    
+                    console.log('🎯 Button detection:', {
+                        clickedButton: !!clickedButton,
+                        isDirectionsClick,
+                        isShareClick,
+                        targetText: e.target.textContent?.substring(0, 30)
+                    });
+                    
+                    if (clickedButton || isDirectionsClick || isShareClick) {
+                        console.log('🎯 BUTTON FOUND via delegation:', clickedButton?.className || 'text-based detection');
                         e.stopPropagation();
                         e.preventDefault();
                         
                         // Handle directions button
-                        if (clickedButton.classList.contains('directions-btn') || clickedButton.textContent.includes('Get Directions')) {
+                        if (isDirectionsClick || (clickedButton && (clickedButton.classList.contains('directions-btn') || clickedButton.textContent?.includes('Get Directions')))) {
                             console.log('🗺️ Directions button clicked via delegation');
                             const placeData = placeDataStore.get(place.id);
+                            console.log('🗺️ Place data found:', !!placeData, placeData?.name);
                             if (placeData) {
+                                console.log('✅ Opening directions for:', placeData.name);
                                 openDirections(placeData.location.latitude, placeData.location.longitude, placeData.name);
+                            } else {
+                                console.error('❌ Place data not found for directions:', place.id);
                             }
                         }
                         // Handle share button
-                        else if (clickedButton.classList.contains('share-btn') || clickedButton.textContent.includes('Share')) {
+                        else if (isShareClick || (clickedButton && (clickedButton.classList.contains('share-btn') || clickedButton.textContent?.includes('Share')))) {
                             console.log('📤 Share button clicked via delegation');
+                            console.log('📤 Sharing place:', place.name);
                             sharePlace(place.name, place.location.latitude, place.location.longitude);
                         }
                     }
                 }, true); // Use capture phase
+                
+                // Ultimate fallback: If clicked anywhere in the modal, check if we're near buttons
+                modal.addEventListener('touchend', function(e) {
+                    console.log('👆 TOUCH END on modal, checking for button area');
+                    
+                    // Get all buttons in the modal
+                    const allButtons = modal.querySelectorAll('.btn-action, button');
+                    console.log('👆 Found buttons in modal:', allButtons.length);
+                    
+                    // Check each button's position
+                    allButtons.forEach((btn, index) => {
+                        const rect = btn.getBoundingClientRect();
+                        const distance = Math.sqrt(
+                            Math.pow(e.clientX - (rect.left + rect.width/2), 2) + 
+                            Math.pow(e.clientY - (rect.top + rect.height/2), 2)
+                        );
+                        
+                        console.log(`👆 Button ${index} distance:`, distance, 'text:', btn.textContent?.substring(0, 20));
+                        
+                        // If touch was within 60px of button center, trigger it
+                        if (distance < 60) {
+                            console.log('👆 CLOSE ENOUGH TO BUTTON, triggering:', btn.textContent?.substring(0, 20));
+                            e.stopPropagation();
+                            e.preventDefault();
+                            
+                            if (btn.textContent?.includes('Get Directions') || btn.textContent?.includes('🗺️')) {
+                                console.log('🗺️ Touch triggered directions');
+                                const placeData = placeDataStore.get(place.id);
+                                if (placeData) {
+                                    openDirections(placeData.location.latitude, placeData.location.longitude, placeData.name);
+                                }
+                            } else if (btn.textContent?.includes('Share') || btn.textContent?.includes('📤')) {
+                                console.log('📤 Touch triggered share');
+                                sharePlace(place.name, place.location.latitude, place.location.longitude);
+                            }
+                        }
+                    });
+                }, { passive: false });
                 
             }, 100);
         }
