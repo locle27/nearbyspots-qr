@@ -2831,10 +2831,9 @@
             /* Enhanced modal content spacing */
             .place-details-full {
                 padding: 20px !important; /* Optimized padding */
-                padding-bottom: 20px !important; /* Remove bottom padding since we're using sticky buttons */
-                flex: 1 !important;
-                display: flex !important;
-                flex-direction: column !important;
+                padding-bottom: 100px !important; /* Add bottom padding for sticky buttons */
+                flex: none !important; /* Remove flex to allow natural scrolling */
+                display: block !important; /* Use block layout for better scrolling */
             }
             
             .place-main-image {
@@ -3266,10 +3265,10 @@
         .photo-gallery {
             background: #f8fafc;
             margin: 16px -20px 0 -20px;
-            padding: 20px 20px 100px 20px; /* Add bottom padding for sticky buttons */
+            padding: 20px; /* Normal padding */
             border-top: 1px solid #e2e8f0;
-            flex: 1;
-            overflow: hidden;
+            flex: none; /* Remove flex constraint */
+            overflow: visible; /* Allow content to be visible */
         }
 
         .gallery-title {
@@ -7120,8 +7119,21 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     console.log('🎯 Modal clicked, target:', e.target.tagName, e.target.className);
                     console.log('🎯 Target text content:', e.target.textContent?.substring(0, 50));
                     
+                    // IMPORTANT: Don't interfere with close/back buttons
+                    const isCloseButton = e.target.classList.contains('image-modal-close') || 
+                                        e.target.classList.contains('image-modal-back') ||
+                                        e.target.id === 'closeImageModal' ||
+                                        e.target.id === 'backImageModal' ||
+                                        e.target.textContent?.includes('✕') ||
+                                        e.target.textContent?.includes('← Back');
+                    
+                    if (isCloseButton) {
+                        console.log('🚪 Close/back button clicked - allowing normal behavior');
+                        return; // Let the close button work normally
+                    }
+                    
                     // Enhanced button detection - check for multiple ways to identify buttons
-                    const clickedButton = e.target.closest('.btn-action, .directions-btn, .share-btn, button');
+                    const clickedButton = e.target.closest('.btn-action, .directions-btn, .share-btn, button:not(.image-modal-close):not(.image-modal-back)');
                     
                     // Also check if the text content indicates it's a button click
                     const isDirectionsClick = e.target.textContent?.includes('Get Directions') || 
@@ -7168,8 +7180,21 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 modal.addEventListener('touchend', function(e) {
                     console.log('👆 TOUCH END on modal, checking for button area');
                     
-                    // Get all buttons in the modal
-                    const allButtons = modal.querySelectorAll('.btn-action, button');
+                    // IMPORTANT: Don't interfere with close/back buttons
+                    const isCloseButton = e.target.classList.contains('image-modal-close') || 
+                                        e.target.classList.contains('image-modal-back') ||
+                                        e.target.id === 'closeImageModal' ||
+                                        e.target.id === 'backImageModal' ||
+                                        e.target.textContent?.includes('✕') ||
+                                        e.target.textContent?.includes('← Back');
+                    
+                    if (isCloseButton) {
+                        console.log('🚪 Close/back button touched - allowing normal behavior');
+                        return; // Let the close button work normally
+                    }
+                    
+                    // Get all buttons in the modal (excluding close buttons)
+                    const allButtons = modal.querySelectorAll('.btn-action, button:not(.image-modal-close):not(.image-modal-back)');
                     console.log('👆 Found buttons in modal:', allButtons.length);
                     
                     // Check each button's position
@@ -10602,7 +10627,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 return;
             }
             
-            const address = document.getElementById('editAddress').value.trim();
+            const address = document.getElementById('editPlaceAddress').value.trim();
             if (!address) {
                 alert('Please enter an address to geocode.');
                 return;
