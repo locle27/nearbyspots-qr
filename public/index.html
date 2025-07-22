@@ -3316,6 +3316,63 @@
         .photo-grid::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
+        
+        /* FORCED DEBUG STYLES - Ultra high specificity to override everything */
+        .photo-gallery .photo-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, 150px) !important;
+            gap: 20px !important;
+            padding: 20px !important;
+            background: #ff6b6b !important;
+            border: 5px solid #FF5722 !important;
+            border-radius: 12px !important;
+            min-height: 200px !important;
+            justify-content: center !important;
+        }
+        
+        .forced-test-image {
+            position: relative !important;
+            width: 150px !important;
+            height: 150px !important;
+            border: 5px solid #00ff00 !important;
+            border-radius: 15px !important;
+            overflow: visible !important;
+            background: #ffeb3b !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+            z-index: 9999 !important;
+            transform: scale(1) !important;
+        }
+        
+        .forced-test-image:hover {
+            transform: scale(1.1) !important;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.7) !important;
+        }
+        
+        .forced-test-content {
+            text-align: center !important;
+            color: #000 !important;
+            font-weight: 900 !important;
+            font-size: 1rem !important;
+            z-index: 10000 !important;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8) !important;
+        }
+        
+        .forced-debug-message {
+            padding: 20px !important;
+            text-align: center !important;
+            color: #000 !important;
+            font-weight: 900 !important;
+            background: #ff9800 !important;
+            border: 5px solid #f57c00 !important;
+            border-radius: 15px !important;
+            margin: 20px 0 !important;
+            font-size: 1.2rem !important;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8) !important;
+        }
 
         /* Mobile gallery optimization */
         @media (max-width: 767px) {
@@ -6629,23 +6686,23 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     <div class="gallery-title">
                         <span>📸 Test Gallery (Forced Debug Mode)</span>
                     </div>
-                    <div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; padding: 16px; background: #f8f9fa; border: 2px dashed #ddd; border-radius: 8px;">
-                        <div style="position: relative; width: 150px; height: 150px; border: 3px solid #FF5722; border-radius: 12px; overflow: hidden; background: linear-gradient(45deg, #ffebee, #ffcdd2); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" onclick="console.log('🖼️ FORCED test image 1 clicked'); alert('Forced test image 1 clicked!')">
-                            <div style="text-align: center; color: #FF5722; font-weight: bold;">
+                    <div class="photo-grid">
+                        <div class="forced-test-image" onclick="console.log('🖼️ FORCED test image 1 clicked'); alert('Forced test image 1 clicked!')">
+                            <div class="forced-test-content">
                                 <div style="font-size: 2.5rem;">🖼️</div>
-                                <div style="font-size: 0.9rem;">FORCED TEST 1</div>
-                                <div style="font-size: 0.7rem;">Should be visible</div>
+                                <div>FORCED TEST 1</div>
+                                <div style="font-size: 0.8rem;">Should be visible</div>
                             </div>
                         </div>
-                        <div style="position: relative; width: 150px; height: 150px; border: 3px solid #9C27B0; border-radius: 12px; overflow: hidden; background: linear-gradient(45deg, #f3e5f5, #e1bee7); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" onclick="console.log('📷 FORCED test image 2 clicked'); alert('Forced test image 2 clicked!')">
-                            <div style="text-align: center; color: #9C27B0; font-weight: bold;">
+                        <div class="forced-test-image" onclick="console.log('📷 FORCED test image 2 clicked'); alert('Forced test image 2 clicked!')">
+                            <div class="forced-test-content">
                                 <div style="font-size: 2.5rem;">📷</div>
-                                <div style="font-size: 0.9rem;">FORCED TEST 2</div>
-                                <div style="font-size: 0.7rem;">Should be visible</div>
+                                <div>FORCED TEST 2</div>
+                                <div style="font-size: 0.8rem;">Should be visible</div>
                             </div>
                         </div>
                     </div>
-                    <div style="padding: 16px; text-align: center; color: #FF5722; font-weight: bold; background: #fff3e0; border-radius: 8px; margin-top: 12px;">
+                    <div class="forced-debug-message">
                         🛠️ FORCED DEBUG MODE: These test images should be clearly visible!
                     </div>
                 </div>
