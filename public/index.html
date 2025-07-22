@@ -7045,64 +7045,96 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     console.log('📸 Grid children count:', photoGrid.children.length);
                 }
                 
-                // Add modal body click interceptor for button clicks
-                const modalBody = modal.querySelector('.image-modal-body');
-                if (modalBody) {
-                    modalBody.addEventListener('click', function(e) {
-                        console.log('🎯 Modal body clicked, checking if should redirect to button');
-                        console.log('🎯 Click coordinates:', { x: e.clientX, y: e.clientY });
+                // Enhanced button event listeners - directly attach to buttons
+                setTimeout(() => {
+                    const directionsButtons = modal.querySelectorAll('.directions-btn, .btn-action[data-place-id]');
+                    const shareButtons = modal.querySelectorAll('.share-btn, .btn-action.share-btn');
+                    
+                    console.log('🎯 Setting up enhanced button listeners:', {
+                        directionsButtons: directionsButtons.length,
+                        shareButtons: shareButtons.length
+                    });
+                    
+                    directionsButtons.forEach(btn => {
+                        // Remove any existing listeners and add new ones
+                        btn.replaceWith(btn.cloneNode(true));
+                        const newBtn = modal.querySelector(`[data-place-id="${btn.dataset.placeId}"].directions-btn, [data-place-id="${btn.dataset.placeId}"].btn-action`);
                         
-                        // Check if click is in button area
-                        const placeActions = modal.querySelector('.place-actions');
-                        console.log('🎯 Place actions found:', !!placeActions);
-                        
-                        if (placeActions) {
-                            const rect = placeActions.getBoundingClientRect();
-                            console.log('🎯 Button area rect:', { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right });
-                            console.log('🎯 Click Y vs button area:', { clickY: e.clientY, buttonTop: rect.top - 20, buttonBottom: rect.bottom + 20 });
-                            
-                            const isInButtonArea = e.clientY >= rect.top - 50 && e.clientY <= rect.bottom + 50;
-                            
-                            if (isInButtonArea) {
-                                console.log('✅ Click IS in button area, finding closest button');
-                                e.stopPropagation();
-                                e.preventDefault();
-                                
-                                // Find the directions button and trigger its onclick directly
-                                const directionsBtn = placeActions.querySelector('.directions-btn, .btn-action[onclick*="directions"]');
-                                const shareBtn = placeActions.querySelector('.share-btn, .btn-action[onclick*="share"]');
-                                
-                                console.log('🔍 Found directions button:', !!directionsBtn);
-                                console.log('🔍 Found share button:', !!shareBtn);
-                                
-                                const isLeftHalf = e.clientX <= rect.left + (rect.width / 2);
-                                console.log('🎯 Click position:', isLeftHalf ? 'LEFT HALF (directions)' : 'RIGHT HALF (share)');
-                                
-                                if (directionsBtn && isLeftHalf) {
-                                    console.log('🗺️ Manually triggering directions button onclick');
-                                    // Trigger the onclick directly
-                                    if (directionsBtn.onclick) {
-                                        directionsBtn.onclick();
+                        if (newBtn) {
+                            // Multiple event types for maximum compatibility
+                            ['click', 'touchend', 'touchstart'].forEach(eventType => {
+                                newBtn.addEventListener(eventType, function(e) {
+                                    console.log(`🗺️ DIRECTIONS ${eventType.toUpperCase()} detected on button`);
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    
+                                    if (eventType === 'touchstart') return; // Just log, don't act
+                                    
+                                    const placeId = this.dataset.placeId || place.id;
+                                    const placeData = placeDataStore.get(placeId);
+                                    console.log('🗺️ Place data found:', !!placeData, placeData?.name);
+                                    
+                                    if (placeData) {
+                                        console.log('✅ Opening directions for:', placeData.name);
+                                        openDirections(placeData.location.latitude, placeData.location.longitude, placeData.name);
                                     } else {
-                                        console.log('🗺️ No onclick, trying click() method');
-                                        directionsBtn.click();
+                                        console.error('❌ Place data not found for directions:', placeId);
                                     }
-                                } else if (shareBtn && !isLeftHalf) {
-                                    console.log('📤 Manually triggering share button onclick');
-                                    // Trigger the onclick directly
-                                    if (shareBtn.onclick) {
-                                        shareBtn.onclick();
-                                    } else {
-                                        console.log('📤 No onclick, trying click() method');
-                                        shareBtn.click();
-                                    }
-                                }
-                            } else {
-                                console.log('❌ Click is NOT in button area');
-                            }
+                                }, { passive: false });
+                            });
                         }
                     });
-                }
+                    
+                    shareButtons.forEach(btn => {
+                        // Remove any existing listeners and add new ones  
+                        btn.replaceWith(btn.cloneNode(true));
+                        const newBtn = modal.querySelector('.share-btn, .btn-action.share-btn');
+                        
+                        if (newBtn) {
+                            ['click', 'touchend', 'touchstart'].forEach(eventType => {
+                                newBtn.addEventListener(eventType, function(e) {
+                                    console.log(`📤 SHARE ${eventType.toUpperCase()} detected on button`);
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    
+                                    if (eventType === 'touchstart') return; // Just log, don't act
+                                    
+                                    console.log('📤 Sharing place:', place.name);
+                                    sharePlace(place.name, place.location.latitude, place.location.longitude);
+                                }, { passive: false });
+                            });
+                        }
+                    });
+                }, 200);
+                
+                // Backup: Add event delegation to the entire modal for button clicks
+                modal.addEventListener('click', function(e) {
+                    console.log('🎯 Modal clicked, target:', e.target.tagName, e.target.className);
+                    
+                    // Check if the clicked element or its parent is a button
+                    const clickedButton = e.target.closest('.btn-action, .directions-btn, .share-btn');
+                    
+                    if (clickedButton) {
+                        console.log('🎯 BUTTON FOUND via delegation:', clickedButton.className);
+                        e.stopPropagation();
+                        e.preventDefault();
+                        
+                        // Handle directions button
+                        if (clickedButton.classList.contains('directions-btn') || clickedButton.textContent.includes('Get Directions')) {
+                            console.log('🗺️ Directions button clicked via delegation');
+                            const placeData = placeDataStore.get(place.id);
+                            if (placeData) {
+                                openDirections(placeData.location.latitude, placeData.location.longitude, placeData.name);
+                            }
+                        }
+                        // Handle share button
+                        else if (clickedButton.classList.contains('share-btn') || clickedButton.textContent.includes('Share')) {
+                            console.log('📤 Share button clicked via delegation');
+                            sharePlace(place.name, place.location.latitude, place.location.longitude);
+                        }
+                    }
+                }, true); // Use capture phase
+                
             }, 100);
         }
         
