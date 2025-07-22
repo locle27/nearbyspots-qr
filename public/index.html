@@ -3843,15 +3843,15 @@
                 margin-top: 2px !important; /* Slight offset from top */
             }
             
-            /* COMPLETE info layout - 3 essential lines */
+            /* COMPACT info layout - MINIMAL spacing */
             .place-details {
                 flex: 1 !important;
                 display: flex !important;
                 flex-direction: column !important;
                 justify-content: flex-start !important;
                 min-width: 0 !important;
-                gap: 2px !important;
-                padding: 2px 0 !important;
+                gap: 1px !important; /* Reduced from 2px */
+                padding: 1px 0 !important; /* Reduced from 2px */
             }
             
             /* Full restaurant name - MUST be readable */
@@ -3868,36 +3868,36 @@
                 max-width: none !important;
             }
             
-            /* Full address - ESSENTIAL for location context */
+            /* Full address - COMPACT spacing */
             .place-address {
                 font-size: 0.75rem !important;
-                line-height: 1.2 !important;
+                line-height: 1.1 !important; /* Reduced line height */
                 color: #666 !important;
                 margin: 0 !important;
                 /* NO truncation - show full address */
                 white-space: normal !important;
                 overflow: visible !important;
-                display: block !important; /* Show address */
+                display: block !important;
             }
             
-            /* Opening hours - ESSENTIAL for planning */
+            /* Opening hours - COMPACT with minimal padding */
             .place-hours,
             .place-hours-placeholder {
                 font-size: 0.7rem !important;
-                line-height: 1.2 !important;
+                line-height: 1.1 !important; /* Tighter line height */
                 margin: 0 !important;
-                padding: 2px 6px !important;
-                border-radius: 4px !important;
-                display: inline-block !important; /* Show hours */
+                padding: 1px 4px !important; /* Reduced padding */
+                border-radius: 3px !important; /* Smaller radius */
+                display: inline-block !important;
                 max-width: 100% !important;
             }
             
-            /* Compact meta with rating and distance */
+            /* ULTRA-COMPACT meta with minimal spacing */
             .place-meta {
-                display: flex !important; /* Show meta info */
-                gap: 8px !important;
+                display: flex !important;
+                gap: 4px !important; /* Reduced from 8px */
                 align-items: center !important;
-                margin-top: 2px !important;
+                margin-top: 1px !important; /* Reduced from 2px */
             }
             
             .place-rating {
@@ -3905,6 +3905,7 @@
                 font-weight: 600 !important;
                 color: #ff9800 !important;
                 margin: 0 !important;
+                line-height: 1.1 !important; /* Tighter spacing */
             }
             
             .place-distance {
@@ -3912,6 +3913,7 @@
                 color: #666 !important;
                 margin: 0 !important;
                 font-weight: 500 !important;
+                line-height: 1.1 !important; /* Tighter spacing */
             }
             
             /* Compact but accessible action buttons */
