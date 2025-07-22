@@ -4121,6 +4121,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 
                 <div class="edit-modal-actions">
                     <button class="cancel-edit-btn" id="cancelEditBtn">Cancel</button>
+                    <button class="fix-coordinates-btn" id="fixCoordinatesBtn" style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); color: white; border: none; border-radius: 8px; padding: 12px 20px; font-size: 1rem; font-weight: 600; cursor: pointer; flex: 1;" onclick="fixPlaceCoordinates()">🗺️ Fix Coordinates</button>
                     <button class="save-edit-btn" id="saveEditBtn">Save All Changes</button>
                 </div>
             </div>
@@ -10143,6 +10144,23 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             infoHtml += `<div class="edit-info-item"><strong>📂 Category:</strong> ${place.category}</div>`;
             infoHtml += `<div class="edit-info-item"><strong>📏 Distance:</strong> ${place.distance}m (${(place.distance * 0.000621371).toFixed(2)} mi)</div>`;
             
+            // Location coordinates with validation
+            if (place.location) {
+                const lat = place.location.latitude;
+                const lng = place.location.longitude;
+                const isHanoi = lat >= 20.9 && lat <= 21.2 && lng >= 105.7 && lng <= 105.9;
+                const isHCMC = lat >= 10.6 && lat <= 10.9 && lng >= 106.5 && lng <= 106.8;
+                
+                let locationWarning = '';
+                if (place.address && place.address.includes('Hà Nội') && !isHanoi) {
+                    locationWarning = ' ⚠️ <span style="color: red;">Coordinates appear to be outside Hanoi!</span>';
+                } else if (place.address && place.address.includes('Ho Chi Minh') && !isHCMC) {
+                    locationWarning = ' ⚠️ <span style="color: red;">Coordinates appear to be outside Ho Chi Minh City!</span>';
+                }
+                
+                infoHtml += `<div class="edit-info-item"><strong>🗺️ Coordinates:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}${locationWarning}</div>`;
+            }
+            
             // Google place types
             if (place.types && place.types.length > 0) {
                 infoHtml += `<div class="edit-info-item"><strong>🏷️ Place Types:</strong> ${place.types.join(', ')}</div>`;
@@ -10204,6 +10222,79 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             currentEditPlaceId = null;
         }
 
+        // Fix coordinates function
+        async function fixPlaceCoordinates() {
+            if (!currentEditPlaceId) {
+                alert('No place selected for editing.');
+                return;
+            }
+            
+            const place = placeDataStore.get(currentEditPlaceId);
+            if (!place) {
+                alert('Place not found.');
+                return;
+            }
+            
+            const address = document.getElementById('editAddress').value.trim();
+            if (!address) {
+                alert('Please enter an address to geocode.');
+                return;
+            }
+            
+            const fixBtn = document.getElementById('fixCoordinatesBtn');
+            const originalText = fixBtn.textContent;
+            fixBtn.textContent = '⏳ Fixing...';
+            fixBtn.disabled = true;
+            
+            try {
+                console.log('🗺️ Fixing coordinates for address:', address);
+                
+                // Call geocoding API
+                const response = await fetch('/api/geocode-address', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ address: address })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Geocoding failed: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('✅ Geocoding successful:', data);
+                
+                if (data.results && data.results.length > 0) {
+                    const newLocation = data.results[0].geometry.location;
+                    console.log('📍 New coordinates:', newLocation.lat, newLocation.lng);
+                    
+                    // Update the place data
+                    place.location.latitude = newLocation.lat;
+                    place.location.longitude = newLocation.lng;
+                    
+                    // Update the data store
+                    placeDataStore.set(currentEditPlaceId, place);
+                    
+                    // Show success message
+                    alert(`✅ Coordinates updated!\nNew location: ${newLocation.lat.toFixed(6)}, ${newLocation.lng.toFixed(6)}\n\nPlease save your changes to persist this update.`);
+                    
+                    // Refresh the edit info display to show new coordinates
+                    populateEditInfoDisplay(place);
+                    
+                } else {
+                    throw new Error('No geocoding results found for this address');
+                }
+                
+            } catch (error) {
+                console.error('❌ Geocoding error:', error);
+                alert(`❌ Failed to fix coordinates: ${error.message}\n\nPlease check the address and try again.`);
+            } finally {
+                fixBtn.textContent = originalText;
+                fixBtn.disabled = false;
+            }
+        }
+        
         // Quick hours setting function
         function setQuickHours(type) {
             const hoursInput = document.getElementById('editOpeningHours');
