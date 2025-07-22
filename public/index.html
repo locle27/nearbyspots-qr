@@ -1403,11 +1403,15 @@
                 backdrop-filter: none !important;
             }
             
-            /* Compact header for bottom sheet */
+            /* Compact header for bottom sheet - STICKY */
             .image-modal-header {
                 padding: 8px 16px !important;
                 min-height: auto !important;
-                position: relative;
+                position: sticky !important; /* Stay at top when scrolling */
+                top: 0 !important;
+                z-index: 1000 !important;
+                background: linear-gradient(135deg, #1976D2 0%, #42a5f5 100%) !important;
+                box-shadow: 0 2px 10px rgba(25, 118, 210, 0.2) !important;
             }
             
             .image-modal-title {
@@ -1417,23 +1421,35 @@
                 line-height: 1.2 !important;
             }
             
-            /* Compact back button */
+            /* Compact back button - ALWAYS VISIBLE */
             .image-modal-back {
+                position: absolute !important; /* Absolute within sticky header */
                 top: 4px !important;
                 left: 8px !important;
                 padding: 6px 10px !important;
                 min-height: 32px !important;
                 min-width: 60px !important;
                 font-size: 0.9rem !important;
+                background: rgba(255, 255, 255, 0.2) !important;
+                color: white !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                border-radius: 6px !important;
+                z-index: 1001 !important; /* Above header */
             }
             
-            /* Compact close button */
+            /* Compact close button - ALWAYS VISIBLE */
             .image-modal-close {
+                position: absolute !important; /* Absolute within sticky header */
                 top: 4px !important;
                 right: 8px !important;
                 width: 32px !important;
                 height: 32px !important;
                 font-size: 1.2rem !important;
+                background: rgba(255, 255, 255, 0.2) !important;
+                color: white !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                border-radius: 6px !important;
+                z-index: 1001 !important; /* Above header */
             }
         }
 
@@ -1452,7 +1468,9 @@
             background: linear-gradient(135deg, #1976D2 0%, #42a5f5 100%);
             color: white;
             padding: 24px 20px 20px 20px;
-            position: relative;
+            position: sticky; /* Make header sticky */
+            top: 0; /* Stick to top */
+            z-index: 1000; /* Above other content */
             box-shadow: 0 2px 20px rgba(25, 118, 210, 0.3);
         }
         
@@ -3016,10 +3034,14 @@
                 z-index: 1000 !important; /* Higher than container */
             }
             
-            /* Enhanced modal header for mobile */
+            /* Enhanced modal header for mobile - STICKY */
             .image-modal-header {
                 padding: 28px 24px !important;
                 min-height: 80px !important;
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 1000 !important;
+                background: linear-gradient(135deg, #1976D2 0%, #42a5f5 100%) !important;
             }
             
             .image-modal-header h2 {
@@ -3046,16 +3068,16 @@
             
             /* Enhanced place stats for mobile */
             .place-stats-full {
-                padding: 20px !important;
-                gap: 16px !important;
-                margin-bottom: 28px !important;
+                padding: 12px !important; /* Reduced from 20px */
+                gap: 8px !important; /* Reduced from 16px */
+                margin-bottom: 16px !important; /* Reduced from 28px */
             }
             
             .place-stat {
-                padding: 16px 20px !important;
-                font-size: 1.05rem !important;
-                min-height: 48px !important;
-                border-radius: 16px !important;
+                padding: 8px 12px !important; /* Reduced from 16px 20px */
+                font-size: 0.85rem !important; /* Reduced from 1.05rem */
+                min-height: 36px !important; /* Reduced from 48px */
+                border-radius: 8px !important; /* Reduced from 16px */
             }
 
             /* Better visual feedback for interactions */
@@ -3206,16 +3228,16 @@
             }
 
             .place-stats-full {
-                padding: 24px !important;
-                gap: 20px !important;
-                margin-bottom: 32px !important;
+                padding: 14px !important; /* Reduced from 24px */
+                gap: 10px !important; /* Reduced from 20px */
+                margin-bottom: 20px !important; /* Reduced from 32px */
             }
 
             .place-stat {
-                padding: 20px 24px !important;
-                font-size: 1.1rem !important;
-                min-height: 56px !important;
-                border-radius: 20px !important;
+                padding: 10px 14px !important; /* Reduced from 20px 24px */
+                font-size: 0.9rem !important; /* Reduced from 1.1rem */
+                min-height: 40px !important; /* Reduced from 56px */
+                border-radius: 10px !important; /* Reduced from 20px */
                 font-weight: 700 !important;
             }
 
@@ -3265,12 +3287,16 @@
                 min-height: 100px !important;
             }
 
-            /* Enhanced modal header for phones - full screen optimized */
+            /* Enhanced modal header for phones - STICKY full screen */
             .image-modal-header {
                 padding: 20px 16px !important; /* Reduced for full screen */
                 min-height: 70px !important; /* Smaller header for more content space */
+                position: sticky !important; /* Always stay at top */
+                top: 0 !important;
+                z-index: 1000 !important;
                 background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%) !important;
                 color: white !important; /* White text for colored background */
+                box-shadow: 0 2px 15px rgba(25, 118, 210, 0.3) !important;
             }
 
             .image-modal-header h2 {
