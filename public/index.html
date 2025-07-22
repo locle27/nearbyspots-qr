@@ -6587,20 +6587,22 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         const imageId = `gallery-img-${timestamp}-${index}`;
                         const loadingId = `loading-${timestamp}-${index}`;
                         const errorId = `error-${timestamp}-${index}`;
+                        console.log('🖼️ Creating gallery image:', index, 'URL:', photoUrl);
                         return `
                             <div class="gallery-image-container" id="container-${imageId}">
                                 <img class="gallery-image clickable-gallery-image" 
                                      id="${imageId}"
-                                     src="${photoUrl}" 
+                                     src="${fallbackImage}" 
                                      data-real-src="${photoUrl}" 
                                      data-loading-id="${loadingId}"
                                      data-error-id="${errorId}"
                                      alt="${place.name}" 
                                      data-place-id="${place.id}" 
                                      data-image-index="photo-${index}" 
-                                     style="cursor: pointer; width: 100%; height: 100%; object-fit: cover;"
-                                     onload="this.style.opacity = '1';"
-                                     onerror="this.src='${fallbackImage}'; this.style.opacity = '0.8';">
+                                     style="cursor: pointer; width: 100%; height: 100%; object-fit: cover; opacity: 1; position: relative;"
+                                     onload="console.log('✅ Gallery image loaded:', '${imageId}'); this.style.opacity = '1';"
+                                     onerror="console.log('❌ Gallery image failed:', '${imageId}'); this.src='${fallbackImage}'; this.style.opacity = '0.8';">
+                                <div class="loading-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 0.8rem; pointer-events: none;">Loading...</div>
                             </div>
                         `;
                     }
@@ -6725,6 +6727,38 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             console.log('📋 Modal z-index:', window.getComputedStyle(modal).zIndex);
             document.body.style.overflow = 'hidden';
             console.log('✅ Modal should now be visible on screen!');
+            
+            // Load real gallery images after modal is shown
+            setTimeout(() => {
+                console.log('🖼️ Loading real gallery images...');
+                const galleryImages = modal.querySelectorAll('.gallery-image[data-real-src]');
+                console.log('🖼️ Found', galleryImages.length, 'gallery images to load');
+                
+                galleryImages.forEach((img, index) => {
+                    const realSrc = img.getAttribute('data-real-src');
+                    if (realSrc) {
+                        console.log('🖼️ Loading image', index, ':', realSrc);
+                        const testImg = new Image();
+                        testImg.onload = () => {
+                            console.log('✅ Gallery image loaded successfully:', index);
+                            img.src = realSrc;
+                            const loadingOverlay = img.nextElementSibling;
+                            if (loadingOverlay && loadingOverlay.classList.contains('loading-overlay')) {
+                                loadingOverlay.style.display = 'none';
+                            }
+                        };
+                        testImg.onerror = () => {
+                            console.log('❌ Gallery image failed to load:', index, realSrc);
+                            const loadingOverlay = img.nextElementSibling;
+                            if (loadingOverlay && loadingOverlay.classList.contains('loading-overlay')) {
+                                loadingOverlay.textContent = 'Image unavailable';
+                                loadingOverlay.style.color = '#999';
+                            }
+                        };
+                        testImg.src = realSrc;
+                    }
+                });
+            }, 500);
             
             // Add safe event listeners for modal buttons (prevents onclick attribute issues)
             setTimeout(() => {
