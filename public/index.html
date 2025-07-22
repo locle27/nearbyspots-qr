@@ -10600,29 +10600,41 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 justify-content: center;
                 backdrop-filter: blur(5px);
                 cursor: pointer;
+                overflow: hidden;
+                touch-action: manipulation;
+                -webkit-overflow-scrolling: touch;
             `;
             
             // Create image container
             const imageContainer = document.createElement('div');
             imageContainer.style.cssText = `
                 position: relative;
-                max-width: 90%;
-                max-height: 90%;
+                width: 95%;
+                height: 95%;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
+                justify-content: center;
+                padding: 20px;
+                box-sizing: border-box;
             `;
             
             // Create image
             const img = document.createElement('img');
             img.src = imageSrc;
             img.alt = placeName;
+            
+            // Mobile-friendly image sizing
+            const isMobile = window.innerWidth <= 768;
             img.style.cssText = `
                 max-width: 100%;
-                max-height: 80vh;
+                max-height: ${isMobile ? '70%' : '80%'};
+                width: auto;
+                height: auto;
                 object-fit: contain;
                 border-radius: 12px;
                 box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+                display: block;
             `;
             
             // Create caption
@@ -10642,8 +10654,8 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             closeBtn.innerHTML = '✕';
             closeBtn.style.cssText = `
                 position: absolute;
-                top: -50px;
-                right: -20px;
+                top: ${isMobile ? '10px' : '-50px'};
+                right: ${isMobile ? '10px' : '-20px'};
                 background: rgba(255, 255, 255, 0.2);
                 border: none;
                 color: white;
@@ -10657,6 +10669,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 justify-content: center;
                 backdrop-filter: blur(10px);
                 transition: all 0.3s ease;
+                z-index: 10001;
             `;
             
             // Close functions
@@ -10692,6 +10705,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             imageContainer.appendChild(closeBtn);
             lightbox.appendChild(imageContainer);
             document.body.appendChild(lightbox);
+            
+            // Prevent body scroll on mobile
+            document.body.style.overflow = 'hidden';
             
             console.log('✅ Lightbox opened for image:', imageIndex + 1);
         }
