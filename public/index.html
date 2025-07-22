@@ -6681,30 +6681,39 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             
             // Generate gallery HTML - FORCE TEST MODE FOR DEBUGGING
             console.log('🖼️ FORCING TEST MODE - Showing visible test images');
+            // SIMPLE HTML APPROACH - No complex styling
             galleryHtml = `
                 <div class="photo-gallery">
-                    <div class="gallery-title">
-                        <span>📸 Test Gallery (Forced Debug Mode)</span>
-                    </div>
-                    <div class="photo-grid" style="display: grid !important; grid-template-columns: repeat(2, 150px) !important; gap: 20px !important; padding: 20px !important; background: #ff0000 !important; border: 5px solid #00ff00 !important; border-radius: 12px !important; min-height: 200px !important; justify-content: center !important;">
-                        <div style="position: relative !important; width: 150px !important; height: 150px !important; border: 5px solid #0000ff !important; border-radius: 15px !important; overflow: visible !important; background: #ffff00 !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; box-shadow: 0 10px 20px rgba(0,0,0,0.8) !important; z-index: 99999 !important; transform: scale(1) !important;" onclick="console.log('🖼️ ULTRA FORCED test image 1 clicked'); alert('ULTRA FORCED test image 1 clicked!')">
-                            <div style="text-align: center !important; color: #000 !important; font-weight: 900 !important; font-size: 1rem !important; z-index: 100000 !important; text-shadow: 2px 2px 4px rgba(255,255,255,0.8) !important;">
-                                <div style="font-size: 3rem !important;">🖼️</div>
-                                <div style="font-size: 1.2rem !important;">ULTRA TEST 1</div>
-                                <div style="font-size: 1rem !important;">MUST BE VISIBLE</div>
-                            </div>
-                        </div>
-                        <div style="position: relative !important; width: 150px !important; height: 150px !important; border: 5px solid #ff00ff !important; border-radius: 15px !important; overflow: visible !important; background: #00ffff !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; box-shadow: 0 10px 20px rgba(0,0,0,0.8) !important; z-index: 99999 !important; transform: scale(1) !important;" onclick="console.log('📷 ULTRA FORCED test image 2 clicked'); alert('ULTRA FORCED test image 2 clicked!')">
-                            <div style="text-align: center !important; color: #000 !important; font-weight: 900 !important; font-size: 1rem !important; z-index: 100000 !important; text-shadow: 2px 2px 4px rgba(255,255,255,0.8) !important;">
-                                <div style="font-size: 3rem !important;">📷</div>
-                                <div style="font-size: 1.2rem !important;">ULTRA TEST 2</div>
-                                <div style="font-size: 1rem !important;">MUST BE VISIBLE</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="padding: 20px !important; text-align: center !important; color: #fff !important; font-weight: 900 !important; background: #ff0000 !important; border: 5px solid #000 !important; border-radius: 15px !important; margin: 20px 0 !important; font-size: 1.5rem !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.8) !important;">
-                        🛠️ ULTRA FORCED MODE: RED BACKGROUND = VISIBLE!
-                    </div>
+                    <h3>📸 SIMPLE TEST GALLERY</h3>
+                    <table border="5" cellpadding="20" bgcolor="#ff0000" width="100%">
+                        <tr>
+                            <td bgcolor="#ffff00" onclick="alert('SIMPLE test image 1 clicked!')">
+                                <center>
+                                    <font size="7">🖼️</font><br>
+                                    <font size="5"><b>SIMPLE TEST 1</b></font><br>
+                                    <font size="4">CLICK ME!</font>
+                                </center>
+                            </td>
+                            <td bgcolor="#00ffff" onclick="alert('SIMPLE test image 2 clicked!')">
+                                <center>
+                                    <font size="7">📷</font><br>
+                                    <font size="5"><b>SIMPLE TEST 2</b></font><br>
+                                    <font size="4">CLICK ME!</font>
+                                </center>
+                            </td>
+                        </tr>
+                    </table>
+                    <center>
+                        <table border="3" cellpadding="15" bgcolor="#ff0000" width="90%">
+                            <tr>
+                                <td>
+                                    <center>
+                                        <font size="6" color="#ffffff"><b>🛠️ SIMPLE MODE: TABLE = ALWAYS VISIBLE!</b></font>
+                                    </center>
+                                </td>
+                            </tr>
+                        </table>
+                    </center>
                 </div>
             `;
             
