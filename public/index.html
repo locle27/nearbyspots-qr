@@ -6590,7 +6590,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         const errorId = `error-${timestamp}-${index}`;
                         console.log('🖼️ Creating gallery image:', index, 'URL:', photoUrl);
                         return `
-                            <div class="gallery-image-container" id="container-${imageId}">
+                            <div class="gallery-image-container" id="container-${imageId}" style="position: relative; width: 150px; height: 150px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #f8f9fa;">
                                 <img class="gallery-image clickable-gallery-image" 
                                      id="${imageId}"
                                      src="${fallbackImage}" 
@@ -6600,10 +6600,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                                      alt="${place.name}" 
                                      data-place-id="${place.id}" 
                                      data-image-index="photo-${index}" 
-                                     style="cursor: pointer; width: 100%; height: 100%; object-fit: cover; opacity: 1; position: relative;"
-                                     onload="console.log('✅ Gallery image loaded:', '${imageId}'); this.style.opacity = '1';"
-                                     onerror="console.log('❌ Gallery image failed:', '${imageId}'); this.src='${fallbackImage}'; this.style.opacity = '0.8';">
-                                <div class="loading-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 0.8rem; pointer-events: none;">Loading...</div>
+                                     style="cursor: pointer; width: 100%; height: 100%; object-fit: cover; opacity: 1; display: block; visibility: visible;"
+                                     onload="console.log('🖼️ FALLBACK image loaded:', '${imageId}', this.naturalWidth + 'x' + this.naturalHeight); this.style.opacity = '1';"
+                                     onerror="console.log('❌ FALLBACK image failed:', '${imageId}'); this.style.background = '#e0e0e0'; this.style.opacity = '0.8';"
+                                     onclick="console.log('🖼️ Gallery image clicked:', ${index}); openImageInLightbox(this.src, '${place.name}', ${index}); event.stopPropagation();">
+                                <div class="loading-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 0.8rem; pointer-events: none; z-index: 1;">Loading real photo...</div>
                             </div>
                         `;
                     }
@@ -6621,8 +6622,37 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 console.log('🖼️ First gallery image HTML sample:', allGalleryImages[0].substring(0, 200) + '...');
             }
             
-            // Generate gallery HTML
-            if (allGalleryImages.length > 0) {
+            // Generate gallery HTML - FORCE TEST MODE FOR DEBUGGING
+            console.log('🖼️ FORCING TEST MODE - Showing visible test images');
+            galleryHtml = `
+                <div class="photo-gallery">
+                    <div class="gallery-title">
+                        <span>📸 Test Gallery (Forced Debug Mode)</span>
+                    </div>
+                    <div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; padding: 16px; background: #f8f9fa; border: 2px dashed #ddd; border-radius: 8px;">
+                        <div style="position: relative; width: 150px; height: 150px; border: 3px solid #FF5722; border-radius: 12px; overflow: hidden; background: linear-gradient(45deg, #ffebee, #ffcdd2); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" onclick="console.log('🖼️ FORCED test image 1 clicked'); alert('Forced test image 1 clicked!')">
+                            <div style="text-align: center; color: #FF5722; font-weight: bold;">
+                                <div style="font-size: 2.5rem;">🖼️</div>
+                                <div style="font-size: 0.9rem;">FORCED TEST 1</div>
+                                <div style="font-size: 0.7rem;">Should be visible</div>
+                            </div>
+                        </div>
+                        <div style="position: relative; width: 150px; height: 150px; border: 3px solid #9C27B0; border-radius: 12px; overflow: hidden; background: linear-gradient(45deg, #f3e5f5, #e1bee7); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" onclick="console.log('📷 FORCED test image 2 clicked'); alert('Forced test image 2 clicked!')">
+                            <div style="text-align: center; color: #9C27B0; font-weight: bold;">
+                                <div style="font-size: 2.5rem;">📷</div>
+                                <div style="font-size: 0.9rem;">FORCED TEST 2</div>
+                                <div style="font-size: 0.7rem;">Should be visible</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding: 16px; text-align: center; color: #FF5722; font-weight: bold; background: #fff3e0; border-radius: 8px; margin-top: 12px;">
+                        🛠️ FORCED DEBUG MODE: These test images should be clearly visible!
+                    </div>
+                </div>
+            `;
+            
+            // ORIGINAL CODE - commented out for debugging
+            /*if (allGalleryImages.length > 0) {
                 const totalImages = (place.images ? place.images.length - 1 : 0) + (place.photos ? place.photos.length - (place.images && place.images.length > 0 ? 0 : 1) : 0);
                 galleryHtml = `
                     <div class="photo-gallery">
@@ -6635,15 +6665,33 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     </div>
                 `;
             } else {
-                console.log('🖼️ NO GALLERY IMAGES - Showing no photos message');
+                console.log('🖼️ NO GALLERY IMAGES - Showing test placeholders');
+                // Show test placeholder images for debugging
                 galleryHtml = `
                     <div class="photo-gallery">
-                        <div class="no-photos">
-                            📷 No additional photos available for this location
+                        <div class="gallery-title">
+                            <span>📸 Test Gallery (Debugging)</span>
+                        </div>
+                        <div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; padding: 16px;">
+                            <div style="position: relative; width: 150px; height: 150px; border: 2px solid #1976D2; border-radius: 8px; overflow: hidden; background: linear-gradient(45deg, #e3f2fd, #bbdefb); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="alert('Test image 1 clicked!')">
+                                <div style="text-align: center; color: #1976D2; font-weight: bold;">
+                                    <div style="font-size: 2rem;">🖼️</div>
+                                    <div style="font-size: 0.8rem;">Test Image 1</div>
+                                </div>
+                            </div>
+                            <div style="position: relative; width: 150px; height: 150px; border: 2px solid #4CAF50; border-radius: 8px; overflow: hidden; background: linear-gradient(45deg, #e8f5e8, #c8e6c9); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="alert('Test image 2 clicked!')">
+                                <div style="text-align: center; color: #4CAF50; font-weight: bold;">
+                                    <div style="font-size: 2rem;">📷</div>
+                                    <div style="font-size: 0.8rem;">Test Image 2</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding: 16px; text-align: center; color: #666; font-size: 0.9rem;">
+                            ⚠️ Debug mode: No real photos found, showing test placeholders
                         </div>
                     </div>
                 `;
-            }
+            }*/
             
             // Create professional mobile modal content
             modalBody.innerHTML = `
@@ -6741,19 +6789,28 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         console.log('🖼️ Loading image', index, ':', realSrc);
                         const testImg = new Image();
                         testImg.onload = () => {
-                            console.log('✅ Gallery image loaded successfully:', index);
+                            console.log('✅ Gallery image loaded successfully:', index, 'Size:', testImg.naturalWidth + 'x' + testImg.naturalHeight);
                             img.src = realSrc;
+                            img.style.display = 'block';
+                            img.style.visibility = 'visible';
                             const loadingOverlay = img.nextElementSibling;
                             if (loadingOverlay && loadingOverlay.classList.contains('loading-overlay')) {
                                 loadingOverlay.style.display = 'none';
                             }
+                            console.log('🔍 Gallery image now visible:', img.style.display, img.style.visibility);
                         };
                         testImg.onerror = () => {
                             console.log('❌ Gallery image failed to load:', index, realSrc);
+                            console.log('❌ Error details - Status:', testImg.complete, 'Natural size:', testImg.naturalWidth + 'x' + testImg.naturalHeight);
+                            img.style.display = 'block';
+                            img.style.visibility = 'visible';
+                            img.style.background = '#f0f0f0';
+                            img.style.border = '2px solid #ddd';
                             const loadingOverlay = img.nextElementSibling;
                             if (loadingOverlay && loadingOverlay.classList.contains('loading-overlay')) {
-                                loadingOverlay.textContent = 'Image unavailable';
+                                loadingOverlay.textContent = 'Image failed to load';
                                 loadingOverlay.style.color = '#999';
+                                loadingOverlay.style.fontSize = '0.7rem';
                             }
                         };
                         testImg.src = realSrc;
@@ -10222,6 +10279,122 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             currentEditPlaceId = null;
         }
 
+        // Open image in lightbox
+        function openImageInLightbox(imageSrc, placeName, imageIndex) {
+            console.log('🖼️ Opening image in lightbox:', imageSrc);
+            
+            // Create lightbox overlay
+            const lightbox = document.createElement('div');
+            lightbox.id = 'imageLightbox';
+            lightbox.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                backdrop-filter: blur(5px);
+                cursor: pointer;
+            `;
+            
+            // Create image container
+            const imageContainer = document.createElement('div');
+            imageContainer.style.cssText = `
+                position: relative;
+                max-width: 90%;
+                max-height: 90%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            `;
+            
+            // Create image
+            const img = document.createElement('img');
+            img.src = imageSrc;
+            img.alt = placeName;
+            img.style.cssText = `
+                max-width: 100%;
+                max-height: 80vh;
+                object-fit: contain;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            `;
+            
+            // Create caption
+            const caption = document.createElement('div');
+            caption.textContent = `${placeName} - Photo ${imageIndex + 1}`;
+            caption.style.cssText = `
+                color: white;
+                font-size: 1.1rem;
+                font-weight: 600;
+                margin-top: 16px;
+                text-align: center;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+            `;
+            
+            // Create close button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '✕';
+            closeBtn.style.cssText = `
+                position: absolute;
+                top: -50px;
+                right: -20px;
+                background: rgba(255, 255, 255, 0.2);
+                border: none;
+                color: white;
+                font-size: 24px;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                backdrop-filter: blur(10px);
+                transition: all 0.3s ease;
+            `;
+            
+            // Close functions
+            const closeLightbox = () => {
+                document.body.removeChild(lightbox);
+                document.body.style.overflow = 'hidden'; // Keep modal overflow hidden
+            };
+            
+            // Event listeners
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeLightbox();
+            });
+            
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) {
+                    closeLightbox();
+                }
+            });
+            
+            // Escape key
+            const handleEscape = (e) => {
+                if (e.key === 'Escape') {
+                    closeLightbox();
+                    document.removeEventListener('keydown', handleEscape);
+                }
+            };
+            document.addEventListener('keydown', handleEscape);
+            
+            // Assemble and show
+            imageContainer.appendChild(img);
+            imageContainer.appendChild(caption);
+            imageContainer.appendChild(closeBtn);
+            lightbox.appendChild(imageContainer);
+            document.body.appendChild(lightbox);
+            
+            console.log('✅ Lightbox opened for image:', imageIndex + 1);
+        }
+        
         // Fix coordinates function
         async function fixPlaceCoordinates() {
             if (!currentEditPlaceId) {
