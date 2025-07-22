@@ -1486,10 +1486,11 @@
             scroll-behavior: smooth;
             display: flex;
             flex-direction: column;
-            padding-bottom: 100px; /* Reserve space for action buttons */
+            padding-bottom: 0; /* Remove padding-bottom to fix overlap */
             pointer-events: auto;
             position: relative;
             z-index: 1;
+            min-height: 0; /* Allow proper flexbox sizing */
         }
 
         /* Desktop styles for larger screens */
@@ -2782,7 +2783,7 @@
             
             /* Ultra-enhanced place actions for guaranteed button clicks */
             .place-actions {
-                position: absolute !important;
+                position: sticky !important;
                 bottom: 0 !important;
                 left: 0 !important;
                 right: 0 !important;
@@ -2791,20 +2792,18 @@
                 justify-content: center !important;
                 align-items: center !important;
                 flex-wrap: wrap !important;
-                padding: 12px 16px !important; /* Enhanced padding for touch safety */
-                background: linear-gradient(to top, rgba(255,255,255,1) 70%, rgba(255,255,255,0.9) 100%) !important;
-                backdrop-filter: blur(8px) !important;
-                z-index: 9998 !important; /* High but below buttons */
+                padding: 16px !important; /* Enhanced padding for touch safety */
+                background: linear-gradient(to top, rgba(255,255,255,1) 70%, rgba(255,255,255,0.95) 100%) !important;
+                backdrop-filter: blur(12px) !important;
+                z-index: 1000 !important;
                 margin: 0 !important;
-                gap: 8px !important; /* More gap for larger buttons */
-                min-height: 70px !important; /* Minimum height for touch targets */
+                margin-top: auto !important; /* Push to bottom with flex */
+                gap: 12px !important; /* More gap for larger buttons */
+                min-height: 80px !important; /* Minimum height for touch targets */
                 transform: none !important;
                 border-top: 2px solid #e0e0e0 !important;
-                background: rgba(255, 255, 255, 0.98) !important; /* More opaque background */
-                backdrop-filter: blur(12px) !important; /* More blur effect */
-                box-shadow: 0 -4px 16px rgba(0,0,0,0.12) !important;
-                z-index: 999 !important; /* High z-index but lower than buttons */
-                pointer-events: none !important; /* Allow clicks to pass through to buttons */
+                box-shadow: 0 -4px 16px rgba(0,0,0,0.15) !important;
+                pointer-events: auto !important; /* Enable all clicks */
             }
             
             /* Ensure buttons inside actions area are clickable */
@@ -2832,7 +2831,10 @@
             /* Enhanced modal content spacing */
             .place-details-full {
                 padding: 20px !important; /* Optimized padding */
-                padding-bottom: 80px !important; /* Space for action buttons */
+                padding-bottom: 20px !important; /* Remove bottom padding since we're using sticky buttons */
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
             }
             
             .place-main-image {
@@ -3169,15 +3171,16 @@
         .place-actions {
             display: flex !important;
             gap: 16px;
-            margin-bottom: 20px;
+            margin-bottom: 0;
             padding: 20px 24px;
-            position: relative !important;
+            position: sticky !important;
+            bottom: 0 !important;
             z-index: 1000 !important;
             background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
             border-top: 2px solid #e2e8f0;
-            margin-top: 16px;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+            margin-top: auto;
+            border-radius: 0;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
             pointer-events: auto !important;
         }
 
@@ -3263,7 +3266,7 @@
         .photo-gallery {
             background: #f8fafc;
             margin: 16px -20px 0 -20px;
-            padding: 20px 20px 24px 20px;
+            padding: 20px 20px 100px 20px; /* Add bottom padding for sticky buttons */
             border-top: 1px solid #e2e8f0;
             flex: 1;
             overflow: hidden;
@@ -6681,39 +6684,24 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             
             // Generate gallery HTML - FORCE TEST MODE FOR DEBUGGING
             console.log('🖼️ FORCING TEST MODE - Showing visible test images');
-            // SIMPLE HTML APPROACH - No complex styling
+            // ULTRA SIMPLE TEXT APPROACH - Maximum visibility
             galleryHtml = `
                 <div class="photo-gallery">
-                    <h3>📸 SIMPLE TEST GALLERY</h3>
-                    <table border="5" cellpadding="20" bgcolor="#ff0000" width="100%">
-                        <tr>
-                            <td bgcolor="#ffff00" onclick="alert('SIMPLE test image 1 clicked!')">
-                                <center>
-                                    <font size="7">🖼️</font><br>
-                                    <font size="5"><b>SIMPLE TEST 1</b></font><br>
-                                    <font size="4">CLICK ME!</font>
-                                </center>
-                            </td>
-                            <td bgcolor="#00ffff" onclick="alert('SIMPLE test image 2 clicked!')">
-                                <center>
-                                    <font size="7">📷</font><br>
-                                    <font size="5"><b>SIMPLE TEST 2</b></font><br>
-                                    <font size="4">CLICK ME!</font>
-                                </center>
-                            </td>
-                        </tr>
-                    </table>
-                    <center>
-                        <table border="3" cellpadding="15" bgcolor="#ff0000" width="90%">
-                            <tr>
-                                <td>
-                                    <center>
-                                        <font size="6" color="#ffffff"><b>🛠️ SIMPLE MODE: TABLE = ALWAYS VISIBLE!</b></font>
-                                    </center>
-                                </td>
-                            </tr>
-                        </table>
-                    </center>
+                    <h1>==========================================</h1>
+                    <h1>📸 GALLERY IS WORKING! 📸</h1>
+                    <h1>==========================================</h1>
+                    <br><br>
+                    <h2>🖼️🖼️🖼️ IMAGE 1 🖼️🖼️🖼️</h2>
+                    <h3 onclick="alert('SUCCESS! Image 1 clicked!')">[ CLICK HERE FOR IMAGE 1 POPUP ]</h3>
+                    <p>👆 Tap the text above to test click! 👆</p>
+                    <br><br>
+                    <h2>📷📷📷 IMAGE 2 📷📷📷</h2>
+                    <h3 onclick="alert('SUCCESS! Image 2 clicked!')">[ CLICK HERE FOR IMAGE 2 POPUP ]</h3>
+                    <p>👆 Tap the text above to test click! 👆</p>
+                    <br><br>
+                    <h1>==========================================</h1>
+                    <h2>✅ GALLERY PHOTOS ARE NOW WORKING! ✅</h2>
+                    <h1>==========================================</h1>
                 </div>
             `;
             
