@@ -1377,22 +1377,63 @@
             flex-direction: column;
         }
         
-        /* Mobile-specific modal behavior to preserve split layout */
+        /* COMPACT bottom sheet - preserves map visibility */
         @media (max-width: 768px) {
             .image-modal {
                 position: fixed;
-                z-index: 4000; /* Higher z-index to ensure it shows above everything */
+                z-index: 4000;
+                align-items: flex-end; /* Align to bottom */
+                padding: 0;
+                background: transparent !important; /* Completely transparent */
             }
             
             .image-modal-content {
-                height: 85vh !important; /* Reduced height to show some background */
-                max-height: 85vh !important;
-                border-radius: 16px 16px 0 0 !important;
+                height: 40vh !important; /* Compact height - map stays visible */
+                max-height: 40vh !important;
+                border-radius: 12px 12px 0 0 !important;
+                box-shadow: 0 -8px 32px rgba(0,0,0,0.3) !important;
+                margin: 0 !important;
+                position: relative;
+                background: white;
             }
             
-            /* Ensure modal doesn't completely cover the map */
+            /* NO background overlay - map stays fully visible */
             .image-modal.show {
-                background: rgba(0,0,0,0.6) !important; /* Less opacity to show background */
+                background: transparent !important;
+                backdrop-filter: none !important;
+            }
+            
+            /* Compact header for bottom sheet */
+            .image-modal-header {
+                padding: 8px 16px !important;
+                min-height: auto !important;
+                position: relative;
+            }
+            
+            .image-modal-title {
+                font-size: 1.1rem !important;
+                margin: 0 !important;
+                padding-right: 80px !important; /* Space for buttons */
+                line-height: 1.2 !important;
+            }
+            
+            /* Compact back button */
+            .image-modal-back {
+                top: 4px !important;
+                left: 8px !important;
+                padding: 6px 10px !important;
+                min-height: 32px !important;
+                min-width: 60px !important;
+                font-size: 0.9rem !important;
+            }
+            
+            /* Compact close button */
+            .image-modal-close {
+                top: 4px !important;
+                right: 8px !important;
+                width: 32px !important;
+                height: 32px !important;
+                font-size: 1.2rem !important;
             }
         }
 
@@ -1507,43 +1548,144 @@
             scroll-behavior: smooth;
             display: flex;
             flex-direction: column;
-            padding-bottom: 0; /* Remove padding-bottom to fix overlap */
+            padding-bottom: 0;
             pointer-events: auto;
             position: relative;
             z-index: 1;
-            min-height: 0; /* Allow proper flexbox sizing */
-            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-            height: calc(100vh - 80px); /* Account for header height */
-            max-height: calc(100vh - 80px);
+            min-height: 0;
+            -webkit-overflow-scrolling: touch;
+            height: calc(40vh - 50px); /* Compact height for bottom sheet */
+            max-height: calc(40vh - 50px);
         }
-
-        /* Mobile-specific scrolling improvements */
-        @media (max-width: 767px) {
+        
+        /* COMPACT detail content for mobile bottom sheet */
+        @media (max-width: 768px) {
             .image-modal-body {
-                /* Enhanced mobile scrolling */
-                scroll-padding-top: 20px;
-                scrollbar-width: none; /* Hide scrollbar on Firefox */
-                -ms-overflow-style: none; /* Hide scrollbar on IE/Edge */
+                height: calc(40vh - 50px) !important;
+                max-height: calc(40vh - 50px) !important;
             }
             
-            .image-modal-body::-webkit-scrollbar {
-                display: none; /* Hide scrollbar on WebKit browsers */
+            /* Ultra-compact place details layout */
+            .place-details-full {
+                padding: 8px !important;
+                display: grid !important;
+                grid-template-columns: 1fr;
+                gap: 6px !important;
+                font-size: 0.8rem !important;
             }
             
-            /* Ensure all content sections can scroll properly */
-            .place-details-full * {
-                max-width: 100% !important;
-                overflow-wrap: break-word !important;
+            /* Compact hero section */
+            .place-hero-section {
+                margin-bottom: 8px !important;
             }
             
-            /* Photo galleries should not interfere with modal scrolling */
+            /* Micro main image */
+            .place-main-image {
+                height: 80px !important;
+                width: 120px !important;
+                float: left !important;
+                margin: 0 8px 4px 0 !important;
+                border-radius: 6px !important;
+            }
+            
+            /* Compact place info */
+            .place-info-full {
+                overflow: hidden !important;
+            }
+            
+            .place-name-full {
+                font-size: 1.1rem !important;
+                margin-bottom: 2px !important;
+                line-height: 1.2 !important;
+            }
+            
+            .place-address-full {
+                font-size: 0.7rem !important;
+                margin-bottom: 4px !important;
+                color: #666 !important;
+                line-height: 1.1 !important;
+            }
+            
+            /* Compact stats in single row */
+            .place-stats-full {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 4px !important;
+                margin-bottom: 6px !important;
+                padding: 0 !important;
+            }
+            
+            .place-stat {
+                padding: 2px 6px !important;
+                font-size: 0.65rem !important;
+                min-height: auto !important;
+                border-radius: 8px !important;
+                line-height: 1.1 !important;
+                font-weight: 600 !important;
+            }
+            
+            /* Hide less critical sections on mobile */
+            .place-types-section,
+            .place-business-section,
+            .place-metadata-section {
+                display: none !important;
+            }
+            
+            /* Compact contact section */
+            .place-contact-section {
+                font-size: 0.7rem !important;
+                padding: 4px !important;
+                margin-bottom: 4px !important;
+            }
+            
+            /* Minimal photo gallery */
             .photo-gallery {
-                overflow: visible !important;
-                height: auto !important;
+                margin: 4px 0 !important;
+                padding: 6px !important;
             }
             
             .photo-grid {
-                overflow: visible !important;
+                grid-template-columns: repeat(4, 60px) !important;
+                gap: 4px !important;
+                max-height: 70px !important;
+                overflow: hidden !important;
+            }
+            
+            .gallery-title {
+                font-size: 0.8rem !important;
+                margin-bottom: 4px !important;
+            }
+        }
+
+        /* Compact modal action buttons */
+        @media (max-width: 768px) {
+            .place-actions {
+                position: sticky !important;
+                bottom: 0 !important;
+                background: white !important;
+                padding: 6px 8px !important;
+                border-top: 1px solid #e0e0e0 !important;
+                gap: 6px !important;
+                margin-top: auto !important;
+                z-index: 1000 !important;
+            }
+            
+            .btn-action {
+                flex: 1 !important;
+                padding: 8px 12px !important;
+                font-size: 0.8rem !important;
+                min-height: 36px !important;
+                border-radius: 6px !important;
+                font-weight: 600 !important;
+            }
+            
+            /* Hide scrollbars for clean look */
+            .image-modal-body::-webkit-scrollbar {
+                display: none;
+            }
+            .image-modal-body {
+                scrollbar-width: none;
+                -ms-overflow-style: none;
             }
         }
 
@@ -3672,80 +3814,105 @@
 
         /* Compact Mobile Place List - Show 4-5 places on screen */
         @media (max-width: 768px) {
-            /* Ultra-compact place items for mobile efficiency */
+            /* EXTREME compact place items - maximum density */
             .place-item {
-                padding: 6px !important; /* Further reduced from 8px */
-                margin-bottom: 3px !important; /* Further reduced from 6px */
-                gap: 8px !important; /* Further reduced from 10px */
-                min-height: 32px !important; /* Further reduced from 38px */
-                border-radius: 4px !important; /* Smaller radius */
-                line-height: 1.1 !important; /* Tighter overall line height */
+                padding: 4px 6px !important; /* Ultra-minimal padding */
+                margin-bottom: 1px !important; /* Minimal separation */
+                gap: 6px !important; /* Tight gap */
+                min-height: 24px !important; /* Extremely compact height */
+                border-radius: 3px !important; /* Minimal radius */
+                line-height: 1.0 !important; /* Tightest line height */
+                display: flex !important;
+                align-items: center !important;
+                position: relative !important;
             }
             
-            /* Ultra-compact images for mobile */
+            /* Micro images for extreme density */
             .place-image,
             .place-image-placeholder {
-                width: 40px !important; /* Further reduced from 50px */
-                height: 40px !important; /* Further reduced from 50px */
-                min-height: 40px !important;
-                max-width: 40px !important;
-                max-height: 40px !important;
-                border-radius: 4px !important;
+                width: 24px !important; /* Micro size */
+                height: 24px !important; /* Micro size */
+                min-height: 24px !important;
+                max-width: 24px !important;
+                max-height: 24px !important;
+                border-radius: 2px !important;
+                flex-shrink: 0 !important;
             }
             
-            /* Ultra-optimized text sizes for mobile */
+            /* EXTREME compact single-line layout */
+            .place-details {
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                min-width: 0 !important;
+                gap: 1px !important;
+            }
+            
+            /* Main info line: Name + Key stats */
             .place-name {
-                font-size: 0.85rem !important; /* Further reduced from 0.9rem */
-                margin-bottom: 1px !important; /* Minimal margin */
-                line-height: 1.1 !important; /* Tighter line height */
+                font-size: 0.75rem !important; /* Compact but readable */
+                line-height: 1.0 !important;
                 font-weight: 600 !important;
+                margin: 0 !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 60% !important;
             }
             
-            .place-address {
-                font-size: 0.7rem !important; /* Further reduced from 0.75rem */
-                margin-bottom: 1px !important; /* Minimal margin */
-                line-height: 1.1 !important;
-                color: #777 !important; /* Slightly lighter for hierarchy */
+            /* Compact meta line with icons */
+            .place-compact-meta {
+                font-size: 0.6rem !important;
+                line-height: 1.0 !important;
+                color: #666 !important;
+                display: flex !important;
+                gap: 6px !important;
+                align-items: center !important;
+                margin: 0 !important;
             }
             
+            /* Hide redundant individual elements */
+            .place-address,
             .place-hours,
-            .place-hours-placeholder {
-                font-size: 0.65rem !important; /* Further reduced from 0.7rem */
-                margin-bottom: 1px !important; /* Minimal margin */
-                padding: 1px 3px !important; /* Further reduced padding */
-                line-height: 1.1 !important;
+            .place-hours-placeholder,
+            .place-meta {
+                display: none !important;
             }
             
+            /* Compact rating display */
             .place-rating {
-                font-size: 0.65rem !important; /* Further reduced from 0.7rem */
+                font-size: 0.6rem !important;
                 font-weight: 600 !important;
+                color: #ff9800 !important;
+                margin: 0 !important;
             }
             
             .place-distance {
-                font-size: 0.65rem !important; /* Further reduced from 0.7rem */
+                font-size: 0.6rem !important;
                 color: #666 !important;
+                margin: 0 !important;
+                font-weight: 500 !important;
             }
             
-            /* Ultra-compact meta information */
-            .place-meta {
-                gap: 4px !important; /* Further reduced from 6px */
-                margin-top: 1px !important; /* Minimal margin */
-            }
-            
-            /* Ultra-compact action buttons for mobile */
+            /* MICRO action buttons - minimal but accessible */
             .view-details-btn,
             .edit-place-btn {
-                padding: 4px 8px !important; /* Further reduced from 6px 10px */
-                font-size: 0.65rem !important; /* Further reduced from 0.7rem */
-                min-height: 30px !important; /* Further reduced from 36px */
-                min-width: 30px !important; /* Further reduced from 36px */
-                border-radius: 4px !important; /* Smaller radius */
+                padding: 2px 4px !important; /* Micro padding */
+                font-size: 0.55rem !important; /* Tiny text */
+                min-height: 20px !important; /* Minimal height */
+                min-width: 24px !important; /* Just wide enough */
+                border-radius: 2px !important; /* Minimal radius */
+                font-weight: 600 !important;
             }
             
             /* Optimize place actions container */
             .place-actions {
-                gap: 4px !important; /* Further reduced from 6px */
-                right: 6px !important; /* Further reduced from 10px */
+                gap: 2px !important; /* Minimal gap */
+                right: 4px !important; /* Close to edge */
+                position: absolute !important;
+                top: 50% !important;
+                transform: translateY(-50%) !important;
             }
             
             /* Compact container margins */
@@ -3778,20 +3945,22 @@
             .list-panel {
                 border-right: none;
                 border-bottom: 2px solid #e9ecef;
-                height: 50vh !important; /* Fixed height for consistent scrolling */
-                max-height: none !important; /* Remove max-height constraint */
-                min-height: none !important; /* Remove min-height constraint */
-                overflow-y: auto !important; /* Enable vertical scrolling */
-                overflow-x: hidden !important; /* Hide horizontal scroll */
-                -webkit-overflow-scrolling: touch !important; /* Smooth iOS scrolling */
+                height: 60vh !important; /* More space for compact list - can fit 12-15 items */
+                max-height: none !important;
+                min-height: none !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                -webkit-overflow-scrolling: touch !important;
+                background: white !important;
+                padding: 4px !important; /* Minimal padding */
             }
             
             .map-panel {
-                height: 50vh !important; /* Match list panel for equal split */
+                height: 40vh !important; /* Smaller map to give more space to list */
                 display: block !important;
                 position: relative !important;
                 overflow: hidden !important;
-                background: #f5f5f5 !important; /* Fallback background to see if panel exists */
+                background: #f5f5f5 !important;
             }
             
             /* Ensure map container inside panel has proper height */
@@ -3800,7 +3969,7 @@
             .map-panel #map {
                 height: 100% !important;
                 width: 100% !important;
-                min-height: 50vh !important; /* Match panel height */
+                min-height: 40vh !important; /* Match compact panel height */
             }
         }
 
