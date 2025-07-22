@@ -6726,32 +6726,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     </div>
                 `;
             } else {
-                console.log('🖼️ NO GALLERY IMAGES - Showing test placeholders');
-                // Show test placeholder images for debugging
-                galleryHtml = `
-                    <div class="photo-gallery">
-                        <div class="gallery-title">
-                            <span>📸 Test Gallery (Debugging)</span>
-                        </div>
-                        <div class="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; padding: 16px;">
-                            <div style="position: relative; width: 150px; height: 150px; border: 2px solid #1976D2; border-radius: 8px; overflow: hidden; background: linear-gradient(45deg, #e3f2fd, #bbdefb); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="alert('Test image 1 clicked!')">
-                                <div style="text-align: center; color: #1976D2; font-weight: bold;">
-                                    <div style="font-size: 2rem;">🖼️</div>
-                                    <div style="font-size: 0.8rem;">Test Image 1</div>
-                                </div>
-                            </div>
-                            <div style="position: relative; width: 150px; height: 150px; border: 2px solid #4CAF50; border-radius: 8px; overflow: hidden; background: linear-gradient(45deg, #e8f5e8, #c8e6c9); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="alert('Test image 2 clicked!')">
-                                <div style="text-align: center; color: #4CAF50; font-weight: bold;">
-                                    <div style="font-size: 2rem;">📷</div>
-                                    <div style="font-size: 0.8rem;">Test Image 2</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="padding: 16px; text-align: center; color: #666; font-size: 0.9rem;">
-                            ⚠️ Debug mode: No real photos found, showing test placeholders
-                        </div>
-                    </div>
-                `;
+                console.log('🖼️ NO GALLERY IMAGES - No photos to display');
+                // Don't show gallery section when there are no photos
+                galleryHtml = '';
             }
             
             // Create professional mobile modal content
@@ -10314,6 +10291,108 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         // Edit Place Modal Functions
         let currentEditPlaceId = null;
 
+        // Setup automatic coordinate updating when address changes
+        let addressUpdateTimeout;
+        function setupAddressAutoUpdate() {
+            const addressField = document.getElementById('editPlaceAddress');
+            
+            // Remove any existing listeners to prevent duplicates
+            addressField.removeEventListener('input', handleAddressChange);
+            
+            // Add new listener with debouncing
+            addressField.addEventListener('input', handleAddressChange);
+        }
+        
+        function handleAddressChange(event) {
+            const address = event.target.value.trim();
+            
+            // Clear previous timeout
+            if (addressUpdateTimeout) {
+                clearTimeout(addressUpdateTimeout);
+            }
+            
+            // Only proceed if address has meaningful content (at least 10 characters)
+            if (address.length < 10) {
+                return;
+            }
+            
+            // Debounce to avoid too many API calls (wait 2 seconds after user stops typing)
+            addressUpdateTimeout = setTimeout(async () => {
+                await autoUpdateCoordinates(address);
+            }, 2000);
+        }
+        
+        async function autoUpdateCoordinates(address) {
+            if (!currentEditPlaceId || !address) return;
+            
+            try {
+                console.log('🗺️ Auto-updating coordinates for address:', address);
+                
+                // Show loading state in coordinates display
+                updateCoordinatesDisplay('⏳ Auto-updating coordinates...', null, null);
+                
+                // Call geocoding API
+                const response = await fetch('/api/geocode-address', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ address: address })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.latitude && data.longitude) {
+                        console.log('✅ Auto-updated coordinates:', data.latitude, data.longitude);
+                        
+                        // Update coordinates in the place data
+                        const place = placeDataStore.get(currentEditPlaceId);
+                        if (place) {
+                            place.latitude = data.latitude;
+                            place.longitude = data.longitude;
+                            place.autoUpdatedCoordinates = true; // Flag to track auto-updates
+                            
+                            // Update the display
+                            updateCoordinatesDisplay('✅ Coordinates auto-updated', data.latitude, data.longitude);
+                        }
+                    } else {
+                        console.log('❌ Geocoding failed:', data.error || 'Unknown error');
+                        updateCoordinatesDisplay('❌ Could not find coordinates for this address', null, null);
+                    }
+                } else {
+                    console.log('❌ Geocoding API error:', response.statusText);
+                    updateCoordinatesDisplay('❌ Failed to update coordinates', null, null);
+                }
+            } catch (error) {
+                console.error('❌ Auto-coordinate update failed:', error);
+                updateCoordinatesDisplay('❌ Error updating coordinates', null, null);
+            }
+        }
+        
+        function updateCoordinatesDisplay(message, latitude, longitude) {
+            const infoContent = document.getElementById('editInfoContent');
+            if (!infoContent) return;
+            
+            // Find existing coordinates line and update it
+            const infoHtml = infoContent.innerHTML;
+            const coordinatesRegex = /<div class="edit-info-item"><strong>🗺️ Coordinates:<\/strong>.*?<\/div>/;
+            
+            let newCoordinatesHtml;
+            if (latitude && longitude) {
+                newCoordinatesHtml = `<div class="edit-info-item"><strong>🗺️ Coordinates:</strong> ${latitude.toFixed(6)}, ${longitude.toFixed(6)} <span style="color: #10b981;">${message}</span></div>`;
+            } else {
+                newCoordinatesHtml = `<div class="edit-info-item"><strong>🗺️ Coordinates:</strong> <span style="color: #f59e0b;">${message}</span></div>`;
+            }
+            
+            if (coordinatesRegex.test(infoHtml)) {
+                // Replace existing coordinates line
+                infoContent.innerHTML = infoHtml.replace(coordinatesRegex, newCoordinatesHtml);
+            } else {
+                // Add coordinates line if it doesn't exist
+                infoContent.innerHTML += newCoordinatesHtml;
+            }
+        }
+
         function showEditPlaceModal(placeId) {
             console.log('🔧 Opening edit modal for place ID:', placeId);
             
@@ -10386,6 +10465,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             }
             
             document.getElementById('editOpeningHours').value = hoursText;
+            
+            // Add auto-update listener for address field
+            setupAddressAutoUpdate();
             
             // Show modal
             const modal = document.getElementById('editPlaceModal');
