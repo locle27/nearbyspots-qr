@@ -4707,39 +4707,54 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     parentClass: e.target.parentElement?.className
                 });
                 
-                // Check if clicking on buttons or their children with multiple methods
+                // ENHANCED mobile button detection with ultra-specific checks
                 const isButtonClick = 
                     // Direct button detection
                     e.target.matches('.delete-recommendation-btn, .view-details-btn, .edit-place-btn') ||
-                    // Parent button detection
+                    // Parent button detection (crucial for mobile)
                     e.target.closest('.delete-recommendation-btn, .view-details-btn, .edit-place-btn') ||
-                    // Text content detection (mobile fallback)
+                    // Text content detection (mobile fallback) - more specific
                     (e.target.textContent && (
-                        e.target.textContent.includes('Details') || 
-                        e.target.textContent.includes('👁️') ||
-                        e.target.textContent.includes('Edit') || 
-                        e.target.textContent.includes('✏️') ||
+                        e.target.textContent.trim() === '👁️ Details' ||
+                        e.target.textContent.trim() === 'Details' ||
+                        e.target.textContent.trim() === '✏️ Edit' ||
+                        e.target.textContent.trim() === 'Edit' ||
                         e.target.textContent.includes('Delete') || 
                         e.target.textContent.includes('🗑️')
                     )) ||
                     // Actions container detection
-                    e.target.closest('.place-actions');
+                    e.target.closest('.place-actions') ||
+                    // Additional mobile-specific detection
+                    e.target.closest('[data-place-id]')?.querySelector('.view-details-btn')?.contains(e.target);
                 
+                // IMMEDIATE stop propagation for any button-related click
                 if (isButtonClick) {
-                    console.log('🚫 Button click detected, preventing place selection');
+                    console.log('🚫 BUTTON CLICK DETECTED - Stopping all propagation');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediateePropagation();
                     
-                    // If this is a details button, manually trigger the modal
-                    if ((e.target.classList.contains('view-details-btn') || 
-                         e.target.textContent?.includes('Details') || 
-                         e.target.textContent?.includes('👁️')) && 
-                        !e.target.textContent?.includes('Edit')) {
-                        
-                        console.log('👁️ MANUAL DETAILS TRIGGER for mobile');
-                        e.preventDefault();
-                        e.stopPropagation();
-                        showPlaceDetailsById(place.id);
+                    // Enhanced details button detection with more specificity
+                    const isDetailsButton = 
+                        e.target.classList.contains('view-details-btn') || 
+                        e.target.closest('.view-details-btn') ||
+                        (e.target.textContent && (
+                            e.target.textContent.trim() === '👁️ Details' ||
+                            e.target.textContent.trim() === 'Details' ||
+                            e.target.textContent.includes('👁️')
+                        )) && !e.target.textContent?.includes('Edit');
+                    
+                    if (isDetailsButton) {
+                        console.log('👁️ DETAILS BUTTON CONFIRMED - Opening modal immediately');
+                        console.log('🔍 Place data available for ID:', place.id, ':', !!placeDataStore.get(place.id));
+                        console.log('🔍 Store contents:', Array.from(placeDataStore.keys()));
+                        // Force immediate modal opening
+                        setTimeout(() => {
+                            console.log('🎬 EXECUTING showPlaceDetailsById for:', place.id);
+                            showPlaceDetailsById(place.id);
+                        }, 0);
                     }
-                    return;
+                    return false; // Prevent any further event processing
                 }
                 
                 console.log(`🔍 Place clicked: ${place.name} (ID: ${place.id})`);
@@ -6682,9 +6697,16 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 ${galleryHtml}
             `;
             
-            // Show modal
+            // Show modal with enhanced debugging
+            console.log('📋 About to show modal...');
+            console.log('📋 Modal classes before:', modal.className);
             modal.classList.add('show');
+            console.log('📋 Modal classes after adding show:', modal.className);
+            console.log('📋 Modal computed display style:', window.getComputedStyle(modal).display);
+            console.log('📋 Modal visibility:', window.getComputedStyle(modal).visibility);
+            console.log('📋 Modal z-index:', window.getComputedStyle(modal).zIndex);
             document.body.style.overflow = 'hidden';
+            console.log('✅ Modal should now be visible on screen!');
             
             // Add safe event listeners for modal buttons (prevents onclick attribute issues)
             setTimeout(() => {
