@@ -1388,8 +1388,8 @@
             }
             
             .image-modal-content {
-                height: 40vh !important; /* Compact height - map stays visible */
-                max-height: 40vh !important;
+                height: 80vh !important; /* More space for content */
+                max-height: 80vh !important;
                 border-radius: 12px 12px 0 0 !important;
                 box-shadow: 0 -8px 32px rgba(0,0,0,0.3) !important;
                 margin: 0 !important;
@@ -1554,106 +1554,109 @@
             z-index: 1;
             min-height: 0;
             -webkit-overflow-scrolling: touch;
-            height: calc(40vh - 50px); /* Compact height for bottom sheet */
-            max-height: calc(40vh - 50px);
+            height: calc(80vh - 50px); /* More height for full content */
+            max-height: calc(80vh - 50px);
         }
         
-        /* COMPACT detail content for mobile bottom sheet */
+        /* COMPLETE detail content - show everything properly */
         @media (max-width: 768px) {
             .image-modal-body {
-                height: calc(40vh - 50px) !important;
-                max-height: calc(40vh - 50px) !important;
+                height: calc(80vh - 50px) !important;
+                max-height: calc(80vh - 50px) !important;
             }
             
-            /* Ultra-compact place details layout */
+            /* Proper spacing for full content */
             .place-details-full {
-                padding: 8px !important;
-                display: grid !important;
-                grid-template-columns: 1fr;
-                gap: 6px !important;
-                font-size: 0.8rem !important;
+                padding: 16px !important; /* Better spacing */
+                display: block !important; /* Natural flow */
+                gap: 0 !important;
+                font-size: 1rem !important;
             }
             
-            /* Compact hero section */
+            /* Normal hero section */
             .place-hero-section {
-                margin-bottom: 8px !important;
+                margin-bottom: 16px !important;
             }
             
-            /* Micro main image */
+            /* Proper main image size */
             .place-main-image {
-                height: 80px !important;
-                width: 120px !important;
-                float: left !important;
-                margin: 0 8px 4px 0 !important;
-                border-radius: 6px !important;
+                height: 200px !important; /* Visible image */
+                width: 100% !important;
+                float: none !important;
+                margin: 0 0 16px 0 !important;
+                border-radius: 12px !important;
             }
             
-            /* Compact place info */
+            /* Full place info */
             .place-info-full {
-                overflow: hidden !important;
+                overflow: visible !important;
             }
             
             .place-name-full {
-                font-size: 1.1rem !important;
-                margin-bottom: 2px !important;
-                line-height: 1.2 !important;
+                font-size: 1.4rem !important; /* Prominent name */
+                margin-bottom: 8px !important;
+                line-height: 1.3 !important;
             }
             
             .place-address-full {
-                font-size: 0.7rem !important;
-                margin-bottom: 4px !important;
+                font-size: 0.9rem !important; /* Readable address */
+                margin-bottom: 12px !important;
                 color: #666 !important;
-                line-height: 1.1 !important;
+                line-height: 1.4 !important;
             }
             
-            /* Compact stats in single row */
+            /* Visible stats */
             .place-stats-full {
                 display: flex !important;
                 flex-wrap: wrap !important;
-                gap: 4px !important;
-                margin-bottom: 6px !important;
-                padding: 0 !important;
+                gap: 8px !important;
+                margin-bottom: 16px !important;
+                padding: 16px !important;
+                background: #f8f9fa !important;
+                border-radius: 8px !important;
             }
             
             .place-stat {
-                padding: 2px 6px !important;
-                font-size: 0.65rem !important;
+                padding: 8px 12px !important;
+                font-size: 0.8rem !important;
                 min-height: auto !important;
-                border-radius: 8px !important;
-                line-height: 1.1 !important;
+                border-radius: 12px !important;
+                line-height: 1.2 !important;
                 font-weight: 600 !important;
             }
             
-            /* Hide less critical sections on mobile */
+            /* Show ALL sections properly */
             .place-types-section,
+            .place-contact-section,
             .place-business-section,
             .place-metadata-section {
-                display: none !important;
+                display: block !important; /* Show all content */
+                margin-bottom: 16px !important;
+                padding: 12px !important;
+                background: #f8f9fa !important;
+                border-radius: 8px !important;
+                font-size: 0.85rem !important;
             }
             
-            /* Compact contact section */
-            .place-contact-section {
-                font-size: 0.7rem !important;
-                padding: 4px !important;
-                margin-bottom: 4px !important;
-            }
-            
-            /* Minimal photo gallery */
+            /* Proper photo gallery */
             .photo-gallery {
-                margin: 4px 0 !important;
-                padding: 6px !important;
+                margin: 16px 0 !important;
+                padding: 16px !important;
+                background: #f8f9fa !important;
+                border-radius: 8px !important;
             }
             
             .photo-grid {
-                grid-template-columns: repeat(4, 60px) !important;
-                gap: 4px !important;
-                max-height: 70px !important;
-                overflow: hidden !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 8px !important;
+                max-height: none !important; /* Show all photos */
+                overflow: visible !important;
             }
             
             .gallery-title {
-                font-size: 0.8rem !important;
-                margin-bottom: 4px !important;
+                font-size: 1rem !important;
+                margin-bottom: 12px !important;
+                font-weight: 600 !important;
             }
         }
 
@@ -3814,105 +3817,121 @@
 
         /* Compact Mobile Place List - Show 4-5 places on screen */
         @media (max-width: 768px) {
-            /* EXTREME compact place items - maximum density */
+            /* COMPACT but complete place items */
             .place-item {
-                padding: 4px 6px !important; /* Ultra-minimal padding */
-                margin-bottom: 1px !important; /* Minimal separation */
-                gap: 6px !important; /* Tight gap */
-                min-height: 24px !important; /* Extremely compact height */
-                border-radius: 3px !important; /* Minimal radius */
-                line-height: 1.0 !important; /* Tightest line height */
+                padding: 8px !important; /* Reasonable padding for readability */
+                margin-bottom: 4px !important; /* Clear separation */
+                gap: 10px !important; /* Good gap for readability */
+                min-height: 60px !important; /* Enough height for 3 lines of info */
+                border-radius: 6px !important; /* Professional radius */
+                line-height: 1.2 !important; /* Readable line height */
                 display: flex !important;
-                align-items: center !important;
+                align-items: flex-start !important; /* Align to top for multi-line */
                 position: relative !important;
             }
             
-            /* Micro images for extreme density */
+            /* Compact but visible images */
             .place-image,
             .place-image-placeholder {
-                width: 24px !important; /* Micro size */
-                height: 24px !important; /* Micro size */
-                min-height: 24px !important;
-                max-width: 24px !important;
-                max-height: 24px !important;
-                border-radius: 2px !important;
+                width: 50px !important; /* Visible but compact */
+                height: 50px !important; /* Square format */
+                min-height: 50px !important;
+                max-width: 50px !important;
+                max-height: 50px !important;
+                border-radius: 6px !important;
                 flex-shrink: 0 !important;
+                margin-top: 2px !important; /* Slight offset from top */
             }
             
-            /* EXTREME compact single-line layout */
+            /* COMPLETE info layout - 3 essential lines */
             .place-details {
                 flex: 1 !important;
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: center !important;
+                justify-content: flex-start !important;
                 min-width: 0 !important;
-                gap: 1px !important;
+                gap: 2px !important;
+                padding: 2px 0 !important;
             }
             
-            /* Main info line: Name + Key stats */
+            /* Full restaurant name - MUST be readable */
             .place-name {
-                font-size: 0.75rem !important; /* Compact but readable */
-                line-height: 1.0 !important;
+                font-size: 0.9rem !important; /* Larger for readability */
+                line-height: 1.2 !important;
                 font-weight: 600 !important;
                 margin: 0 !important;
-                white-space: nowrap !important;
-                overflow: hidden !important;
-                text-overflow: ellipsis !important;
-                max-width: 60% !important;
+                color: #333 !important;
+                /* NO truncation - show full name */
+                white-space: normal !important;
+                overflow: visible !important;
+                text-overflow: unset !important;
+                max-width: none !important;
             }
             
-            /* Compact meta line with icons */
-            .place-compact-meta {
-                font-size: 0.6rem !important;
-                line-height: 1.0 !important;
+            /* Full address - ESSENTIAL for location context */
+            .place-address {
+                font-size: 0.75rem !important;
+                line-height: 1.2 !important;
                 color: #666 !important;
-                display: flex !important;
-                gap: 6px !important;
-                align-items: center !important;
                 margin: 0 !important;
+                /* NO truncation - show full address */
+                white-space: normal !important;
+                overflow: visible !important;
+                display: block !important; /* Show address */
             }
             
-            /* Hide redundant individual elements */
-            .place-address,
+            /* Opening hours - ESSENTIAL for planning */
             .place-hours,
-            .place-hours-placeholder,
-            .place-meta {
-                display: none !important;
+            .place-hours-placeholder {
+                font-size: 0.7rem !important;
+                line-height: 1.2 !important;
+                margin: 0 !important;
+                padding: 2px 6px !important;
+                border-radius: 4px !important;
+                display: inline-block !important; /* Show hours */
+                max-width: 100% !important;
             }
             
-            /* Compact rating display */
+            /* Compact meta with rating and distance */
+            .place-meta {
+                display: flex !important; /* Show meta info */
+                gap: 8px !important;
+                align-items: center !important;
+                margin-top: 2px !important;
+            }
+            
             .place-rating {
-                font-size: 0.6rem !important;
+                font-size: 0.7rem !important;
                 font-weight: 600 !important;
                 color: #ff9800 !important;
                 margin: 0 !important;
             }
             
             .place-distance {
-                font-size: 0.6rem !important;
+                font-size: 0.7rem !important;
                 color: #666 !important;
                 margin: 0 !important;
                 font-weight: 500 !important;
             }
             
-            /* MICRO action buttons - minimal but accessible */
+            /* Compact but accessible action buttons */
             .view-details-btn,
             .edit-place-btn {
-                padding: 2px 4px !important; /* Micro padding */
-                font-size: 0.55rem !important; /* Tiny text */
-                min-height: 20px !important; /* Minimal height */
-                min-width: 24px !important; /* Just wide enough */
-                border-radius: 2px !important; /* Minimal radius */
+                padding: 6px 8px !important; /* Touch-friendly padding */
+                font-size: 0.7rem !important; /* Readable text */
+                min-height: 32px !important; /* Accessible height */
+                min-width: 40px !important; /* Wide enough for text */
+                border-radius: 4px !important; /* Professional radius */
                 font-weight: 600 !important;
             }
             
             /* Optimize place actions container */
             .place-actions {
-                gap: 2px !important; /* Minimal gap */
-                right: 4px !important; /* Close to edge */
+                gap: 4px !important; /* Clear gap */
+                right: 8px !important; /* Professional spacing */
                 position: absolute !important;
-                top: 50% !important;
-                transform: translateY(-50%) !important;
+                top: 8px !important; /* Align with top of content */
+                transform: none !important;
             }
             
             /* Compact container margins */
@@ -3930,46 +3949,51 @@
                 font-size: 1.4rem !important; /* Reduced from 1.8rem */
             }
             
-            /* Layout adjustments for mobile */
+            /* SIDE-BY-SIDE Layout: List Left, Map Right */
             .split-content {
-                flex-direction: column;
-                height: auto;
+                flex-direction: row !important; /* Horizontal layout */
+                height: 100vh !important;
+                gap: 0 !important;
             }
             
             .split-panel {
-                max-width: 100%;
-                display: block !important; /* Ensure panels are visible */
+                height: 100vh !important;
+                display: block !important;
                 overflow: visible !important;
             }
             
+            /* Compact list panel on LEFT */
             .list-panel {
-                border-right: none;
-                border-bottom: 2px solid #e9ecef;
-                height: 60vh !important; /* More space for compact list - can fit 12-15 items */
+                width: 50% !important; /* Left half */
+                border-right: 2px solid #e9ecef !important;
+                border-bottom: none !important;
+                height: 100vh !important;
                 max-height: none !important;
                 min-height: none !important;
                 overflow-y: auto !important;
                 overflow-x: hidden !important;
                 -webkit-overflow-scrolling: touch !important;
                 background: white !important;
-                padding: 4px !important; /* Minimal padding */
+                padding: 8px !important;
             }
             
+            /* Map panel on RIGHT */
             .map-panel {
-                height: 40vh !important; /* Smaller map to give more space to list */
+                width: 50% !important; /* Right half */
+                height: 100vh !important;
                 display: block !important;
                 position: relative !important;
                 overflow: hidden !important;
                 background: #f5f5f5 !important;
             }
             
-            /* Ensure map container inside panel has proper height */
+            /* Ensure map container fills right panel */
             .map-panel .map-container,
             .map-panel .map-container-split,
             .map-panel #map {
                 height: 100% !important;
                 width: 100% !important;
-                min-height: 40vh !important; /* Match compact panel height */
+                min-height: 100vh !important; /* Full height map */
             }
         }
 
