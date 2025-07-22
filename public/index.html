@@ -6543,6 +6543,14 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             let galleryHtml = '';
             let allGalleryImages = [];
             
+            // DEBUG: Check what photo data we have
+            console.log('🖼️ GALLERY DEBUG - Building gallery for place:', place.name);
+            console.log('🖼️ place.images:', place.images?.length || 0, 'images');
+            console.log('🖼️ place.photos:', place.photos?.length || 0, 'photos');
+            if (place.photos && place.photos.length > 0) {
+                console.log('🖼️ First photo sample:', place.photos[0]);
+            }
+            
             // Add uploaded images first (starting from index 1 if we used first image as main)
             if (place.images && place.images.length > 0) {
                 const startIndex = 1; // Skip first image as it's used as main
@@ -6566,7 +6574,9 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             
             // Add Google Places photos
             if (place.photos && place.photos.length > 0) {
+                console.log('🖼️ Processing Google Places photos, total available:', place.photos.length);
                 const startIndex = (place.images && place.images.length > 0) ? 0 : 1; // If we have uploaded images, include all photos in gallery
+                console.log('🖼️ Starting from index:', startIndex, 'will process up to 9 photos');
                 const photoGalleryImages = place.photos.slice(startIndex, 9).map((photo, index) => {
                     if (photo && photo.name && photo.name.trim().length > 0 && 
                         !photo.name.includes('undefined') && !photo.name.includes('null')) {
@@ -6601,6 +6611,13 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             
             const galleryImagesHtml = allGalleryImages.join('');
             
+            console.log('🖼️ FINAL GALLERY PROCESSING:');
+            console.log('🖼️ Total gallery images generated:', allGalleryImages.length);
+            console.log('🖼️ Gallery HTML length:', galleryImagesHtml.length);
+            if (allGalleryImages.length > 0) {
+                console.log('🖼️ First gallery image HTML sample:', allGalleryImages[0].substring(0, 200) + '...');
+            }
+            
             // Generate gallery HTML
             if (allGalleryImages.length > 0) {
                 const totalImages = (place.images ? place.images.length - 1 : 0) + (place.photos ? place.photos.length - (place.images && place.images.length > 0 ? 0 : 1) : 0);
@@ -6615,6 +6632,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     </div>
                 `;
             } else {
+                console.log('🖼️ NO GALLERY IMAGES - Showing no photos message');
                 galleryHtml = `
                     <div class="photo-gallery">
                         <div class="no-photos">
