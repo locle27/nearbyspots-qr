@@ -6781,7 +6781,24 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 // Gallery images debugging and visibility fix
                 console.log('📸 Checking gallery images...');
                 const allGalleryImgs = modal.querySelectorAll('.gallery-image');
+                const allImgElements = modal.querySelectorAll('img');
+                const galleryContainers = modal.querySelectorAll('.gallery-image-container');
+                
                 console.log(`📸 Found ${allGalleryImgs.length} gallery images in DOM`);
+                console.log(`📸 Found ${allImgElements.length} total img elements`); 
+                console.log(`📸 Found ${galleryContainers.length} gallery containers`);
+                
+                // Debug all img elements in detail
+                allImgElements.forEach((img, index) => {
+                    console.log(`🖼️ IMG ${index + 1} DETAILS:`);
+                    console.log(`   - Classes: ${img.classList.toString()}`);
+                    console.log(`   - Src: ${img.src}`);
+                    console.log(`   - Dimensions: ${img.offsetWidth}x${img.offsetHeight}`);
+                    console.log(`   - Natural: ${img.naturalWidth}x${img.naturalHeight}`);
+                    console.log(`   - Display: ${getComputedStyle(img).display}`);
+                    console.log(`   - Opacity: ${getComputedStyle(img).opacity}`);
+                    console.log(`   - Visibility: ${getComputedStyle(img).visibility}`);
+                });
                 
                 // Force images to be visible and debug thoroughly
                 allGalleryImgs.forEach((img, index) => {
