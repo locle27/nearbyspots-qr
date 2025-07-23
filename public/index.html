@@ -7052,7 +7052,23 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             }
             
             // Debug logging for coordinate tracking
-            console.log(`🗺️ Adding marker for ${place.name} at coordinates: ${place.location.latitude}, ${place.location.longitude}`);
+            console.log(`🗺️ Adding marker for ${place.name}:`, {
+                id: place.id,
+                coordinates: `${place.location.latitude}, ${place.location.longitude}`,
+                address: place.address,
+                distance: place.distance + 'm'
+            });
+            
+            // Validate coordinates are in expected range (Vietnam bounds check)
+            if (place.location.latitude < 10 || place.location.latitude > 25 || 
+                place.location.longitude < 100 || place.location.longitude > 110) {
+                console.warn('⚠️ SUSPICIOUS COORDINATES - Place may be using old data:', {
+                    place: place.name,
+                    coordinates: `${place.location.latitude}, ${place.location.longitude}`,
+                    expectedInVietnam: 'lat: 8-23, lng: 102-110',
+                    likelyOldData: place.location.latitude < 15 && place.location.longitude > 105
+                });
+            }
             
             const color = CATEGORY_COLORS[category];
             const icon = CATEGORY_ICONS[category];
@@ -7131,6 +7147,15 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             placeMarkerMap.set(place.id, marker);
             
             placeMarkers.push(marker);
+            
+            // Verify marker was created at correct position
+            const actualPosition = marker.getPosition();
+            console.log(`✅ Marker created for ${place.name} - Position verification:`, {
+                expected: `${place.location.latitude}, ${place.location.longitude}`,
+                actual: `${actualPosition.lat()}, ${actualPosition.lng()}`,
+                matches: Math.abs(actualPosition.lat() - place.location.latitude) < 0.001 && 
+                        Math.abs(actualPosition.lng() - place.location.longitude) < 0.001
+            });
             
             // Add event listener for info window directions button (when clicked)
             google.maps.event.addListener(infoWindow, 'domready', function() {
@@ -11494,7 +11519,17 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                                     const newPosition = new google.maps.LatLng(data.latitude, data.longitude);
                                     marker.setPosition(newPosition);
                                     marker.place = mainPlace; // Update marker's place reference
-                                    console.log('🗺️ Updated map marker position');
+                                    console.log('🗺️ Updated map marker position:', {
+                                        placeId: currentEditPlaceId,
+                                        oldPosition: marker.getPosition() ? `${marker.getPosition().lat()}, ${marker.getPosition().lng()}` : 'unknown',
+                                        newPosition: `${data.latitude}, ${data.longitude}`
+                                    });
+                                    
+                                    // Force marker update by setting new position again to ensure it takes effect
+                                    setTimeout(() => {
+                                        marker.setPosition(newPosition);
+                                        console.log('🔄 Confirmed marker position update');
+                                    }, 100);
                                 }
                             }
                             
@@ -12316,17 +12351,44 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     // Update the places list
                     updatePlacesList();
                     
-                    // Force map markers update with explicit logging
-                    console.log('🗺️ Forcing map markers update...');
-                    if (typeof google !== 'undefined' && map) {
-                        // Clear existing markers first
-                        if (typeof allMarkers !== 'undefined') {
-                            allMarkers.forEach(marker => marker.setMap(null));
-                            allMarkers.length = 0;
-                            console.log('🗑️ Cleared all existing map markers');
+                    // Force map markers update with delay to ensure data consistency
+                    console.log('🗺️ Scheduling map markers update after data sync...');
+                    setTimeout(() => {
+                        if (typeof google !== 'undefined' && map) {
+                            console.log('🔄 Executing delayed map markers update...');
+                            
+                            // Log current place data before recreating markers
+                            const targetPlace = findPlaceInAllPlaces(updatedPlace.id);
+                            if (targetPlace) {
+                                console.log('📍 Place data before marker recreation:', {
+                                    id: targetPlace.id,
+                                    name: targetPlace.name,
+                                    coordinates: targetPlace.location
+                                });
+                            }
+                            
+                            // Clear existing markers first
+                            if (typeof allMarkers !== 'undefined') {
+                                allMarkers.forEach(marker => marker.setMap(null));
+                                allMarkers.length = 0;
+                                console.log('🗑️ Cleared all existing map markers');
+                            }
+                            
+                            updateMapMarkers();
+                            
+                            // Verify marker position after recreation
+                            setTimeout(() => {
+                                const finalMarker = placeMarkerMap.get(updatedPlace.id);
+                                if (finalMarker) {
+                                    const finalPos = finalMarker.getPosition();
+                                    console.log('🎯 Final marker position confirmed:', {
+                                        placeId: updatedPlace.id,
+                                        position: `${finalPos.lat()}, ${finalPos.lng()}`
+                                    });
+                                }
+                            }, 200);
                         }
-                        
-                        updateMapMarkers();
+                    }, 500);
                         
                         // If coordinates changed, adjust map to show both hotel and new location
                         if (addressChanged && newCoordinates) {
