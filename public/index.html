@@ -6976,88 +6976,88 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             console.log('Auto-loading places! Current activeCategories:', Array.from(activeCategories), 'Size:', activeCategories.size);
             
             try {
-            // Prevent rapid successive calls
-            const now = Date.now();
-            if (now - lastLoadTime < LOAD_COOLDOWN) {
-                console.log('⏳ Load request too frequent, waiting for cooldown...');
-                return;
-            }
-            lastLoadTime = now;
-            
-            // Auto-select recommend category if no categories are selected
-            if (activeCategories.size === 0) {
-                console.log('No categories selected, auto-selecting recommend category');
-                activeCategories.add('recommend');
-                
-                // Update UI to show recommend category as selected
-                document.querySelectorAll('.category-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                const recommendBtn = document.querySelector('.category-btn[data-category="recommend"]');
-                if (recommendBtn) {
-                    recommendBtn.classList.add('active');
+                // Prevent rapid successive calls
+                const now = Date.now();
+                if (now - lastLoadTime < LOAD_COOLDOWN) {
+                    console.log('⏳ Load request too frequent, waiting for cooldown...');
+                    return;
                 }
-                updateSelectedCategoriesDisplay();
-            }
-            
-            console.log('Categories selected, proceeding with load...');
+                lastLoadTime = now;
+                
+                // Auto-select recommend category if no categories are selected
+                if (activeCategories.size === 0) {
+                    console.log('No categories selected, auto-selecting recommend category');
+                    activeCategories.add('recommend');
+                    
+                    // Update UI to show recommend category as selected
+                    document.querySelectorAll('.category-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    const recommendBtn = document.querySelector('.category-btn[data-category="recommend"]');
+                    if (recommendBtn) {
+                        recommendBtn.classList.add('active');
+                    }
+                    updateSelectedCategoriesDisplay();
+                }
+                
+                console.log('Categories selected, proceeding with load...');
 
-            const radiusElement = document.getElementById('radiusSelect');
-            if (!radiusElement) {
-                throw new Error('Radius select element not found');
-            }
-            const radius = parseInt(radiusElement.value);
-            if (isNaN(radius)) {
-                throw new Error('Invalid radius value: ' + radiusElement.value);
-            }
-            console.log('✅ Radius parsed successfully:', radius);
-            const previousRadius = currentRadius;
-            currentRadius = radius;
-            
-            console.log(`Radius change: ${previousRadius}m → ${radius}m`);
-            
-            const loadingMap = document.getElementById('loadingMap');
-            const loadingList = document.getElementById('loadingList');
-            
-            // Show loading indicators on both tabs
-            if (loadingMap) loadingMap.classList.add('show');
-            if (loadingList) loadingList.classList.add('show');
+                const radiusElement = document.getElementById('radiusSelect');
+                if (!radiusElement) {
+                    throw new Error('Radius select element not found');
+                }
+                const radius = parseInt(radiusElement.value);
+                if (isNaN(radius)) {
+                    throw new Error('Invalid radius value: ' + radiusElement.value);
+                }
+                console.log('✅ Radius parsed successfully:', radius);
+                const previousRadius = currentRadius;
+                currentRadius = radius;
+                
+                console.log(`Radius change: ${previousRadius}m → ${radius}m`);
+                
+                const loadingMap = document.getElementById('loadingMap');
+                const loadingList = document.getElementById('loadingList');
+                
+                // Show loading indicators on both tabs
+                if (loadingMap) loadingMap.classList.add('show');
+                if (loadingList) loadingList.classList.add('show');
 
-            // Handle radius changes intelligently
-            console.log('🛠️ loadPlaces: About to handle radius changes, allPlaces:', typeof allPlaces, Object.keys(allPlaces));
-            if (radius < previousRadius && Object.keys(allPlaces).length > 0) {
-                console.log('Smaller radius: filtering existing places without API call');
-                // For smaller radius, just filter existing places (no API call needed)
-                // BUT preserve manual recommendations regardless of distance
-                try {
-                    Object.keys(allPlaces).forEach(category => {
-                        console.log(`🛠️ Processing category for filtering: ${category}`);
-                        if (allPlaces[category]) {
-                            if (category === 'recommend') {
-                                // Keep all manual recommendations regardless of distance
-                                console.log(`Preserving all ${allPlaces[category].length} manual recommendations (no distance filtering)`);
-                            } else {
-                                // Apply distance filtering to other categories
-                                const beforeFilter = allPlaces[category].length;
-                                try {
-                                    allPlaces[category] = allPlaces[category].filter(place => place.distance <= radius);
-                                    console.log(`${category}: ${beforeFilter} → ${allPlaces[category].length} places (distance filtered)`);
-                                } catch (filterError) {
-                                    console.error(`❌ Error filtering ${category}:`, filterError);
-                                    throw filterError;
+                // Handle radius changes intelligently
+                console.log('🛠️ loadPlaces: About to handle radius changes, allPlaces:', typeof allPlaces, Object.keys(allPlaces));
+                if (radius < previousRadius && Object.keys(allPlaces).length > 0) {
+                    console.log('Smaller radius: filtering existing places without API call');
+                    // For smaller radius, just filter existing places (no API call needed)
+                    // BUT preserve manual recommendations regardless of distance
+                    try {
+                        Object.keys(allPlaces).forEach(category => {
+                            console.log(`🛠️ Processing category for filtering: ${category}`);
+                            if (allPlaces[category]) {
+                                if (category === 'recommend') {
+                                    // Keep all manual recommendations regardless of distance
+                                    console.log(`Preserving all ${allPlaces[category].length} manual recommendations (no distance filtering)`);
+                                } else {
+                                    // Apply distance filtering to other categories
+                                    const beforeFilter = allPlaces[category].length;
+                                    try {
+                                        allPlaces[category] = allPlaces[category].filter(place => place.distance <= radius);
+                                        console.log(`${category}: ${beforeFilter} → ${allPlaces[category].length} places (distance filtered)`);
+                                    } catch (filterError) {
+                                        console.error(`❌ Error filtering ${category}:`, filterError);
+                                        throw filterError;
+                                    }
                                 }
                             }
-                        }
-                    });
-                } catch (radiusFilterError) {
-                    console.error('❌ Error in radius filtering:', radiusFilterError);
-                    throw radiusFilterError;
-                }
-                
-                console.log('Places filtered for smaller radius:', allPlaces);
-                updateMapMarkers();
-                updateStats();
-                adjustMapBounds();
+                        });
+                    } catch (radiusFilterError) {
+                        console.error('❌ Error in radius filtering:', radiusFilterError);
+                        throw radiusFilterError;
+                    }
+                    
+                    console.log('Places filtered for smaller radius:', allPlaces);
+                    updateMapMarkers();
+                    updateStats();
+                    adjustMapBounds();
                 } else {
                     console.log('Larger radius or first load: fetching from API');
                     
