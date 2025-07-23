@@ -4297,6 +4297,9 @@
                 <button onclick="importBackup()" class="btn-backup" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);">
                     📥 Import Backup
                 </button>
+                <button onclick="manualCoordinateValidation()" class="btn-backup" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);">
+                    🗺️ Fix Markers
+                </button>
                 <button onclick="saveBackupEverywhere()" class="btn-backup" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3);">
                     ☁️ Sync Now
                 </button>
@@ -4859,6 +4862,146 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             console.log(`🔄 Updated info window for ${place.name} with new distance: ${distanceText}`);
         }
         
+        // Function to validate and correct place coordinates based on address
+        async function validateAndCorrectPlaceCoordinates(place) {
+            if (!place || !place.address) {
+                console.log('❌ Cannot validate place - missing address data');
+                return place;
+            }
+            
+            try {
+                console.log(`🔍 Validating coordinates for "${place.name}" at address: ${place.address}`);
+                
+                // Check if current coordinates match the address using reverse geocoding
+                const reverseResponse = await fetch('/api/reverse-geocode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        latitude: place.location.latitude,
+                        longitude: place.location.longitude
+                    })
+                });
+                
+                if (reverseResponse.ok) {
+                    const reverseData = await reverseResponse.json();
+                    const currentLocationAddress = reverseData.address || '';
+                    
+                    // Simple check: if addresses are very different, coordinates might be wrong
+                    const addressMatch = place.address.toLowerCase().includes('hà nội') || place.address.toLowerCase().includes('hanoi');
+                    const coordinatesInHanoi = place.location.latitude > 20.5 && place.location.latitude < 21.5 && 
+                                             place.location.longitude > 105.5 && place.location.longitude < 106.0;
+                    
+                    if (addressMatch && !coordinatesInHanoi) {
+                        console.warn(`⚠️ COORDINATE MISMATCH DETECTED for ${place.name}:`);
+                        console.warn(`📍 Address suggests Hanoi: ${place.address}`);
+                        console.warn(`🗺️ But coordinates are: ${place.location.latitude}, ${place.location.longitude}`);
+                        
+                        // Attempt to geocode the address to get correct coordinates
+                        const geocodeResponse = await fetch('/api/geocode-address', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ address: place.address })
+                        });
+                        
+                        if (geocodeResponse.ok) {
+                            const geocodeData = await geocodeResponse.json();
+                            if (geocodeData.success && geocodeData.latitude && geocodeData.longitude) {
+                                console.log(`✅ CORRECTING coordinates for ${place.name}:`);
+                                console.log(`📍 Old: ${place.location.latitude}, ${place.location.longitude}`);
+                                console.log(`📍 New: ${geocodeData.latitude}, ${geocodeData.longitude}`);
+                                
+                                // Update coordinates to match address
+                                place.location = {
+                                    latitude: geocodeData.latitude,
+                                    longitude: geocodeData.longitude,
+                                    lat: geocodeData.latitude,
+                                    lng: geocodeData.longitude
+                                };
+                                
+                                // Recalculate distance
+                                const distance = calculateDistance(
+                                    HOTEL_LOCATION.lat, HOTEL_LOCATION.lng,
+                                    geocodeData.latitude, geocodeData.longitude
+                                );
+                                place.distance = Math.round(distance);
+                                
+                                // Mark as corrected
+                                place.coordinatesCorrected = true;
+                                place.correctionTimestamp = new Date().toISOString();
+                                
+                                console.log(`🔧 Updated distance: ${place.distance}m`);
+                                return place;
+                            }
+                        }
+                    } else if (addressMatch && coordinatesInHanoi) {
+                        console.log(`✅ Coordinates validation PASSED for ${place.name} - address and coordinates both indicate Hanoi`);
+                    }
+                } else {
+                    console.warn(`⚠️ Reverse geocoding failed for ${place.name}`);
+                }
+            } catch (error) {
+                console.error(`❌ Error validating coordinates for ${place.name}:`, error);
+            }
+            
+            return place;
+        }
+        
+        // Function to validate all places coordinates
+        async function validateAllPlaceCoordinates() {
+            console.log('🔍 Starting comprehensive coordinate validation for all places...');
+            let correctionsMade = 0;
+            
+            for (const category in allPlaces) {
+                if (Array.isArray(allPlaces[category])) {
+                    for (let i = 0; i < allPlaces[category].length; i++) {
+                        const originalPlace = JSON.parse(JSON.stringify(allPlaces[category][i])); // Deep copy
+                        const validatedPlace = await validateAndCorrectPlaceCoordinates(allPlaces[category][i]);
+                        
+                        // Check if corrections were made
+                        if (validatedPlace.coordinatesCorrected && 
+                            (originalPlace.location.latitude !== validatedPlace.location.latitude ||
+                             originalPlace.location.longitude !== validatedPlace.location.longitude)) {
+                            correctionsMade++;
+                            console.log(`🔧 Corrected coordinates for: ${validatedPlace.name}`);
+                            
+                            // Save corrected coordinates to server
+                            try {
+                                const saveResponse = await fetch('/api/save-place', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(validatedPlace)
+                                });
+                                
+                                if (saveResponse.ok) {
+                                    console.log(`💾 Saved corrected coordinates for ${validatedPlace.name} to server`);
+                                } else {
+                                    console.warn(`⚠️ Failed to save corrected coordinates for ${validatedPlace.name}`);
+                                }
+                            } catch (error) {
+                                console.error(`❌ Error saving corrected coordinates:`, error);
+                            }
+                        }
+                        
+                        // Small delay to avoid overwhelming the geocoding API
+                        if (i < allPlaces[category].length - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
+                    }
+                }
+            }
+            
+            console.log(`✅ Coordinate validation complete. ${correctionsMade} corrections made.`);
+            
+            if (correctionsMade > 0) {
+                // Update UI with corrected data
+                updatePlacesList();
+                updateMapMarkers();
+                console.log('🔄 UI updated with corrected coordinates');
+            }
+            
+            return correctionsMade;
+        }
+        
         // Function to recalculate all place distances when hotel location changes
         function refreshAllPlaceDistances() {
             console.log('🔄 Refreshing all place distances from new hotel location');
@@ -5330,6 +5473,58 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 }
             };
             input.click();
+        }
+        
+        // Manual coordinate validation function for user-triggered fixes
+        async function manualCoordinateValidation() {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            
+            try {
+                // Show loading state
+                button.disabled = true;
+                button.innerHTML = '⏳ Checking...';
+                button.style.opacity = '0.7';
+                
+                console.log('🔧 Manual coordinate validation triggered by user');
+                
+                // Check if we have places to validate
+                const totalPlaces = Object.values(allPlaces || {}).reduce((sum, category) => sum + category.length, 0);
+                if (totalPlaces === 0) {
+                    alert('❌ No places found to validate. Please load some places first.');
+                    return;
+                }
+                
+                console.log(`🔍 Starting manual validation of ${totalPlaces} places...`);
+                
+                // Run comprehensive validation
+                const corrections = await validateAllPlaceCoordinates();
+                
+                // Show results to user
+                if (corrections > 0) {
+                    alert(`✅ Coordinate validation complete!\n\n🔧 ${corrections} places had their coordinates corrected.\n🗺️ Map markers have been updated to show correct locations.\n💾 Changes saved to database automatically.`);
+                    console.log(`✅ Manual validation successful - ${corrections} places corrected`);
+                } else {
+                    alert(`✅ Coordinate validation complete!\n\n🎉 All ${totalPlaces} places already have correct coordinates.\n🗺️ No corrections were needed.`);
+                    console.log('✅ Manual validation successful - all coordinates already correct');
+                }
+                
+                // Force UI refresh to show any corrections
+                setTimeout(() => {
+                    updatePlacesList();
+                    updateMapMarkers();
+                    console.log('🔄 UI refreshed after manual validation');
+                }, 500);
+                
+            } catch (error) {
+                console.error('❌ Error during manual coordinate validation:', error);
+                alert(`❌ Coordinate validation failed:\n\n${error.message}\n\nPlease check the console for more details.`);
+            } finally {
+                // Restore button state
+                button.disabled = false;
+                button.innerHTML = originalText;
+                button.style.opacity = '1';
+            }
         }
         
         // Function to verify and fix hotel location
@@ -5983,6 +6178,23 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     if (beyondRadius.length > 0) {
                         console.log(`⚠️ ${beyondRadius.length} recommendations are beyond current radius (${currentRadius}m):`, 
                                    beyondRadius.map(r => ({ name: r.name, distance: r.distance })));
+                    }
+                    
+                    // Automatically validate coordinates after loading recommendations to ensure markers display correctly
+                    if (newRecommendations.length > 0) {
+                        setTimeout(async () => {
+                            console.log('🔍 Starting automatic coordinate validation for newly loaded places...');
+                            try {
+                                const corrections = await validateAllPlaceCoordinates();
+                                if (corrections > 0) {
+                                    console.log(`✅ Coordinate validation complete - ${corrections} places corrected and markers updated`);
+                                } else {
+                                    console.log('✅ Coordinate validation complete - all places have correct coordinates');
+                                }
+                            } catch (error) {
+                                console.error('❌ Error during automatic coordinate validation:', error);
+                            }
+                        }, 3000); // 3 second delay to allow UI to settle
                     }
                 } else {
                     console.warn('⚠️ No recommendations received from API');

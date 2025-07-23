@@ -2844,6 +2844,40 @@ app.post('/api/geocode-address', async (req, res) => {
   }
 });
 
+// Reverse geocode endpoint (alternative endpoint for reverse geocoding)
+app.post('/api/reverse-geocode', async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+    
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    if (!GOOGLE_MAPS_API_KEY) {
+      return res.status(500).json({ error: 'Google Maps API key not configured' });
+    }
+
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
+    
+    const response = await axios.get(geocodeUrl, { timeout: 10000 });
+    
+    if (response.data.status === 'OK' && response.data.results.length > 0) {
+      const address = response.data.results[0].formatted_address;
+      res.json({
+        success: true,
+        address: address,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude)
+      });
+    } else {
+      res.status(404).json({ error: 'Address not found for these coordinates.' });
+    }
+  } catch (error) {
+    console.error('Reverse geocoding error:', error);
+    res.status(500).json({ error: 'Failed to reverse geocode coordinates' });
+  }
+});
+
 // Resolve shortened Google Maps URLs
 app.post('/api/resolve-maps-url', async (req, res) => {
   try {
