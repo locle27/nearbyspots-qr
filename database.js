@@ -196,12 +196,16 @@ const db = {
         RETURNING *
       `;
       
+      // Handle both direct coordinate properties and nested location object
+      const latitude = updates.location ? updates.location.latitude : updates.latitude;
+      const longitude = updates.location ? updates.location.longitude : updates.longitude;
+      
       const values = [
         id,
         updates.name,
         updates.address,
-        updates.latitude,
-        updates.longitude,
+        latitude,
+        longitude,
         updates.rating,
         updates.description,
         updates.websiteUri,
@@ -209,10 +213,32 @@ const db = {
         updates.images ? JSON.stringify(updates.images) : null
       ];
       
+      console.log('🔧 Database update values:', {
+        id,
+        name: updates.name,
+        coordinates: { latitude, longitude },
+        hasLocation: !!updates.location
+      });
+      
       const result = await pool.query(query, values);
-      return result.rows[0];
+      
+      if (result.rows.length > 0) {
+        console.log('✅ Database update successful:', {
+          id: result.rows[0].id,
+          name: result.rows[0].name,
+          updated_coordinates: {
+            latitude: result.rows[0].latitude,
+            longitude: result.rows[0].longitude
+          }
+        });
+        return result.rows[0];
+      } else {
+        console.error('⚠️ No rows returned from database update - place not found?');
+        return null;
+      }
     } catch (error) {
       console.error('❌ Error updating recommendation:', error);
+      console.error('📋 Query values that failed:', values);
       return null;
     }
   },

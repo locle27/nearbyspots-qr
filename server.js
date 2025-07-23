@@ -1305,16 +1305,31 @@ app.post('/api/save-place', async (req, res) => {
       console.log(`✏️ Updating existing place: ${name}`);
       
       if (useDatabase) {
+        console.log('💾 Attempting database update for place:', {
+          id,
+          name,
+          coordinates: placeData.location,
+          address: placeData.address
+        });
+        
         const dbResult = await db.updateRecommendation(id, placeData);
         if (dbResult) {
           // Refresh in-memory cache from database
           const dbRecommendations = await db.getAllRecommendations();
           if (dbRecommendations) {
             manualRecommendations = dbRecommendations;
+            console.log(`🔄 Refreshed ${dbRecommendations.length} recommendations from database`);
           }
           console.log(`✅ Updated place in database: ${name}`);
+          console.log('📍 Confirmed coordinates in database:', {
+            latitude: dbResult.latitude,
+            longitude: dbResult.longitude
+          });
         } else {
-          throw new Error('Failed to update in database');
+          console.error('❌ Database update returned null/failed');
+          console.error('🔍 Place ID attempted:', id);
+          console.error('📋 Data sent to database:', placeData);
+          throw new Error('Failed to update in database - check if place exists and database is connected');
         }
       } else {
         manualRecommendations[existingPlaceIndex] = placeData;
