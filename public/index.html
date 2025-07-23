@@ -4286,6 +4286,25 @@
                 </div>
             </div>
         </div>
+        
+        <!-- 🌐 BACKUP & SYNC CONTROLS -->
+        <div class="backup-controls" style="margin-top: 15px; text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #17a2b8;">
+            <h4 style="margin: 0 0 10px 0; color: #17a2b8; font-size: 1rem;">🌐 Backup & Cross-Device Sync</h4>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                <button onclick="exportBackup()" class="btn-backup" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);">
+                    📤 Export Backup
+                </button>
+                <button onclick="importBackup()" class="btn-backup" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);">
+                    📥 Import Backup
+                </button>
+                <button onclick="saveBackupEverywhere()" class="btn-backup" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3);">
+                    ☁️ Sync Now
+                </button>
+            </div>
+            <p style="margin: 8px 0 0 0; font-size: 0.8rem; color: #666;">
+                <span id="clientIdDisplay">Client ID: Loading...</span> • Auto-backup every 5 minutes • Cross-device sync • File download
+            </p>
+        </div>
     </div>
 
     <!-- Gemini AI Search Section -->
@@ -4794,6 +4813,260 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             Object.assign(HOTEL_LOCATION, updates);
             saveHotelLocationToStorage(HOTEL_LOCATION);
             console.log('✅ Hotel location updated and saved:', HOTEL_LOCATION);
+        }
+
+        // ============================================
+        // 🌐 COMPREHENSIVE BACKUP & SYNC SYSTEM
+        // ============================================
+        
+        // Generate unique client ID for cross-device sync
+        function getClientId() {
+            let clientId = localStorage.getItem('client_id');
+            if (!clientId) {
+                clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('client_id', clientId);
+                console.log('🆔 Generated new client ID:', clientId);
+            }
+            return clientId;
+        }
+        
+        // Comprehensive data backup function
+        function createFullBackup() {
+            const clientId = getClientId();
+            const timestamp = new Date().toISOString();
+            
+            const backup = {
+                version: '1.0',
+                clientId: clientId,
+                timestamp: timestamp,
+                hotelLocation: HOTEL_LOCATION,
+                places: allPlaces || {},
+                userPreferences: {
+                    lastUsedCategories: Array.from(activeCategories),
+                    lastRadius: currentRadius || 2000
+                },
+                metadata: {
+                    totalPlaces: Object.values(allPlaces || {}).reduce((sum, category) => sum + category.length, 0),
+                    device: navigator.userAgent,
+                    url: window.location.href
+                }
+            };
+            
+            console.log('📦 Created full backup:', backup);
+            return backup;
+        }
+        
+        // Save backup to multiple locations
+        async function saveBackupEverywhere(backup = null) {
+            if (!backup) {
+                backup = createFullBackup();
+            }
+            
+            const results = {
+                localStorage: false,
+                server: false,
+                download: false
+            };
+            
+            try {
+                // 1. Save to localStorage
+                localStorage.setItem('full_backup', JSON.stringify(backup));
+                localStorage.setItem('backup_timestamp', backup.timestamp);
+                results.localStorage = true;
+                console.log('💾 Backup saved to localStorage');
+                
+                // 2. Save to server
+                try {
+                    const serverResponse = await fetch('/api/save-client-data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            clientId: backup.clientId,
+                            data: backup,
+                            timestamp: backup.timestamp
+                        })
+                    });
+                    
+                    if (serverResponse.ok) {
+                        results.server = true;
+                        console.log('☁️ Backup saved to server');
+                    } else {
+                        console.warn('⚠️ Server backup failed:', serverResponse.status);
+                    }
+                } catch (serverError) {
+                    console.warn('⚠️ Server backup unavailable:', serverError.message);
+                }
+                
+                // 3. Auto-download backup file
+                const dataStr = JSON.stringify(backup, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.download = `nearbyspots-backup-${backup.timestamp.split('T')[0]}.json`;
+                downloadLink.style.display = 'none';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(url);
+                results.download = true;
+                console.log('📥 Backup file auto-downloaded');
+                
+            } catch (error) {
+                console.error('❌ Backup creation failed:', error);
+            }
+            
+            return results;
+        }
+        
+        // Load data from server for cross-device sync
+        async function loadDataFromServer(clientId = null) {
+            if (!clientId) {
+                clientId = getClientId();
+            }
+            
+            try {
+                const response = await fetch(`/api/get-client-data/${clientId}`);
+                if (response.ok) {
+                    const serverData = await response.json();
+                    console.log('☁️ Loaded data from server:', serverData);
+                    return serverData;
+                }
+            } catch (error) {
+                console.log('📱 Server data not available:', error.message);
+            }
+            
+            return null;
+        }
+        
+        // Restore from backup with conflict resolution
+        async function restoreFromBackup(backup) {
+            try {
+                console.log('🔄 Restoring from backup...');
+                
+                // Restore hotel location
+                if (backup.hotelLocation) {
+                    updateAndSaveHotelLocation(backup.hotelLocation);
+                    console.log('📍 Hotel location restored');
+                }
+                
+                // Restore places data
+                if (backup.places) {
+                    // Merge with existing data
+                    for (const category in backup.places) {
+                        if (!allPlaces[category]) {
+                            allPlaces[category] = [];
+                        }
+                        
+                        // Add places that don't exist
+                        backup.places[category].forEach(backupPlace => {
+                            const exists = allPlaces[category].find(p => p.id === backupPlace.id);
+                            if (!exists) {
+                                allPlaces[category].push(backupPlace);
+                                console.log(`➕ Restored place: ${backupPlace.name}`);
+                            }
+                        });
+                    }
+                }
+                
+                // Restore user preferences
+                if (backup.userPreferences) {
+                    if (backup.userPreferences.lastUsedCategories) {
+                        activeCategories.clear();
+                        backup.userPreferences.lastUsedCategories.forEach(cat => activeCategories.add(cat));
+                    }
+                    if (backup.userPreferences.lastRadius) {
+                        currentRadius = backup.userPreferences.lastRadius;
+                    }
+                }
+                
+                // Force UI refresh
+                updatePlacesList();
+                if (typeof updateMapMarkers === 'function') {
+                    updateMapMarkers();
+                }
+                
+                console.log('✅ Backup restored successfully');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Backup restore failed:', error);
+                return false;
+            }
+        }
+        
+        // Auto-sync on page load
+        async function autoSyncOnLoad() {
+            console.log('🔄 Starting auto-sync on page load...');
+            
+            try {
+                // Try to load from server first
+                const serverData = await loadDataFromServer();
+                if (serverData && serverData.data) {
+                    const serverTimestamp = new Date(serverData.timestamp);
+                    const localTimestamp = new Date(localStorage.getItem('backup_timestamp') || '1970-01-01');
+                    
+                    if (serverTimestamp > localTimestamp) {
+                        console.log('☁️ Server data is newer, syncing...');
+                        await restoreFromBackup(serverData.data);
+                        return;
+                    }
+                }
+                
+                // Fallback to localStorage
+                const localBackup = localStorage.getItem('full_backup');
+                if (localBackup) {
+                    console.log('💾 Loading from localStorage backup');
+                    const backup = JSON.parse(localBackup);
+                    await restoreFromBackup(backup);
+                }
+                
+            } catch (error) {
+                console.warn('⚠️ Auto-sync failed:', error);
+            }
+        }
+        
+        // Periodic backup every 5 minutes
+        setInterval(async () => {
+            console.log('⏰ Performing periodic backup...');
+            await saveBackupEverywhere();
+        }, 5 * 60 * 1000);
+        
+        // Export backup manually
+        function exportBackup() {
+            const backup = createFullBackup();
+            saveBackupEverywhere(backup);
+            alert(`✅ Backup created and saved!\n\n📦 ${backup.metadata.totalPlaces} places backed up\n📍 Hotel location: ${backup.hotelLocation.address}\n⏰ Timestamp: ${backup.timestamp}`);
+        }
+        
+        // Import backup from file
+        function importBackup() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    try {
+                        const text = await file.text();
+                        const backup = JSON.parse(text);
+                        
+                        if (backup.version && backup.hotelLocation && backup.places) {
+                            const success = await restoreFromBackup(backup);
+                            if (success) {
+                                alert(`✅ Backup restored successfully!\n\n📦 ${backup.metadata?.totalPlaces || 'Unknown'} places imported\n📍 Hotel: ${backup.hotelLocation.address}`);
+                            } else {
+                                alert('❌ Failed to restore backup. Please check the file format.');
+                            }
+                        } else {
+                            alert('❌ Invalid backup file format.');
+                        }
+                    } catch (error) {
+                        alert('❌ Error reading backup file: ' + error.message);
+                    }
+                }
+            };
+            input.click();
         }
         
         // Function to verify and fix hotel location
@@ -8793,8 +9066,19 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
         window.addEventListener('load', async () => {
             console.log('📱 Page loaded, checking for Google Maps API...');
             
-            // 🌐 Try to load hotel location from server for cross-device sync
+            // 🌐 COMPREHENSIVE AUTO-SYNC SYSTEM
             try {
+                // Initialize full backup and sync system
+                await autoSyncOnLoad();
+                
+                // Display client ID for user reference
+                const clientId = getClientId();
+                const clientIdDisplay = document.getElementById('clientIdDisplay');
+                if (clientIdDisplay) {
+                    clientIdDisplay.textContent = `Client ID: ${clientId.substr(-8)}`;
+                }
+                
+                // Try to load hotel location from server for cross-device sync
                 const serverLocation = await loadHotelLocationFromServer();
                 if (serverLocation) {
                     console.log('☁️ Updating HOTEL_LOCATION from server:', serverLocation);
@@ -8814,7 +9098,7 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     console.log('✅ Hotel location synced from server successfully');
                 }
             } catch (error) {
-                console.log('📱 Server sync not available, using localStorage/default');
+                console.log('📱 Full sync not available, using localStorage/default');
             }
             
             // Check if Google Maps API is already loaded
@@ -11552,7 +11836,13 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                         
                         // Update coordinates if address changed and geocoding succeeded
                         if (addressChanged && newCoordinates) {
-                            place.location = newCoordinates;
+                            // 🚨 CRITICAL: Ensure coordinate structure is correct
+                            place.location = {
+                                latitude: newCoordinates.latitude,
+                                longitude: newCoordinates.longitude,
+                                lat: newCoordinates.latitude, // Backup format
+                                lng: newCoordinates.longitude  // Backup format
+                            };
                             
                             // Update websiteUri with new Google Maps link
                             const encodedAddress = encodeURIComponent(newAddress);
@@ -11565,9 +11855,14 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                             );
                             place.distance = Math.round(distance);
                             
-                            console.log(`📍 Updated coordinates and distance:
-                                Coords: ${oldCoords.latitude},${oldCoords.longitude} → ${newCoordinates.latitude},${newCoordinates.longitude}
-                                Distance: ${place.distance}m from hotel`);
+                            console.log(`📍 COORDINATE UPDATE COMPLETE:
+                                📊 Old: ${oldCoords.latitude},${oldCoords.longitude}
+                                ✅ New: ${newCoordinates.latitude},${newCoordinates.longitude}
+                                📏 Distance: ${place.distance}m from hotel
+                                🆔 Place ID: ${place.id}`);
+                                
+                            // 🔧 FORCE IMMEDIATE DATA REFRESH
+                            console.log(`🔄 FORCING IMMEDIATE PLACE DATA REFRESH FOR ID: ${place.id}`);
                         }
                         
                         // Update opening hours in a structured format
@@ -11682,16 +11977,46 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                             });
                             
                             if (saveResponse.ok) {
-                                console.log('✅ Place saved to server successfully');
+                                const serverResult = await saveResponse.json();
+                                console.log('✅ Place saved to server successfully:', serverResult);
+                                console.log('💾 Server persistence confirmed for place ID:', updatedPlace.id);
+                                
+                                // Verify the save was successful
+                                if (serverResult.success) {
+                                    console.log('🔒 Database persistence confirmed');
+                                }
                             } else {
-                                console.warn('⚠️ Failed to save place to server, but keeping local changes');
-                                const errorData = await saveResponse.json().catch(() => ({}));
-                                console.warn('Save error details:', errorData);
+                                console.error('❌ FAILED to save place to server!');
+                                console.error('🔴 HTTP Status:', saveResponse.status, saveResponse.statusText);
+                                
+                                // Try to get error details
+                                try {
+                                    const errorData = await saveResponse.text();
+                                    console.error('📋 Server error response:', errorData);
+                                    
+                                    // Show user notification about persistence issue
+                                    if (saveResponse.status === 502) {
+                                        alert('⚠️ Server temporarily unavailable. Changes saved locally but may not persist after refresh.');
+                                    } else {
+                                        alert(`⚠️ Failed to save to database (HTTP ${saveResponse.status}). Changes saved locally but may not persist.`);
+                                    }
+                                } catch (errorParseError) {
+                                    console.error('❌ Could not parse server error response');
+                                }
                             }
                         }
                     } catch (saveError) {
                         console.warn('⚠️ Error saving to server:', saveError);
                         console.warn('Place updated locally but may not persist on reload');
+                    }
+                    
+                    // 🔄 FORCE COMPLETE UI REFRESH
+                    console.log('🔄 FORCING COMPLETE UI AND MAP REFRESH...');
+                    
+                    // Clear any cached data
+                    if (typeof placeDataStore !== 'undefined') {
+                        placeDataStore.clear();
+                        console.log('🗑️ Cleared place data store cache');
                     }
                     
                     // Update the places list
@@ -11700,6 +12025,13 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     // Force map markers update with explicit logging
                     console.log('🗺️ Forcing map markers update...');
                     if (typeof google !== 'undefined' && map) {
+                        // Clear existing markers first
+                        if (typeof allMarkers !== 'undefined') {
+                            allMarkers.forEach(marker => marker.setMap(null));
+                            allMarkers.length = 0;
+                            console.log('🗑️ Cleared all existing map markers');
+                        }
+                        
                         updateMapMarkers();
                         
                         // If coordinates changed, adjust map to show both hotel and new location
