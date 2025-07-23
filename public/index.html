@@ -4813,6 +4813,94 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             Object.assign(HOTEL_LOCATION, updates);
             saveHotelLocationToStorage(HOTEL_LOCATION);
             console.log('✅ Hotel location updated and saved:', HOTEL_LOCATION);
+            
+            // Critical: Refresh all place data with new distances
+            refreshAllPlaceDistances();
+        }
+        
+        // Function to update marker info window with refreshed place data
+        function updatePlaceMarkerInfoWindow(marker, place) {
+            if (!marker.infoWindow) return;
+            
+            const distanceText = place.distance < 1000 
+                ? `${place.distance}m` 
+                : `${(place.distance / 1000).toFixed(1)}km`;
+                
+            const milesText = `${(place.distance * 0.000621371).toFixed(2)} miles`;
+            
+            const infoContent = `
+                <div style="max-width: 300px; padding: 12px;">
+                    <h3 style="margin: 0 0 8px 0; color: #1976D2; font-size: 1.1rem;">${place.name}</h3>
+                    <p style="margin: 4px 0; color: #666; font-size: 0.9rem;">📍 ${place.address || 'Address not available'}</p>
+                    <div style="margin: 8px 0; display: flex; gap: 12px; flex-wrap: wrap;">
+                        ${place.rating ? `<span style="color: #ff9800; font-weight: 600;">⭐ ${place.rating}</span>` : ''}
+                        <span style="color: #2196f3; font-weight: 600;">📏 ${distanceText} (${milesText})</span>
+                    </div>
+                    ${place.description ? `<p style="margin: 8px 0; color: #555; font-size: 0.85rem; font-style: italic;">${place.description}</p>` : ''}
+                </div>
+            `;
+            
+            marker.infoWindow.setContent(infoContent);
+            console.log(`🔄 Updated info window for ${place.name} with new distance: ${distanceText}`);
+        }
+        
+        // Function to recalculate all place distances when hotel location changes
+        function refreshAllPlaceDistances() {
+            console.log('🔄 Refreshing all place distances from new hotel location');
+            
+            if (!allPlaces || Object.keys(allPlaces).length === 0) {
+                console.log('📭 No places data to refresh');
+                return;
+            }
+            
+            let totalUpdated = 0;
+            
+            // Iterate through all categories and places
+            Object.keys(allPlaces).forEach(category => {
+                if (Array.isArray(allPlaces[category])) {
+                    allPlaces[category].forEach(place => {
+                        if (place.location && place.location.latitude && place.location.longitude) {
+                            // Recalculate distance from current hotel location
+                            const oldDistance = place.distance;
+                            const newDistance = calculateDistance(
+                                HOTEL_LOCATION.lat,
+                                HOTEL_LOCATION.lng,
+                                place.location.latitude,
+                                place.location.longitude
+                            );
+                            
+                            // Update place distance
+                            place.distance = Math.round(newDistance);
+                            
+                            console.log(`📍 ${place.name}: ${oldDistance}m → ${newDistance}m`);
+                            totalUpdated++;
+                        }
+                    });
+                }
+            });
+            
+            console.log(`✅ Updated distances for ${totalUpdated} places`);
+            
+            // Refresh UI displays if places are currently shown
+            if (document.getElementById('places-list-content')) {
+                console.log('🖼️ Refreshing place list UI');
+                updatePlacesList();
+            }
+            
+            // Update map markers with new distances
+            if (map && Object.keys(placeMarkers).length > 0) {
+                console.log('🗺️ Refreshing map markers');
+                Object.values(placeMarkers).forEach(marker => {
+                    // Force marker info window update if it's open
+                    if (marker.infoWindow && marker.infoWindow.getMap()) {
+                        const place = marker.place;
+                        if (place) {
+                            // Update the info window content with new distance
+                            updatePlaceMarkerInfoWindow(marker, place);
+                        }
+                    }
+                });
+            }
         }
 
         // ============================================
