@@ -4918,7 +4918,85 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             return clientId;
         }
         
-        // Comprehensive data backup function
+        // Check localStorage available space
+        function getLocalStorageUsage() {
+            let used = 0;
+            for (let key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    used += localStorage[key].length;
+                }
+            }
+            return {
+                used: used,
+                usedMB: (used / 1024 / 1024).toFixed(2),
+                estimated5MBLimit: used > 5 * 1024 * 1024
+            };
+        }
+        
+        // Create optimized backup with size management
+        function createOptimizedBackup() {
+            const clientId = getClientId();
+            const timestamp = new Date().toISOString();
+            
+            // Create lightweight version of places data (exclude large images)
+            const optimizedPlaces = {};
+            if (allPlaces) {
+                Object.keys(allPlaces).forEach(category => {
+                    if (Array.isArray(allPlaces[category])) {
+                        optimizedPlaces[category] = allPlaces[category].map(place => {
+                            // Keep essential data, compress images array
+                            const lightPlace = {
+                                id: place.id,
+                                name: place.name,
+                                address: place.address,
+                                location: place.location,
+                                distance: place.distance,
+                                rating: place.rating,
+                                description: place.description,
+                                websiteUri: place.websiteUri,
+                                featured: place.featured,
+                                // Keep only first image with smaller data
+                                images: place.images ? place.images.slice(0, 1).map(img => ({
+                                    name: img.name,
+                                    size: img.size || 0,
+                                    // Don't include dataUrl to save space
+                                    optimized: true
+                                })) : []
+                            };
+                            return lightPlace;
+                        });
+                    }
+                });
+            }
+            
+            const backup = {
+                version: '1.1',
+                clientId: clientId,
+                timestamp: timestamp,
+                hotelLocation: HOTEL_LOCATION,
+                places: optimizedPlaces,
+                userPreferences: {
+                    lastUsedCategories: Array.from(activeCategories),
+                    lastRadius: currentRadius || 2000
+                },
+                metadata: {
+                    totalPlaces: Object.values(optimizedPlaces).reduce((sum, category) => sum + category.length, 0),
+                    optimized: true,
+                    originalSize: JSON.stringify(allPlaces || {}).length,
+                    optimizedSize: JSON.stringify(optimizedPlaces).length
+                }
+            };
+            
+            const backupSize = JSON.stringify(backup).length;
+            console.log('📦 Created optimized backup:', {
+                size: (backupSize / 1024).toFixed(1) + 'KB',
+                places: backup.metadata.totalPlaces
+            });
+            
+            return backup;
+        }
+        
+        // Legacy full backup for file downloads only
         function createFullBackup() {
             const clientId = getClientId();
             const timestamp = new Date().toISOString();
@@ -4936,42 +5014,100 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                 metadata: {
                     totalPlaces: Object.values(allPlaces || {}).reduce((sum, category) => sum + category.length, 0),
                     device: navigator.userAgent,
-                    url: window.location.href
+                    url: window.location.href,
+                    fullBackup: true
                 }
             };
             
-            console.log('📦 Created full backup:', backup);
+            console.log('📦 Created full backup for download');
             return backup;
         }
         
-        // Save backup to multiple locations
-        async function saveBackupEverywhere(backup = null) {
-            if (!backup) {
-                backup = createFullBackup();
-            }
+        // Save backup to multiple locations with smart storage management
+        async function saveBackupEverywhere(forceFullBackup = false) {
+            const storageUsage = getLocalStorageUsage();
+            console.log('📊 LocalStorage usage:', storageUsage);
             
             const results = {
                 localStorage: false,
                 server: false,
-                download: false
+                download: false,
+                error: null,
+                method: 'unknown'
             };
             
+            let backup;
+            
             try {
-                // 1. Save to localStorage
-                localStorage.setItem('full_backup', JSON.stringify(backup));
-                localStorage.setItem('backup_timestamp', backup.timestamp);
-                results.localStorage = true;
-                console.log('💾 Backup saved to localStorage');
+                // 1. Try optimized backup for localStorage and server
+                if (!forceFullBackup) {
+                    backup = createOptimizedBackup();
+                    results.method = 'optimized';
+                } else {
+                    backup = createFullBackup();
+                    results.method = 'full';
+                }
                 
-                // 2. Save to server
+                // 1. Smart localStorage backup with quota handling
                 try {
+                    // Clear old backups if storage is nearly full
+                    if (storageUsage.estimated5MBLimit) {
+                        console.log('🧹 Storage nearly full, clearing old backups');
+                        localStorage.removeItem('full_backup');
+                        localStorage.removeItem('old_backup');
+                        localStorage.removeItem('backup_v1');
+                    }
+                    
+                    const backupData = JSON.stringify(backup);
+                    localStorage.setItem('full_backup', backupData);
+                    localStorage.setItem('backup_timestamp', backup.timestamp);
+                    results.localStorage = true;
+                    console.log(`💾 ${results.method} backup saved to localStorage (${(backupData.length / 1024).toFixed(1)}KB)`);
+                    
+                } catch (quotaError) {
+                    console.warn('⚠️ LocalStorage quota exceeded, trying server and download only');
+                    results.error = 'localStorage_quota_exceeded';
+                    
+                    // Clear some old data and try again with even smaller backup
+                    try {
+                        // Remove non-essential localStorage data
+                        for (let key in localStorage) {
+                            if (key.includes('backup') || key.includes('temp')) {
+                                localStorage.removeItem(key);
+                            }
+                        }
+                        
+                        // Try with just hotel location and preferences
+                        const minimalBackup = {
+                            version: '1.2',
+                            clientId: backup.clientId,
+                            timestamp: backup.timestamp,
+                            hotelLocation: HOTEL_LOCATION,
+                            userPreferences: backup.userPreferences,
+                            metadata: { minimal: true, totalPlaces: backup.metadata.totalPlaces }
+                        };
+                        
+                        localStorage.setItem('minimal_backup', JSON.stringify(minimalBackup));
+                        localStorage.setItem('backup_timestamp', backup.timestamp);
+                        results.localStorage = true;
+                        console.log('💾 Minimal backup saved to localStorage');
+                        
+                    } catch (finalError) {
+                        console.error('❌ Even minimal localStorage backup failed:', finalError);
+                        results.localStorage = false;
+                    }
+                }
+                
+                // 2. Save to server (always try with optimized data)
+                try {
+                    const serverBackup = forceFullBackup ? backup : createOptimizedBackup();
                     const serverResponse = await fetch('/api/save-client-data', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            clientId: backup.clientId,
-                            data: backup,
-                            timestamp: backup.timestamp
+                            clientId: serverBackup.clientId,
+                            data: serverBackup,
+                            timestamp: serverBackup.timestamp
                         })
                     });
                     
@@ -4985,23 +5121,31 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     console.warn('⚠️ Server backup unavailable:', serverError.message);
                 }
                 
-                // 3. Auto-download backup file
-                const dataStr = JSON.stringify(backup, null, 2);
-                const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(dataBlob);
-                const downloadLink = document.createElement('a');
-                downloadLink.href = url;
-                downloadLink.download = `nearbyspots-backup-${backup.timestamp.split('T')[0]}.json`;
-                downloadLink.style.display = 'none';
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-                URL.revokeObjectURL(url);
-                results.download = true;
-                console.log('📥 Backup file auto-downloaded');
+                // 3. Auto-download backup file (only for full backups or manual requests)
+                if (forceFullBackup) {
+                    try {
+                        const fullBackup = createFullBackup();
+                        const dataStr = JSON.stringify(fullBackup, null, 2);
+                        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                        const url = URL.createObjectURL(dataBlob);
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = url;
+                        downloadLink.download = `nearbyspots-backup-${fullBackup.timestamp.split('T')[0]}.json`;
+                        downloadLink.style.display = 'none';
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                        URL.revokeObjectURL(url);
+                        results.download = true;
+                        console.log('📥 Full backup file auto-downloaded');
+                    } catch (downloadError) {
+                        console.warn('⚠️ Download backup failed:', downloadError);
+                    }
+                }
                 
             } catch (error) {
                 console.error('❌ Backup creation failed:', error);
+                results.error = error.message;
             }
             
             return results;
@@ -5114,17 +5258,33 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             }
         }
         
-        // Periodic backup every 5 minutes
+        // Periodic optimized backup every 5 minutes (prevents localStorage quota issues)
         setInterval(async () => {
-            console.log('⏰ Performing periodic backup...');
-            await saveBackupEverywhere();
+            console.log('⏰ Performing periodic optimized backup...');
+            const result = await saveBackupEverywhere(false); // Use optimized backup
+            
+            if (result.error === 'localStorage_quota_exceeded') {
+                console.log('💽 Storage full - backup saved to server only');
+            } else if (result.localStorage && result.server) {
+                console.log('✅ Optimized backup successful (localStorage + server)');
+            } else if (result.server) {
+                console.log('☁️ Backup saved to server only');
+            } else {
+                console.log('⚠️ Backup partially failed, check storage');
+            }
         }, 5 * 60 * 1000);
         
-        // Export backup manually
-        function exportBackup() {
+        // Export backup manually with full data
+        async function exportBackup() {
+            console.log('📥 Creating manual full backup export...');
             const backup = createFullBackup();
-            saveBackupEverywhere(backup);
-            alert(`✅ Backup created and saved!\n\n📦 ${backup.metadata.totalPlaces} places backed up\n📍 Hotel location: ${backup.hotelLocation.address}\n⏰ Timestamp: ${backup.timestamp}`);
+            const result = await saveBackupEverywhere(true); // Force full backup with download
+            
+            if (result.download || result.localStorage || result.server) {
+                alert(`✅ Backup created and saved!\n\n📦 ${backup.metadata.totalPlaces} places backed up\n📍 Hotel: ${backup.hotelLocation.address}\n💾 LocalStorage: ${result.localStorage ? '✅' : '❌'}\n☁️ Server: ${result.server ? '✅' : '❌'}\n📥 Downloaded: ${result.download ? '✅' : '❌'}`);
+            } else {
+                alert('❌ Backup export failed. Please try again.');
+            }
         }
         
         // Import backup from file
