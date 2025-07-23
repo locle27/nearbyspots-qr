@@ -7025,11 +7025,11 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
 
             // Handle radius changes intelligently
             console.log('🛠️ loadPlaces: About to handle radius changes, allPlaces:', typeof allPlaces, Object.keys(allPlaces));
-                if (radius < previousRadius && Object.keys(allPlaces).length > 0) {
-                    console.log('Smaller radius: filtering existing places without API call');
-                    // For smaller radius, just filter existing places (no API call needed)
-                    // BUT preserve manual recommendations regardless of distance
-                    try {
+            if (radius < previousRadius && Object.keys(allPlaces).length > 0) {
+                console.log('Smaller radius: filtering existing places without API call');
+                // For smaller radius, just filter existing places (no API call needed)
+                // BUT preserve manual recommendations regardless of distance
+                try {
                     Object.keys(allPlaces).forEach(category => {
                         console.log(`🛠️ Processing category for filtering: ${category}`);
                         if (allPlaces[category]) {
@@ -7049,15 +7049,15 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                             }
                         }
                     });
-                    } catch (radiusFilterError) {
-                        console.error('❌ Error in radius filtering:', radiusFilterError);
-                        throw radiusFilterError;
-                    }
-                    
-                    console.log('Places filtered for smaller radius:', allPlaces);
-                    updateMapMarkers();
-                    updateStats();
-                    adjustMapBounds();
+                } catch (radiusFilterError) {
+                    console.error('❌ Error in radius filtering:', radiusFilterError);
+                    throw radiusFilterError;
+                }
+                
+                console.log('Places filtered for smaller radius:', allPlaces);
+                updateMapMarkers();
+                updateStats();
+                adjustMapBounds();
                 } else {
                     console.log('Larger radius or first load: fetching from API');
                     
