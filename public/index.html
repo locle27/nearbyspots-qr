@@ -4818,6 +4818,21 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
             refreshAllPlaceDistances();
         }
         
+        // Helper function to find a place in allPlaces data structure by ID
+        function findPlaceInAllPlaces(placeId) {
+            for (const category in allPlaces) {
+                if (Array.isArray(allPlaces[category])) {
+                    const place = allPlaces[category].find(p => p.id === placeId);
+                    if (place) {
+                        console.log(`🔍 Found place ${placeId} in category: ${category}`);
+                        return place;
+                    }
+                }
+            }
+            console.log(`⚠️ Place ${placeId} not found in allPlaces`);
+            return null;
+        }
+        
         // Function to update marker info window with refreshed place data
         function updatePlaceMarkerInfoWindow(marker, place) {
             if (!marker.infoWindow) return;
@@ -11445,12 +11460,43 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     if (data.success && data.latitude && data.longitude) {
                         console.log('✅ Auto-updated coordinates:', data.latitude, data.longitude);
                         
-                        // Update coordinates in the place data
+                        // Update coordinates in BOTH placeDataStore AND allPlaces to prevent data loss
                         const place = placeDataStore.get(currentEditPlaceId);
                         if (place) {
+                            // Update temporary store
                             place.latitude = data.latitude;
                             place.longitude = data.longitude;
                             place.autoUpdatedCoordinates = true; // Flag to track auto-updates
+                            
+                            // CRITICAL: Also update in main allPlaces data structure to persist changes
+                            const mainPlace = findPlaceInAllPlaces(currentEditPlaceId);
+                            if (mainPlace) {
+                                mainPlace.location = {
+                                    latitude: data.latitude,
+                                    longitude: data.longitude,
+                                    lat: data.latitude, // Backup format
+                                    lng: data.longitude  // Backup format
+                                };
+                                mainPlace.autoUpdatedCoordinates = true;
+                                console.log('🔄 Updated coordinates in main data structure:', data.latitude, data.longitude);
+                                
+                                // Recalculate distance from hotel
+                                const distance = calculateDistance(
+                                    HOTEL_LOCATION.lat, HOTEL_LOCATION.lng,
+                                    data.latitude, data.longitude
+                                );
+                                mainPlace.distance = Math.round(distance);
+                                console.log('📏 Updated distance in main data:', mainPlace.distance + 'm');
+                                
+                                // Update map marker position if it exists
+                                const marker = placeMarkerMap.get(currentEditPlaceId);
+                                if (marker) {
+                                    const newPosition = new google.maps.LatLng(data.latitude, data.longitude);
+                                    marker.setPosition(newPosition);
+                                    marker.place = mainPlace; // Update marker's place reference
+                                    console.log('🗺️ Updated map marker position');
+                                }
+                            }
                             
                             // Update the display
                             updateCoordinatesDisplay('✅ Coordinates auto-updated', data.latitude, data.longitude);
@@ -12261,10 +12307,10 @@ The AI will automatically extract: Place Name, Address, Hours, Prices, Menu Item
                     // 🔄 FORCE COMPLETE UI REFRESH
                     console.log('🔄 FORCING COMPLETE UI AND MAP REFRESH...');
                     
-                    // Clear any cached data
+                    // Clear any cached data (Safe: auto-updated coordinates are now saved to main allPlaces data)
                     if (typeof placeDataStore !== 'undefined') {
                         placeDataStore.clear();
-                        console.log('🗑️ Cleared place data store cache');
+                        console.log('🗑️ Cleared place data store cache - coordinates preserved in main data');
                     }
                     
                     // Update the places list
